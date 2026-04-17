@@ -1,0 +1,43 @@
+syntax = "proto3";
+
+package chunk.v1;
+
+option go_package = "dos/gen/proto/chunk/v1;chunk";
+
+service ChunkService {
+  rpc PutChunk(stream PutChunkRequest) returns (PutChunkResponse);
+  rpc GetChunk(GetChunkRequest) returns (stream GetChunkResponse);
+}
+
+message PutChunkRequest {
+  oneof part {
+    PutChunkHeader header = 1;
+    bytes data = 2;
+  }
+}
+
+message PutChunkHeader {
+  string server_id = 1;
+  string chunk_id = 2;
+  int64 chunk_size = 3;
+  string checksum = 4;
+}
+
+message PutChunkResponse {}
+
+message GetChunkRequest {
+  string chunk_id = 1;
+}
+
+message GetChunkResponse {
+  oneof part {
+    GetChunkHeader header = 1;
+    bytes data = 2;
+  }
+}
+
+message GetChunkHeader {
+  string chunk_id = 1;
+  int64 chunk_size = 2;
+  string checksum = 3;
+}

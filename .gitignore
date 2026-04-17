@@ -1,0 +1,23 @@
+# Binaries
+/bin/
+/build/
+/dist/
+
+# Go build artifacts
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+
+# Coverage
+*.out
+
+# OS
+.DS_Store
+
+# Env
+.env
+
+# Generated
+gen/

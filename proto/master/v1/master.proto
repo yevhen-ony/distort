@@ -1,0 +1,72 @@
+syntax = "proto3";
+
+package master.v1;
+
+option go_package = "dos/gen/proto/master/v1;master";
+
+service MasterService {
+  rpc CreateObject(CreateObjectRequest) returns (CreateObjectResponse);
+  rpc AllocateChunk(AllocateChunkRequest) returns (AllocateChunkResponse);
+  rpc GetObject(GetObjectRequest) returns (GetObjectResponse);
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc ReportChunks(ReportChunksRequest) returns (ReportChunksResponse);
+}
+
+message CreateObjectRequest {
+  string object_id = 1;
+}
+
+message CreateObjectResponse {}
+
+message AllocateChunkRequest {
+  string object_id = 1;
+  int64 chunk_index = 2;
+  int64 chunk_size = 3;
+}
+
+message AllocateChunkResponse {
+  string chunk_id = 1;
+  repeated ChunkServerRef locations = 2;
+}
+
+message GetObjectRequest {
+  string object_id = 1;
+}
+
+message GetObjectResponse {
+  string object_id = 1;
+  repeated ChunkMeta chunks = 2;
+}
+
+message ChunkMeta {
+  string chunk_id = 1;
+  int64 chunk_index = 2;
+  int64 chunk_size = 3;
+  repeated ChunkServerRef locations = 4;
+}
+
+message ChunkServerRef {
+  string server_id = 1;
+  string address = 2;
+}
+
+message HeartbeatRequest {
+  string server_id = 1;
+  string address = 2;
+}
+
+message HeartbeatResponse {}
+
+message ReportChunksRequest {
+  string server_id = 1;
+  string address = 2;
+  repeated ChunkReport chunks = 3;
+  bool full_sync = 4;
+}
+
+message ReportChunksResponse {}
+
+message ChunkReport {
+  string chunk_id = 1;
+  int64 chunk_size = 2;
+}
