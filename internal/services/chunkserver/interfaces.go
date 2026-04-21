@@ -3,11 +3,13 @@ package chunkserver
 import (
 	"io"
 	"time"
+
+	"dos/internal/libraries/digest"
 )
 
 type ChunkWriter interface {
 	io.WriteCloser
-	Digest() ChunkDigest
+	Digest() digest.Digest
 	Commit(ChunkID) (time.Time, error)
 }
 

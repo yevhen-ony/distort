@@ -1,8 +1,8 @@
 package main
 
 import (
-	"dos/internal/chunkserver/api"
-	"dos/internal/chunkserver/storage"
+	"dos/internal/services/chunkserver/api"
+	"dos/internal/services/chunkserver/storage"
 	"fmt"
 	"strings"
 

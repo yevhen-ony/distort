@@ -179,7 +179,8 @@ func (*PutChunkResponse) Descriptor() ([]byte, []int) {
 
 type GetChunkRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
+	ServerId      string                 `protobuf:"bytes,1,opt,name=server_id,json=serverId,proto3" json:"server_id,omitempty"`
+	ChunkId       string                 `protobuf:"bytes,2,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -212,6 +213,13 @@ func (x *GetChunkRequest) ProtoReflect() protoreflect.Message {
 // Deprecated: Use GetChunkRequest.ProtoReflect.Descriptor instead.
 func (*GetChunkRequest) Descriptor() ([]byte, []int) {
 	return file_chunk_v1_chunk_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetChunkRequest) GetServerId() string {
+	if x != nil {
+		return x.ServerId
+	}
+	return ""
 }
 
 func (x *GetChunkRequest) GetChunkId() string {
@@ -347,9 +355,10 @@ const file_chunk_v1_chunk_proto_rawDesc = "" +
 	"\n" +
 	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\x12\x1a\n" +
 	"\bchecksum\x18\x04 \x01(\tR\bchecksum\"\x12\n" +
-	"\x10PutChunkResponse\",\n" +
-	"\x0fGetChunkRequest\x12\x19\n" +
-	"\bchunk_id\x18\x01 \x01(\tR\achunkId\"X\n" +
+	"\x10PutChunkResponse\"I\n" +
+	"\x0fGetChunkRequest\x12\x1b\n" +
+	"\tserver_id\x18\x01 \x01(\tR\bserverId\x12\x19\n" +
+	"\bchunk_id\x18\x02 \x01(\tR\achunkId\"X\n" +
 	"\x10GetChunkResponse\x120\n" +
 	"\x06header\x18\x01 \x01(\v2\x18.chunk.v1.GetChunkHeaderR\x06header\x12\x12\n" +
 	"\x04data\x18\x02 \x01(\fR\x04data\"f\n" +

@@ -3,6 +3,7 @@ package chunkserver
 import (
 	"io"
 	"time"
+	"dos/internal/libraries/digest"
 )
 
 type ChunkID string
@@ -14,13 +15,14 @@ type ChunkDigest struct {
 }
 
 type ChunkMeta struct {
-	ChunkDigest
+	Digest digest.Digest
 	ModifiedAt time.Time
 }
 
 type ChunkInfo struct {
 	ID ChunkID
-	ChunkDigest
+	Digest digest.Digest
+	
 }
 
 type Chunk struct {

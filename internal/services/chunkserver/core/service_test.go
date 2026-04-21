@@ -1,4 +1,4 @@
-package service
+package core 
 
 import (
 	"crypto/sha256"
@@ -9,8 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	cs "dos/internal/chunkserver"
-	"dos/internal/chunkserver/storage"
+	cs "dos/internal/services/chunkserver"
+	"dos/internal/services/chunkserver/storage"
+	"dos/internal/libraries/digest"
 )
 
 func checksumHex(data []byte) string {
@@ -35,12 +36,12 @@ func newTestService(t *testing.T) (*Service, *storage.FSChunkStorage) {
 func TestService_CommitUploadSession(t *testing.T) {
 	svc, st := newTestService(t)
 	payload := []byte("hello")
-	dg := storage.NewDigester()
+	dg := digest.New()
 	dg.Write(payload)
 
 	info := &cs.ChunkInfo{
 		ID: "chunk-1",
-		ChunkDigest: dg.Digest(),
+		Digest: dg.Digest(),
 	}
 
 	t.Run("HappyPath", func(t *testing.T) {
@@ -54,8 +55,8 @@ func TestService_CommitUploadSession(t *testing.T) {
 
 		meta, ok := svc.catalog[info.ID]
 		require.True(t, ok)
-		assert.Equal(t, info.Size, meta.Size)
-		assert.Equal(t, info.Checksum, meta.Checksum)
+		assert.Equal(t, info.Digest.Size, meta.Digest.Size)
+		assert.Equal(t, info.Digest.Checksum, meta.Digest.Checksum)
 
 		r, err := st.Get(info.ID)
 		require.NoError(t, err)
@@ -73,12 +74,12 @@ func TestService_CommitUploadSession(t *testing.T) {
 
   	t.Run("CollitionOnCommit", func(t *testing.T) {
 		payload := []byte("hello")
-		dg := storage.NewDigester()
+		dg := digest.New()
 		dg.Write(payload)
 
 		info := &cs.ChunkInfo{
 			ID: "chunk-2",
-			ChunkDigest: dg.Digest(),
+			Digest: dg.Digest(),
 		}
 
 		session, err := svc.StartUploadSession(info)
@@ -89,7 +90,7 @@ func TestService_CommitUploadSession(t *testing.T) {
 
   		// Simulate race: ID becomes taken after session start but before commit.
 		svc.catalog[info.ID] = cs.ChunkMeta{
-			ChunkDigest: cs.ChunkDigest{Size: int64(999), Checksum: "existing"},
+			Digest: digest.Digest{Size: int64(999), Checksum: "existing"},
 		}
 
 		err = svc.CommitUploadSession(session, info)
@@ -97,7 +98,7 @@ func TestService_CommitUploadSession(t *testing.T) {
 
 		// Existing entry must stay untouched.
 		meta := svc.catalog[info.ID]
-		assert.Equal(t, int64(999), meta.Size)
-		assert.Equal(t, "existing", meta.Checksum)
+		assert.Equal(t, int64(999), meta.Digest.Size)
+		assert.Equal(t, "existing", meta.Digest.Checksum)
 	})
 }

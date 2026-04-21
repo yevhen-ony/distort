@@ -6,7 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	cs "dos/internal/chunkserver"
+	"dos/internal/libraries/digest"
+	cs "dos/internal/services/chunkserver"
 )
 
 type FSChunkStorage struct {
@@ -50,7 +51,7 @@ func (s *FSChunkStorage) GetMeta(chunkID cs.ChunkID) (*cs.ChunkMeta, error) {
 	}
 	defer fd.Close()
 	
-	dg := NewDigester()
+	dg := digest.New()
 	if _, err := io.Copy(dg, fd); err != nil {
 		return nil, fmt.Errorf("read chunk: %w", err)
 	}
@@ -60,7 +61,7 @@ func (s *FSChunkStorage) GetMeta(chunkID cs.ChunkID) (*cs.ChunkMeta, error) {
 		return nil, fmt.Errorf("stat chunk: %w", err)
 	}
 	meta := &cs.ChunkMeta{
-		ChunkDigest: dg.Digest(),
+		Digest: dg.Digest(),
 		ModifiedAt: fi.ModTime(),
 	}
 	
@@ -92,7 +93,7 @@ func (s *FSChunkStorage) NewWriter() (cs.ChunkWriter, error) {
 	w := &FSChunkWriter{
 		fd: fd,
 		commitDir: s.commitDir, 
-		dg: NewDigester(),
+		dg: digest.New(),
 	}
 	return w, nil
 }

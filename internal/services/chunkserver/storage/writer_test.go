@@ -8,7 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	cs "dos/internal/chunkserver"
+	cs "dos/internal/services/chunkserver"
+	"dos/internal/libraries/digest"
 )
 
 func newTestWriter(t *testing.T) *FSChunkWriter {
@@ -24,7 +25,7 @@ func newTestWriter(t *testing.T) *FSChunkWriter {
 	fd, err := os.CreateTemp(tempDir, "chunk-*")
 	require.NoError(t, err)
 
-	return &FSChunkWriter{fd: fd, commitDir: commitDir, dg: NewDigester()}
+	return &FSChunkWriter{fd: fd, commitDir: commitDir, dg: digest.New()}
 }
 
 func TestFSChunkWriter_Cleanup(t *testing.T) {

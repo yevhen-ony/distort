@@ -7,13 +7,14 @@ import (
 	"path/filepath"
 	"time"
 
-	cs "dos/internal/chunkserver"
+	cs "dos/internal/services/chunkserver"
+	"dos/internal/libraries/digest"
 )
 
 
 type FSChunkWriter struct {
 	fd *os.File
-	dg *Digester
+	dg *digest.Digester
 	commitDir string
 	closed bool
 }
@@ -81,7 +82,7 @@ func (w *FSChunkWriter) Write(data []byte) (int, error) {
 	return n, nil 
 }
 
-func (w *FSChunkWriter) Digest() cs.ChunkDigest {
+func (w *FSChunkWriter) Digest() digest.Digest {
 	return w.dg.Digest()
 }
 

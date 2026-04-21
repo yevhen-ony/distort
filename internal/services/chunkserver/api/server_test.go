@@ -10,9 +10,9 @@ import (
 	"time"
 
 	pb "dos/gen/proto/chunk/v1"
-	"dos/internal/chunkserver/api"
-	"dos/internal/chunkserver/service"
-	"dos/internal/chunkserver/storage"
+	"dos/internal/services/chunkserver/api"
+	"dos/internal/services/chunkserver/core"
+	"dos/internal/services/chunkserver/storage"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -36,10 +36,10 @@ func startChunkServer(t *testing.T) (pb.ChunkServiceClient, func()) {
 	store, err := storage.New(storeConfig)
 	require.NoError(t, err)
 
-	service, err := service.New(store)
+	service, err := core.New(store)
 	require.NoError(t, err)
 
-	serverConfig := &api.ServerConfig{PartSize: 4}
+	serverConfig := &api.ServerConfig{FrameSize: 4}
 	server := api.New(service, serverConfig)
 
 	lis, err := net.Listen("tcp", "127.0.0.1:0")

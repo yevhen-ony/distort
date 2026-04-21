@@ -1,0 +1,47 @@
+package digest
+import (
+	"crypto/sha256"
+	"encoding/hex"
+	"hash"
+)
+
+type Digest struct {
+	Checksum string
+	Size int64 
+}
+
+func (d Digest) Equal(o Digest) bool {
+	return d.Size == o.Size &&
+		d.Checksum == o.Checksum
+}
+
+type Digester struct {
+	hash hash.Hash
+	total int64
+}
+
+func New() *Digester {
+	return &Digester{
+		hash: sha256.New(),
+	}
+}
+
+func (d *Digester) Write(p []byte) (int, error) {
+	n, err := d.hash.Write(p)
+	if n > 0 {
+		d.total += int64(n)
+	}
+	return n, err
+}
+
+func (d *Digester) Digest() Digest {
+	return Digest{
+		Size: d.total,
+		Checksum: d.Checksum(),
+	}
+}
+
+func (d *Digester) Checksum() string {
+	sum := d.hash.Sum(nil)
+	return hex.EncodeToString(sum)
+}

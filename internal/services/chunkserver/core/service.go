@@ -1,4 +1,4 @@
-package service
+package core 
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"log/slog"
 	"sync"
 
-	cs "dos/internal/chunkserver"
+	cs "dos/internal/services/chunkserver"
 )
 
 type Service struct {
@@ -64,9 +64,9 @@ func (s *Service) StartUploadSession(info *cs.ChunkInfo) (cs.ChunkWriter, error)
 }
 
 func (s *Service) CommitUploadSession(w cs.ChunkWriter, info *cs.ChunkInfo) error {
-	meta := cs.ChunkMeta{ChunkDigest: w.Digest()} 
-	if err := s.validate(info.ChunkDigest, meta.ChunkDigest); err != nil {
-		return fmt.Errorf("session validation: %w", err) 
+	meta := cs.ChunkMeta{Digest: w.Digest()} 
+	if !info.Digest.Equal(meta.Digest) {
+		return fmt.Errorf("session validation: digest missmatch") 
 	}
 
 	s.mu.Lock()	

@@ -1,22 +1,23 @@
-package api 
+package api
 
 import (
 	"fmt"
 	"io"
 
 	pb "dos/gen/proto/chunk/v1"
-	cs "dos/internal/chunkserver"
-	svc "dos/internal/chunkserver/service"
+	"dos/internal/libraries/digest"
+	cs "dos/internal/services/chunkserver"
+	"dos/internal/services/chunkserver/core"
 )
 
 type Server struct {
 	pb.UnimplementedChunkServiceServer
 
-	service *svc.Service
+	service *core.Service
 	config  *ServerConfig
 }
 
-func New(service *svc.Service, config *ServerConfig) *Server {
+func New(service *core.Service, config *ServerConfig) *Server {
 	return &Server{
 		service: service,
 		config: config,
@@ -38,7 +39,7 @@ func (s *Server) PutChunk(stream pb.ChunkService_PutChunkServer) (err error) {
 
 	chunkInfo := &cs.ChunkInfo{
 		ID: cs.ChunkID(header.GetChunkId()),
-		ChunkDigest: cs.ChunkDigest{
+		Digest: digest.Digest{
 			Size:     header.GetChunkSize(),
 			Checksum: header.GetChecksum(),
 		},
@@ -84,15 +85,15 @@ func (s *Server) GetChunk(req *pb.GetChunkRequest, stream pb.ChunkService_GetChu
 	rsp := &pb.GetChunkResponse{
 		Header: &pb.GetChunkHeader{
 			ChunkId:   string(chunk.ID),
-			ChunkSize: chunk.Meta.Size,
-			Checksum:  chunk.Meta.Checksum,
+			ChunkSize: chunk.Meta.Digest.Size,
+			Checksum:  chunk.Meta.Digest.Checksum,
 		},
 	}
 	if err = stream.Send(rsp); err != nil {
 		return fmt.Errorf("send header: %w", err)
 	}
 
-	buf := make([]byte, s.config.PartSize)
+	buf := make([]byte, s.config.FrameSize)
 	for {
 		n, readErr := chunk.Reader.Read(buf)
 		if n > 0 {

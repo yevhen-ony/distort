@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	cs "dos/internal/chunkserver"
+	cs "dos/internal/services/chunkserver"
 )
 
 func TestFSChunkStorage_New(t *testing.T) {
@@ -62,7 +62,7 @@ func TestFSChunkStorage_GetMeta(t *testing.T) {
 		meta, err := s.GetMeta(chunkID)
 		require.NoError(t, err)
 		require.NotNil(t, meta)
-		require.Equal(t, int64(len(content)), meta.Size)
+		require.Equal(t, int64(len(content)), meta.Digest.Size)
 	})
 
 	t.Run("ChunkNotExists", func(t *testing.T) {

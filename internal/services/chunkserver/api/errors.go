@@ -1,7 +1,7 @@
 package api 
 
 import (
-	svc "dos/internal/chunkserver/service"
+	svc "dos/internal/services/chunkserver/core"
 	"errors"
 	"log/slog"
 

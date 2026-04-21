@@ -24,7 +24,8 @@ message PutChunkHeader {
 message PutChunkResponse {}
 
 message GetChunkRequest {
-  string chunk_id = 1;
+  string server_id = 1;
+  string chunk_id = 2;
 }
 
 message GetChunkResponse {

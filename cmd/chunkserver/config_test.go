@@ -13,7 +13,7 @@ func TestLoadConfig(t *testing.T) {
 		cfg, err := loadConfig("./config.yml")
 		require.NoError(t, err, "load config")
 
-		assert.Equal(t, 5, cfg.API.PartSize)
+		assert.Equal(t, 5, cfg.API.FrameSize)
 		assert.Equal(t, "./chunkserver_data", cfg.Store.RootDir)
 	})
 
@@ -25,7 +25,7 @@ func TestLoadConfig(t *testing.T) {
 		require.NoError(t, err, "load config")
 
 		assert.Equal(t, 80, cfg.Listen.Port)
-		assert.Equal(t, "*", cfg.Listen.Host)
+		assert.Equal(t, "0.0.0.0", cfg.Listen.Host)
 		assert.Equal(t, "./chunkserver_data", cfg.Store.RootDir)
 	})
 }

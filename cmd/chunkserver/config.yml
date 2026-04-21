@@ -1,5 +1,5 @@
 api:
-  part_size: 5 
+  frame_size: 5 
 
 store:
   root_dir: ./chunkserver_data
