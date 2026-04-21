@@ -10,10 +10,8 @@ service ChunkService {
 }
 
 message PutChunkRequest {
-  oneof part {
-    PutChunkHeader header = 1;
-    bytes data = 2;
-  }
+  PutChunkHeader header = 1;
+  bytes data = 2;
 }
 
 message PutChunkHeader {
@@ -30,10 +28,8 @@ message GetChunkRequest {
 }
 
 message GetChunkResponse {
-  oneof part {
-    GetChunkHeader header = 1;
-    bytes data = 2;
-  }
+  GetChunkHeader header = 1;
+  bytes data = 2;
 }
 
 message GetChunkHeader {

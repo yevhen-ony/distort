@@ -1,0 +1,122 @@
+package api 
+
+import (
+	"fmt"
+	"io"
+
+	pb "dos/gen/proto/chunk/v1"
+	cs "dos/internal/chunkserver"
+	svc "dos/internal/chunkserver/service"
+)
+
+type Server struct {
+	pb.UnimplementedChunkServiceServer
+
+	service *svc.Service
+	config  *ServerConfig
+}
+
+func New(service *svc.Service, config *ServerConfig) *Server {
+	return &Server{
+		service: service,
+		config: config,
+	}
+}
+
+func (s *Server) PutChunk(stream pb.ChunkService_PutChunkServer) (err error) {
+	defer func() { err = toStatus(err) }()
+
+	req, err := stream.Recv()
+	if err != nil {
+		return fmt.Errorf("receive header request: %w", err)
+	}
+
+	header := req.GetHeader()
+	if err := s.validatePutChunkHeader(header); err != nil {
+		return err
+	}
+
+	chunkInfo := &cs.ChunkInfo{
+		ID: cs.ChunkID(header.GetChunkId()),
+		ChunkDigest: cs.ChunkDigest{
+			Size:     header.GetChunkSize(),
+			Checksum: header.GetChecksum(),
+		},
+	}
+
+	session, err := s.service.StartUploadSession(chunkInfo)
+	if err != nil {
+		return fmt.Errorf("start upload session: %w", err)
+	}
+	defer session.Close()
+
+	for {
+		req, err := stream.Recv()
+		if err == io.EOF {
+			break
+		}
+
+		if err != nil {
+			return fmt.Errorf("receive data request: %w", err)
+		}
+		if _, err = session.Write(req.GetData()); err != nil {
+			return fmt.Errorf("write to upload session: %w", err)
+		}
+	}
+
+	if err := s.service.CommitUploadSession(session, chunkInfo); err != nil {
+		return fmt.Errorf("commit upload session: %w", err)
+	}
+	if err := stream.SendAndClose(&pb.PutChunkResponse{}); err != nil {
+		return fmt.Errorf("close stream: %w", err)
+	}
+	return nil
+}
+
+func (s *Server) GetChunk(req *pb.GetChunkRequest, stream pb.ChunkService_GetChunkServer) (err error) {
+	defer func() { err = toStatus(err) }()
+
+	chunk, err := s.service.GetChunk(cs.ChunkID(req.GetChunkId()))
+	if err != nil {
+		return fmt.Errorf("get chunk: %w", err)
+	}
+
+	rsp := &pb.GetChunkResponse{
+		Header: &pb.GetChunkHeader{
+			ChunkId:   string(chunk.ID),
+			ChunkSize: chunk.Meta.Size,
+			Checksum:  chunk.Meta.Checksum,
+		},
+	}
+	if err = stream.Send(rsp); err != nil {
+		return fmt.Errorf("send header: %w", err)
+	}
+
+	buf := make([]byte, s.config.PartSize)
+	for {
+		n, readErr := chunk.Reader.Read(buf)
+		if n > 0 {
+			rsp := &pb.GetChunkResponse{Data: buf[:n]}
+			if sendErr := stream.Send(rsp); sendErr != nil {
+				return fmt.Errorf("send part: %w", sendErr)
+			}
+		}
+		if readErr == io.EOF {
+			break
+		}
+		if readErr != nil {
+			return fmt.Errorf("read part: %w", readErr)
+		}
+	}
+	return nil
+}
+
+func (s *Server) validatePutChunkHeader(header *pb.PutChunkHeader) error {
+	if header == nil {
+		return fmt.Errorf("missing header: %w", ErrHeaderInvalid)
+	}
+	if header.GetServerId() != s.service.GetServerID() {
+		return fmt.Errorf("invalid server id: %w", ErrHeaderInvalid)
+	}
+	return nil
+}

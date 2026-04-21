@@ -1,0 +1,10 @@
+api:
+  part_size: 5 
+
+store:
+  root_dir: ./chunkserver_data
+
+listen:
+  host: "0.0.0.0"
+  port: 10001
+
