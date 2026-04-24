@@ -7,15 +7,18 @@ import (
 
 	pb "dos/gen/proto/master/v1"
 	m "dos/internal/services/master"
-	"dos/internal/services/master/domain"
 )
 
-type Server struct {
+type ClientServer struct {
 	pb.UnimplementedMasterClientServiceServer
-	service domain.Service
+	service m.Service
 }
 
-func (s *Server) CreateObject(
+func NewClientServer(service m.Service) *ClientServer {
+	return &ClientServer{service: service}
+}
+
+func (s *ClientServer) CreateObject(
 	ctx context.Context, req *pb.CreateObjectRequest,
 ) (rsp *pb.CreateObjectResponse, err error) {
 
@@ -33,7 +36,7 @@ func (s *Server) CreateObject(
 	return &pb.CreateObjectResponse{}, nil
 }
 
-func (s *Server) AllocateChunk(
+func (s *ClientServer) AllocateChunk(
 	ctx context.Context, req *pb.AllocateChunkRequest,
 ) (rsp *pb.AllocateChunkResponse, err error) {
 
@@ -62,7 +65,7 @@ func (s *Server) AllocateChunk(
 	return rsp, nil
 }
 
-func (s *Server) GetObjectAccess(
+func (s *ClientServer) GetObjectAccess(
 	ctx context.Context, req *pb.GetObjectAccessRequest,
 ) (rsp *pb.GetObjectAccessResponse, err error) {
 

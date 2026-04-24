@@ -13,6 +13,12 @@ type InMemChunkRepo struct {
 	chunks map[m.ChunkID]*m.Chunk
 }
 
+func MakeInMemChunkRepo() *InMemChunkRepo {
+	return &InMemChunkRepo{
+		chunks: map[m.ChunkID]*m.Chunk{},
+	}
+}
+
 func (r *InMemChunkRepo) Create(_ context.Context) (m.ChunkID, error) {
 	id := r.pickChunkID()
 	r.chunks[id] = &m.Chunk{ ID: id }

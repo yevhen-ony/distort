@@ -7,12 +7,12 @@ import (
 
 type Service interface {
 	CreateObject(context.Context, ObjectID) error
-	AllocateChunk(context.Context, *AllocateChunkCommand) (ChunkPlacement, err error)
+	AllocateChunk(context.Context, *AllocateChunkCommand) (ChunkPlacement, error)
 	GetObjectAccess(context.Context, ObjectID) (ObjectAccess, error)
 }
 
 type ObjectRepo interface {
-	Create(context.Context, ObjectID) error 
+	Create(context.Context, ObjectID) error
 	Get(context.Context, ObjectID) (Object, error)
 	AddChunk(context.Context, ObjectID, ChunkKey, ChunkID) error
 }
@@ -38,7 +38,7 @@ type NodeRegistry interface {
 
 type CandidateNodesQuery struct {
 	MinFreeBytes int64
-	ExcludeChunk ChunkID 
+	ExcludeChunk ChunkID
 }
 
 type PlacementPolicy interface {
@@ -46,7 +46,7 @@ type PlacementPolicy interface {
 }
 
 type AllocateChunkCommand struct {
-	ObjectID ObjectID
-	ChunkKey ChunkKey
+	ObjectID  ObjectID
+	ChunkKey  ChunkKey
 	ChunkSize int64
 }

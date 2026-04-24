@@ -22,6 +22,15 @@ type InMemNodeRegistry struct {
 	mu sync.RWMutex
 }
 
+func NewInMemNodeRegistry() *InMemNodeRegistry {
+	return &InMemNodeRegistry{
+		nodes: map[m.NodeID]*m.Node{},
+		addrs: map[string]m.NodeID{},
+		nodeChunks: map[m.NodeID]map[m.ChunkID]struct{}{},
+		chunkNodes: map[m.ChunkID]map[m.NodeID]struct{}{},
+	}
+}
+
 func (r *InMemNodeRegistry) Register(_ context.Context, report m.NodeReport) (m.NodeID, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()

@@ -6,25 +6,40 @@ import (
 	"fmt"
 )
 
-type ServiceConfig struct{
+type MasterServiceConfig struct{
 	ReplicationCount int
 	ChunkAllocationMarginBytes int64
 }
 
-type Service struct {
+type MasterService struct {
 	chunkRepo m.ChunkRepo
 	objectRepo m.ObjectRepo
 	nodeReg m.NodeRegistry
 
 	placementPolicy m.PlacementPolicy
-	config *ServiceConfig
+	config *MasterServiceConfig
 }
 
-func (s *Service) CreateObject(ctx context.Context, oid m.ObjectID) error {
+func NewMasterService(
+	chunkRepo m.ChunkRepo,
+	objectRepo m.ObjectRepo,
+	nodeReg m.NodeRegistry,
+	config *MasterServiceConfig,
+) *MasterService {
+	return &MasterService{
+		chunkRepo: chunkRepo,
+		objectRepo: objectRepo,
+		nodeReg: nodeReg,
+		placementPolicy: &RandomPlacementPolicy{},
+		config: config,
+	}
+}
+
+func (s *MasterService) CreateObject(ctx context.Context, oid m.ObjectID) error {
 	return s.objectRepo.Create(ctx, oid)
 }
 
-func (s *Service) AllocateChunk(
+func (s *MasterService) AllocateChunk(
 	ctx context.Context,
 	cmd *m.AllocateChunkCommand,
 ) (placement m.ChunkPlacement, err error) {
@@ -62,7 +77,7 @@ func (s *Service) AllocateChunk(
 	return placement, nil
 }
 
-func (s *Service) GetObjectAccess(ctx context.Context, oid m.ObjectID) (m.ObjectAccess, error) {
+func (s *MasterService) GetObjectAccess(ctx context.Context, oid m.ObjectID) (m.ObjectAccess, error) {
 	obj, err := s.objectRepo.Get(ctx, oid)
 	if err != nil {
 		return m.ObjectAccess{}, fmt.Errorf("access object: %w", err) 
