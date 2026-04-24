@@ -65,7 +65,7 @@ func (s *Service) StartUploadSession(info *cs.ChunkInfo) (cs.ChunkWriter, error)
 
 func (s *Service) CommitUploadSession(w cs.ChunkWriter, info *cs.ChunkInfo) error {
 	meta := cs.ChunkMeta{Digest: w.Digest()} 
-	if !info.Digest.Equal(meta.Digest) {
+	if !info.Digest.Equal(&meta.Digest) {
 		return fmt.Errorf("session validation: digest missmatch") 
 	}
 

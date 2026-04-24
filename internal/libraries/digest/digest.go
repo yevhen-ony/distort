@@ -10,9 +10,16 @@ type Digest struct {
 	Size int64 
 }
 
-func (d Digest) Equal(o Digest) bool {
+func (d Digest) Equal(o *Digest) bool {
 	return d.Size == o.Size &&
 		d.Checksum == o.Checksum
+}
+
+func (d *Digest) Clone() *Digest {
+	return &Digest{
+		Checksum: d.Checksum,
+		Size: d.Size,
+	}
 }
 
 type Digester struct {

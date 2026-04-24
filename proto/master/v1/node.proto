@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package master.v1;
+
+option go_package = "dos/gen/proto/master/v1;master";
+
+service MasterChunkserverService {
+  rpc Heartbeat(HeartbeatRequest) returns (HeartbeatResponse);
+  rpc ReportChunks(ReportChunksRequest) returns (ReportChunksResponse);
+  rpc RegisterNode(RegisterNodeRequest) returns (RegisterNodeResponse);
+}
+
+message HeartbeatRequest {
+  string server_id = 1;
+  string address = 2;
+}
+
+message HeartbeatResponse {}
+
+message ReportChunksRequest {
+  string server_id = 1;
+  string address = 2;
+  repeated ChunkReport chunks = 3;
+  bool full_sync = 4;
+}
+
+message ReportChunksResponse {}
+
+message ChunkReport {
+  string chunk_id = 1;
+  int64 chunk_size = 2;
+}
+
+message RegisterNodeRequest {
+  string addr = 1;
+}
+
+message RegisterNodeResponse {
+  string node_id = 1;
+}
