@@ -20,11 +20,11 @@ type ObjectRepo interface {
 type ChunkRepo interface {
 	Create(context.Context) (ChunkID, error)
 	Get(context.Context, ChunkID) (Chunk, error)
-	SetDigest(context.Context, ChunkID, digest.Digest) error
+	SetDigest(context.Context, ChunkID, *digest.Digest) error
 }
 
 type NodeRegistry interface {
-	Register(context.Context, string) (NodeID, error)
+	Register(context.Context, *NodeReport) (NodeID, error)
 	Unregister(context.Context, NodeID) error
 
 	GetNode(context.Context, NodeID) (Node, error)

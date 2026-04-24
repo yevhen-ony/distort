@@ -31,7 +31,7 @@ func NewInMemNodeRegistry() *InMemNodeRegistry {
 	}
 }
 
-func (r *InMemNodeRegistry) Register(_ context.Context, report m.NodeReport) (m.NodeID, error) {
+func (r *InMemNodeRegistry) Register(_ context.Context, report *m.NodeReport) (m.NodeID, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -42,7 +42,7 @@ func (r *InMemNodeRegistry) Register(_ context.Context, report m.NodeReport) (m.
 
 	nid := r.pickNodeID()
 	r.addrs[report.Addr] = nid 
-	r.nodes[nid] = &m.Node{ ID: nid, Report: report }
+	r.nodes[nid] = &m.Node{ ID: nid, Report: *report }
 	r.nodeChunks[nid] = map[m.ChunkID]struct{}{}
 	return nid, nil 
 }
@@ -122,7 +122,7 @@ func (r *InMemNodeRegistry) GetChunkNodes(_ context.Context, cid m.ChunkID) ([]m
 }
 
 func (r *InMemNodeRegistry) GetCandidateNodes(
-	_ context.Context, query m.CandidateNodesQuery) ([]m.Node, error) {
+	_ context.Context, query *m.CandidateNodesQuery) ([]m.Node, error) {
 
 	r.mu.RLock()
 	defer r.mu.RUnlock()
