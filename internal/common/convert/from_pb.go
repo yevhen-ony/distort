@@ -1,10 +1,9 @@
-package transport
+package convert 
 
 import (
 	mpb "dos/gen/proto/master/v1"
-	c "dos/internal/services/client"
+	t "dos/internal/common/types"
 )
-
 
 type ChunkPlacementLike interface {
 	GetChunkId() string
@@ -12,22 +11,22 @@ type ChunkPlacementLike interface {
 	GetNodes() []*mpb.NodeAccess
 }
 
-func NodeAccessFromPB(pbNode *mpb.NodeAccess) *c.NodeAccess {
-	return &c.NodeAccess{
-		NodeID: pbNode.GetNodeId(),
+func NodeAccessFromPB(pbNode *mpb.NodeAccess) *t.NodeAccess {
+	return &t.NodeAccess{
+		NodeID: t.NodeID(pbNode.GetNodeId()),
 		Addr: pbNode.GetAddress(),
 	}
 }
 
-func ChunkPlacementFromPB(pbObj ChunkPlacementLike) *c.ChunkPlacement {
+func ChunkPlacementFromPB(pbObj ChunkPlacementLike) *t.ChunkPlacement {
 	pbNodes := pbObj.GetNodes()
-	nodes := make([]c.NodeAccess, 0, len(pbNodes))
+	nodes := make([]t.NodeAccess, 0, len(pbNodes))
 	for _, pbNode := range pbNodes {
 		nodes = append(nodes, *NodeAccessFromPB(pbNode))
 	}
-	return &c.ChunkPlacement{
-		ChunkID: c.ChunkID(pbObj.GetChunkId()),
-		ChunkKey: c.ChunkKey(pbObj.GetChunkKey()),
+	return &t.ChunkPlacement{
+		ChunkID: t.ChunkID(pbObj.GetChunkId()),
+		ChunkKey: t.ChunkKey(pbObj.GetChunkKey()),
 		Nodes: nodes,
 	}
 }
@@ -38,14 +37,14 @@ type ObjectAccessLike interface {
 	GetChunks() []*mpb.ChunkPlacement
 }
 
-func ObjectAccessFromPB(pbObj ObjectAccessLike) *c.ObjectAccess {
+func ObjectAccessFromPB(pbObj ObjectAccessLike) *t.ObjectAccess {
 	pbChunks := pbObj.GetChunks()
-	chunks := make([]c.ChunkPlacement, 0, len(pbChunks))
+	chunks := make([]t.ChunkPlacement, 0, len(pbChunks))
 	for _, pbChunk := range pbChunks {
 		chunks = append(chunks, *ChunkPlacementFromPB(pbChunk))
 	}
-	return &c.ObjectAccess{
-		ObjectID: c.ObjectID(pbObj.GetObjectId()),
+	return &t.ObjectAccess{
+		ObjectID: t.ObjectID(pbObj.GetObjectId()),
 		TotalSize: pbObj.GetTotalSize(),
 		Chunks: chunks,
 	}

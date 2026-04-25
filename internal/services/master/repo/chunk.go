@@ -7,25 +7,26 @@ import (
 
 	"dos/internal/common/digest"
 	m "dos/internal/services/master"
+	t "dos/internal/common/types"
 )
 
 type InMemChunkRepo struct { 
-	chunks map[m.ChunkID]*m.Chunk
+	chunks map[t.ChunkID]*m.Chunk
 }
 
 func MakeInMemChunkRepo() *InMemChunkRepo {
 	return &InMemChunkRepo{
-		chunks: map[m.ChunkID]*m.Chunk{},
+		chunks: map[t.ChunkID]*m.Chunk{},
 	}
 }
 
-func (r *InMemChunkRepo) Create(_ context.Context) (m.ChunkID, error) {
+func (r *InMemChunkRepo) Create(_ context.Context) (t.ChunkID, error) {
 	id := r.pickChunkID()
 	r.chunks[id] = &m.Chunk{ ID: id }
 	return id, nil
 }
 
-func (r *InMemChunkRepo) pickChunkID() m.ChunkID {
+func (r *InMemChunkRepo) pickChunkID() t.ChunkID {
 	for {
 		id := newChunkID()
 		if _, ok := r.chunks[id]; !ok {
@@ -34,13 +35,13 @@ func (r *InMemChunkRepo) pickChunkID() m.ChunkID {
 	}
 }
 
-func newChunkID() m.ChunkID {
+func newChunkID() t.ChunkID {
 	var b [16]byte
 	rand.Read(b[:])
-	return m.ChunkID(hex.EncodeToString(b[:]))
+	return t.ChunkID(hex.EncodeToString(b[:]))
 }
 
-func (r *InMemChunkRepo) SetDigest(_ context.Context, id m.ChunkID, digest *digest.Digest) error {
+func (r *InMemChunkRepo) SetDigest(_ context.Context, id t.ChunkID, digest *digest.Digest) error {
 	chunk, ok := r.chunks[id]	
 	if !ok {
 		return m.ErrChunkNotFound 
@@ -55,7 +56,7 @@ func (r *InMemChunkRepo) SetDigest(_ context.Context, id m.ChunkID, digest *dige
 	return nil
 }
 
-func (r *InMemChunkRepo) Get(_ context.Context, id m.ChunkID) (m.Chunk, error) {
+func (r *InMemChunkRepo) Get(_ context.Context, id t.ChunkID) (m.Chunk, error) {
 	chunk, ok := r.chunks[id]
 	if !ok {
 		return m.Chunk{}, m.ErrChunkNotFound

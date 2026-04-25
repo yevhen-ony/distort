@@ -2,17 +2,14 @@ package master
 
 import (
 	"dos/internal/common/digest"
+	t "dos/internal/common/types"
 	"maps"
 )
 
-type ObjectID string
-type ChunkID string
-type NodeID string
-type ChunkKey string 
 
 type Object struct {
-	ID     ObjectID
-	Chunks map[ChunkKey]ChunkID
+	ID     t.ObjectID
+	Chunks map[t.ChunkKey]t.ChunkID
 }
 
 func (o *Object) Clone() *Object {
@@ -20,7 +17,7 @@ func (o *Object) Clone() *Object {
 		return nil
 	}
 
-	chunks := make(map[ChunkKey]ChunkID, len(o.Chunks))
+	chunks := make(map[t.ChunkKey]t.ChunkID, len(o.Chunks))
 	maps.Copy(chunks, o.Chunks)
 
 	return &Object{
@@ -30,20 +27,14 @@ func (o *Object) Clone() *Object {
 }
 
 type ObjectAccess struct {
-	ObjectID  ObjectID
+	ObjectID  t.ObjectID
 	TotalSize int64
-	Chunks    []ChunkPlacement
+	Chunks    []t.ChunkPlacement
 }
 
 type Chunk struct {
-	ID     ChunkID
+	ID     t.ChunkID
 	Digest *digest.Digest
-}
-
-type ChunkPlacement struct {
-	ChunkID ChunkID
-	ChunkKey ChunkKey
-	Nodes   []NodeAccess
 }
 
 func (c *Chunk) Clone() *Chunk {
@@ -59,18 +50,7 @@ func (c *Chunk) Clone() *Chunk {
 }
 
 type Node struct {
-	ID     NodeID
-	Report NodeReport
+	ID     t.NodeID
+	Report t.NodeReport
 }
 
-type NodeReport struct {
-	Addr       string
-	FreeBytes  int64
-	UsedBytes  int64
-	ChunkCount int
-}
-
-type NodeAccess struct {
-	NodeID NodeID
-	Addr   string
-}

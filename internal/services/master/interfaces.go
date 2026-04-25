@@ -3,42 +3,43 @@ package master
 import (
 	"context"
 	"dos/internal/common/digest"
+	t "dos/internal/common/types"
 )
 
 type Service interface {
-	CreateObject(context.Context, ObjectID) error
-	AllocateChunk(context.Context, *AllocateChunkCommand) (ChunkPlacement, error)
-	GetObjectAccess(context.Context, ObjectID) (ObjectAccess, error)
+	CreateObject(context.Context, t.ObjectID) error
+	AllocateChunk(context.Context, *AllocateChunkCommand) (t.ChunkPlacement, error)
+	GetObjectAccess(context.Context, t.ObjectID) (ObjectAccess, error)
 }
 
 type ObjectRepo interface {
-	Create(context.Context, ObjectID) error
-	Get(context.Context, ObjectID) (Object, error)
-	AddChunk(context.Context, ObjectID, ChunkKey, ChunkID) error
+	Create(context.Context, t.ObjectID) error
+	Get(context.Context, t.ObjectID) (Object, error)
+	AddChunk(context.Context, t.ObjectID, t.ChunkKey, t.ChunkID) error
 }
 
 type ChunkRepo interface {
-	Create(context.Context) (ChunkID, error)
-	Get(context.Context, ChunkID) (Chunk, error)
-	SetDigest(context.Context, ChunkID, *digest.Digest) error
+	Create(context.Context) (t.ChunkID, error)
+	Get(context.Context, t.ChunkID) (Chunk, error)
+	SetDigest(context.Context, t.ChunkID, *digest.Digest) error
 }
 
 type NodeRegistry interface {
-	Register(context.Context, *NodeReport) (NodeID, error)
-	Unregister(context.Context, NodeID) error
+	Register(context.Context, *t.NodeReport) (t.NodeID, error)
+	Unregister(context.Context, t.NodeID) error
 
-	GetNode(context.Context, NodeID) (Node, error)
+	GetNode(context.Context, t.NodeID) (Node, error)
 
-	AttachChunk(context.Context, NodeID, ChunkID) error
-	GetNodeChunks(context.Context, NodeID) ([]ChunkID, error)
-	GetChunkNodes(context.Context, ChunkID) ([]Node, error)
+	AttachChunk(context.Context, t.NodeID, t.ChunkID) error
+	GetNodeChunks(context.Context, t.NodeID) ([]t.ChunkID, error)
+	GetChunkNodes(context.Context, t.ChunkID) ([]Node, error)
 
 	GetCandidateNodes(context.Context, *CandidateNodesQuery) ([]Node, error)
 }
 
 type CandidateNodesQuery struct {
 	MinFreeBytes int64
-	ExcludeChunk ChunkID
+	ExcludeChunk t.ChunkID
 }
 
 type PlacementPolicy interface {
@@ -46,7 +47,7 @@ type PlacementPolicy interface {
 }
 
 type AllocateChunkCommand struct {
-	ObjectID  ObjectID
-	ChunkKey  ChunkKey
+	ObjectID  t.ObjectID
+	ChunkKey  t.ChunkKey
 	ChunkSize int64
 }

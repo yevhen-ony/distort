@@ -99,6 +99,6 @@ func TestService_CommitUploadSession(t *testing.T) {
 		// Existing entry must stay untouched.
 		meta := svc.catalog[info.ID]
 		assert.Equal(t, int64(999), meta.Digest.Size)
-		assert.Equal(t, "existing", meta.Digest.Checksum)
+		assert.Equal(t, "existing", string(meta.Digest.Checksum))
 	})
 }

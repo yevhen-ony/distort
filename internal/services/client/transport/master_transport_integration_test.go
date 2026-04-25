@@ -8,9 +8,8 @@ import (
 
 	pb "dos/gen/proto/master/v1"
 	"dos/internal/common/digest"
-	c "dos/internal/services/client"
+	t "dos/internal/common/types"
 	tr "dos/internal/services/client/transport"
-	m "dos/internal/services/master"
 	"dos/internal/services/master/api"
 	"dos/internal/services/master/domain"
 	"dos/internal/services/master/repo"
@@ -26,8 +25,8 @@ type MasterDependencies struct {
 	nodeReg *repo.InMemNodeRegistry
 }
 
-func startMasterServer(t *testing.T) (string, *MasterDependencies, func()) {
-	t.Helper()
+func startMasterServer(test *testing.T) (string, *MasterDependencies, func()) {
+	test.Helper()
 
 	deps := &MasterDependencies{
 		chunkRepo: repo.MakeInMemChunkRepo(),
@@ -48,7 +47,7 @@ func startMasterServer(t *testing.T) (string, *MasterDependencies, func()) {
 	server := api.NewClientServer(svc)
 
 	lis, err := net.Listen("tcp", "127.0.0.1:0")
-	require.NoError(t, err)
+	require.NoError(test, err)
 
 	gs := grpc.NewServer()
 	pb.RegisterMasterClientServiceServer(gs, server)
@@ -63,61 +62,61 @@ func startMasterServer(t *testing.T) (string, *MasterDependencies, func()) {
 	return lis.Addr().String(), deps, cleanup
 }
 
-func TestMasterTransport_HappyPath_AgainstMasterServer(t *testing.T) {
-	addr, deps, stopServer := startMasterServer(t)
+func TestMasterTransport_HappyPath_AgainstMasterServer(test *testing.T) {
+	addr, deps, stopServer := startMasterServer(test)
 	defer stopServer()
 
 	cp := tr.NewConnectionPool()
 	defer func() { _ = cp.Close() }()
 
 	mt, err := tr.NewMasterTransport(cp, &tr.MasterTransportConfig{Addr: addr})
-	require.NoError(t, err)
+	require.NoError(test, err)
 
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	nodeID, err := deps.nodeReg.Register(ctx, &m.NodeReport{
+	nodeID, err := deps.nodeReg.Register(ctx, &t.NodeReport{
 		Addr:      "127.0.0.1:9001",
 		FreeBytes: 1024,
 	})
-	require.NoError(t, err)
+	require.NoError(test, err)
 
 	const (
-		objectID  = c.ObjectID("obj-1")
-		chunkKey  = c.ChunkKey("0")
+		objectID  = t.ObjectID("obj-1")
+		chunkKey  = t.ChunkKey("0")
 		chunkSize = int64(128)
 	)
 
-	require.NoError(t, mt.CreateObject(ctx, objectID))
+	require.NoError(test, mt.CreateObject(ctx, objectID))
 
 	placement, err := mt.AllocateChunk(ctx, &tr.AllocateChunkQuery{
 		ObjectID:  objectID,
 		ChunkKey:  chunkKey,
 		ChunkSize: chunkSize,
 	})
-	require.NoError(t, err)
-	require.NotEmpty(t, placement.ChunkID)
-	require.Len(t, placement.Nodes, 1)
+	require.NoError(test, err)
+	require.NotEmpty(test, placement.ChunkID)
+	require.Len(test, placement.Nodes, 1)
 
-	assert.Equal(t, string(nodeID), placement.Nodes[0].NodeID)
-	assert.Equal(t, "127.0.0.1:9001", placement.Nodes[0].Addr)
+	assert.Equal(test, nodeID, placement.Nodes[0].NodeID)
+	assert.Equal(test, "127.0.0.1:9001", placement.Nodes[0].Addr)
 
 	// Seed metadata needed by GetObjectAccess.
-	require.NoError(t, deps.chunkRepo.SetDigest(
+	require.NoError(test, deps.chunkRepo.SetDigest(
 		ctx,
-		m.ChunkID(placement.ChunkID),
+		t.ChunkID(placement.ChunkID),
 		&digest.Digest{Size: chunkSize, Checksum: "checksum-1"},
 	))
-	require.NoError(t, deps.nodeReg.AttachChunk(ctx, nodeID, m.ChunkID(placement.ChunkID)))
+	require.NoError(test, deps.nodeReg.AttachChunk(ctx, nodeID, t.ChunkID(placement.ChunkID)))
 
 	obj, err := mt.GetObjectAccess(ctx, objectID)
-	require.NoError(t, err)
+	require.NoError(test, err)
 
-	assert.Equal(t, objectID, obj.ObjectID)
-	assert.Equal(t, chunkSize, obj.TotalSize)
-	require.Len(t, obj.Chunks, 1)
-	assert.Equal(t, placement.ChunkID, obj.Chunks[0].ChunkID)
-	assert.Equal(t, chunkKey, obj.Chunks[0].ChunkKey)
-	require.Len(t, obj.Chunks[0].Nodes, 1)
-	assert.Equal(t, string(nodeID), obj.Chunks[0].Nodes[0].NodeID)
+	assert.Equal(test, objectID, obj.ObjectID)
+	assert.Equal(test, chunkSize, obj.TotalSize)
+	require.Len(test, obj.Chunks, 1)
+	assert.Equal(test, placement.ChunkID, obj.Chunks[0].ChunkID)
+	assert.Equal(test, chunkKey, obj.Chunks[0].ChunkKey)
+	require.Len(test, obj.Chunks[0].Nodes, 1)
+	assert.Equal(test, nodeID, obj.Chunks[0].Nodes[0].NodeID)
 }

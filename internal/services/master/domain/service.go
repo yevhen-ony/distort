@@ -3,6 +3,7 @@ package domain
 import (
 	"context"
 	m "dos/internal/services/master"
+	t "dos/internal/common/types"
 	"fmt"
 )
 
@@ -35,14 +36,14 @@ func NewMasterService(
 	}
 }
 
-func (s *MasterService) CreateObject(ctx context.Context, oid m.ObjectID) error {
+func (s *MasterService) CreateObject(ctx context.Context, oid t.ObjectID) error {
 	return s.objectRepo.Create(ctx, oid)
 }
 
 func (s *MasterService) AllocateChunk(
 	ctx context.Context,
 	cmd *m.AllocateChunkCommand,
-) (placement m.ChunkPlacement, err error) {
+) (placement t.ChunkPlacement, err error) {
 	_, err = s.objectRepo.Get(ctx, cmd.ObjectID)
 	if err != nil {
 		return placement, fmt.Errorf("ensure object exists: %w", err)
@@ -77,7 +78,7 @@ func (s *MasterService) AllocateChunk(
 	return placement, nil
 }
 
-func (s *MasterService) GetObjectAccess(ctx context.Context, oid m.ObjectID) (m.ObjectAccess, error) {
+func (s *MasterService) GetObjectAccess(ctx context.Context, oid t.ObjectID) (m.ObjectAccess, error) {
 	obj, err := s.objectRepo.Get(ctx, oid)
 	if err != nil {
 		return m.ObjectAccess{}, fmt.Errorf("access object: %w", err) 
@@ -90,7 +91,7 @@ func (s *MasterService) GetObjectAccess(ctx context.Context, oid m.ObjectID) (m.
 			return m.ObjectAccess{}, fmt.Errorf("access chunk %s: %w", chunkID, err)
 		}
 		
-		chunkPlacement := m.ChunkPlacement{ChunkID: chunkID, ChunkKey: key}
+		chunkPlacement := t.ChunkPlacement{ChunkID: chunkID, ChunkKey: key}
 		nodes, err := s.nodeReg.GetChunkNodes(ctx, chunkID)
 		if err != nil {
 			return m.ObjectAccess{}, fmt.Errorf("access %s chunk's nodes: %w", chunkID, err)

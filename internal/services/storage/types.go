@@ -5,10 +5,10 @@ import (
 	"time"
 
 	"dos/internal/common/digest"
+	t "dos/internal/common/types"
 )
 
-type ChunkID string
-type ChunkCatalog map[ChunkID]ChunkMeta
+type ChunkCatalog map[t.ChunkID]ChunkMeta
 
 type ChunkDigest struct {
 	Size     int64
@@ -21,13 +21,13 @@ type ChunkMeta struct {
 }
 
 type ChunkInfo struct {
-	ID ChunkID
+	ID t.ChunkID
 	Digest digest.Digest
 	
 }
 
 type Chunk struct {
-	ID ChunkID
+	ID t.ChunkID
 	Meta *ChunkMeta
 	Reader io.ReadCloser
 }

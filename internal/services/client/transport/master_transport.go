@@ -6,7 +6,9 @@ import (
 	"fmt"
 
 	pb "dos/gen/proto/master/v1"
-	c "dos/internal/services/client"
+	t "dos/internal/common/types"
+	"dos/internal/common/convert"
+	
 )
 
 type MasterTransport struct {
@@ -24,7 +26,7 @@ func NewMasterTransport(conn *ConnectionPool, config *MasterTransportConfig) (*M
 	return &MasterTransport{conn: conn, config: config}, nil
 }
 
-func (mt *MasterTransport) CreateObject(ctx context.Context, oid c.ObjectID) error {
+func (mt *MasterTransport) CreateObject(ctx context.Context, oid t.ObjectID) error {
 	conn, err := mt.conn.Get(mt.config.Addr)
 	if err != nil {
 		return fmt.Errorf("get conn: %w", err)
@@ -42,17 +44,17 @@ func (mt *MasterTransport) CreateObject(ctx context.Context, oid c.ObjectID) err
 }
 
 type AllocateChunkQuery struct {
-	ObjectID c.ObjectID
-	ChunkKey c.ChunkKey
+	ObjectID t.ObjectID
+	ChunkKey t.ChunkKey
 	ChunkSize int64
 }
 
 func (mt *MasterTransport) AllocateChunk(
 	ctx context.Context, query *AllocateChunkQuery,
-) (c.ChunkPlacement, error)  {
+) (t.ChunkPlacement, error)  {
 	conn, err := mt.conn.Get(mt.config.Addr)
 	if err != nil {
-		return c.ChunkPlacement{}, fmt.Errorf("get conn: %w", err) 
+		return t.ChunkPlacement{}, fmt.Errorf("get conn: %w", err) 
 	}
 	client := pb.NewMasterClientServiceClient(conn)
 
@@ -63,26 +65,26 @@ func (mt *MasterTransport) AllocateChunk(
 	}
 	rsp, err := client.AllocateChunk(ctx, req)
 	if err != nil {
-		return c.ChunkPlacement{}, fmt.Errorf("allocate chunk: %w", err) 
+		return t.ChunkPlacement{}, fmt.Errorf("allocate chunk: %w", err) 
 	}
-	chunks := *ChunkPlacementFromPB(rsp)
+	chunks := *convert.ChunkPlacementFromPB(rsp)
 	return chunks, nil
 }
 
 func (mt *MasterTransport) GetObjectAccess(
-	ctx context.Context, oid c.ObjectID,
-) (c.ObjectAccess, error)  {
+	ctx context.Context, oid t.ObjectID,
+) (t.ObjectAccess, error)  {
 	conn, err := mt.conn.Get(mt.config.Addr)
 	if err != nil {
-		return c.ObjectAccess{}, fmt.Errorf("get conn: %w", err)
+		return t.ObjectAccess{}, fmt.Errorf("get conn: %w", err)
 	}
 	client :=  pb.NewMasterClientServiceClient(conn)
 
 	req := &pb.GetObjectAccessRequest{ObjectId: string(oid)}
 	rsp, err := client.GetObjectAccess(ctx, req)
 	if err != nil {
-		return c.ObjectAccess{}, fmt.Errorf("get object access: %w", err)
+		return t.ObjectAccess{}, fmt.Errorf("get object access: %w", err)
 	}
-	objAccess := *ObjectAccessFromPB(rsp)
+	objAccess := *convert.ObjectAccessFromPB(rsp)
 	return objAccess, nil  
 }

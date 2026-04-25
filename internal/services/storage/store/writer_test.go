@@ -8,97 +8,97 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	s "dos/internal/services/storage"
 	"dos/internal/common/digest"
+	t "dos/internal/common/types"
 )
 
-func newTestWriter(t *testing.T) *FSChunkWriter {
-	t.Helper()
+func newTestWriter(test *testing.T) *FSChunkWriter {
+	test.Helper()
 
-	root := t.TempDir()
+	root := test.TempDir()
 	commitDir := filepath.Join(root, "chunks")
 	tempDir := filepath.Join(root, "temp")
 
-	require.NoError(t, os.MkdirAll(commitDir, 0o755))
-	require.NoError(t, os.MkdirAll(tempDir, 0o755))
+	require.NoError(test, os.MkdirAll(commitDir, 0o755))
+	require.NoError(test, os.MkdirAll(tempDir, 0o755))
 
 	fd, err := os.CreateTemp(tempDir, "chunk-*")
-	require.NoError(t, err)
+	require.NoError(test, err)
 
 	return &FSChunkWriter{fd: fd, commitDir: commitDir, dg: digest.New()}
 }
 
-func TestFSChunkWriter_Cleanup(t *testing.T) {
-  	t.Run("RemovesTempFile", func(t *testing.T) {
-		w := newTestWriter(t)
+func TestFSChunkWriter_Cleanup(test *testing.T) {
+  	test.Run("RemovesTempFile", func(test *testing.T) {
+		w := newTestWriter(test)
 
 		_, err := w.Write([]byte("hello"))
-		require.NoError(t, err, "write to temp")
+		require.NoError(test, err, "write to temp")
 
-		require.NoError(t, w.Close(), "cleanup")
+		require.NoError(test, w.Close(), "cleanup")
 
 		_, err = os.Stat(w.fd.Name())
-		assert.ErrorIs(t, err, os.ErrNotExist)
+		assert.ErrorIs(test, err, os.ErrNotExist)
 	})
 
-  	t.Run("Idempotent", func(t *testing.T) {
-		w := newTestWriter(t)
+  	test.Run("Idempotent", func(test *testing.T) {
+		w := newTestWriter(test)
 
-		assert.NoError(t, w.Close())
-		assert.NoError(t, w.Close())
+		assert.NoError(test, w.Close())
+		assert.NoError(test, w.Close())
 	})
 }
 
-func TestFSChunkWriter_Commit(t *testing.T) {
-	t.Run("CreateCommitedFile", func(t *testing.T) {
-		w := newTestWriter(t)
+func TestFSChunkWriter_Commit(test *testing.T) {
+	test.Run("CreateCommitedFile", func(test *testing.T) {
+		w := newTestWriter(test)
 
-		chunkID := s.ChunkID("chunk-001")
+		chunkID := t.ChunkID("chunk-001")
 		want := []byte("payload")
 
 		_, err := w.Write(want)
-		require.NoError(t, err, "write to temp")
+		require.NoError(test, err, "write to temp")
 
 		_, err = w.Commit(chunkID)
-		require.NoError(t, err, "commit")
+		require.NoError(test, err, "commit")
 
 		commitPath := filepath.Join(w.commitDir, string(chunkID))
 		got, err := os.ReadFile(commitPath)
 
-		assert.NoError(t, err, "read commited")
-		assert.Equal(t, want, got, "compare content")
+		assert.NoError(test, err, "read commited")
+		assert.Equal(test, want, got, "compare content")
   	})
 
-  	t.Run("TargetAlreadyExists", func (t *testing.T) {
-		w := newTestWriter(t)
+  	test.Run("TargetAlreadyExists", func (test *testing.T) {
+		w := newTestWriter(test)
 
-		chunkID := s.ChunkID("chunk-precreated")
+		chunkID := t.ChunkID("chunk-precreated")
 		commitPath := filepath.Join(w.commitDir, string(chunkID))
 
 		origContent := []byte("dummy data")
 		err := os.WriteFile(commitPath, origContent, 0o600)
-		require.NoError(t, err, "create commited")
+		require.NoError(test, err, "create commited")
 		
 		_, err = w.Write([]byte("hello, world"))
-		assert.NoError(t, err, "write to temp")
+		assert.NoError(test, err, "write to temp")
 
 		_,  err = w.Commit(chunkID)
-		assert.Error(t, err, "try commit with commited id")
+		assert.Error(test, err, "try commit with commited id")
 
 		got, err := os.ReadFile(commitPath)
-		assert.NoError(t, err, "read commited")
-		assert.Equal(t, origContent, got, "compare content")
+		assert.NoError(test, err, "read commited")
+		assert.Equal(test, origContent, got, "compare content")
 	})
 }
 
-func TestFSChunkWriter_Write(t *testing.T) {
-	t.Run("WriteAfterClose", func(t *testing.T) {
-		w := newTestWriter(t)
+func TestFSChunkWriter_Write(test *testing.T) {
+	test.Run("WriteAfterClose", func(test *testing.T) {
+		w := newTestWriter(test)
 
-		require.NoError(t, w.Close(), "run cleanup")
+		require.NoError(test, w.Close(), "run cleanup")
 
 		n, err := w.Write([]byte("x"))
-		assert.Error(t, err, "write after cleanup")
-		assert.Zero(t, n, "nothing was written")
+		assert.Error(test, err, "write after cleanup")
+		assert.Zero(test, n, "nothing was written")
 	})
 }

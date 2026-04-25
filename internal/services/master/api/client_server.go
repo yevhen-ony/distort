@@ -6,7 +6,10 @@ import (
 	"log/slog"
 
 	pb "dos/gen/proto/master/v1"
+	t "dos/internal/common/types"
+	"dos/internal/common/convert"
 	m "dos/internal/services/master"
+
 )
 
 type ClientServer struct {
@@ -29,7 +32,7 @@ func (s *ClientServer) CreateObject(
 		return nil, err
 	}
 
-	err = s.service.CreateObject(ctx, m.ObjectID(req.GetObjectId()))
+	err = s.service.CreateObject(ctx, t.ObjectID(req.GetObjectId()))
 	if err != nil {
 		return nil, fmt.Errorf("create object %s: %w", req.GetObjectId(), err)
 	}
@@ -48,8 +51,8 @@ func (s *ClientServer) AllocateChunk(
 	}
 
 	cmd := &m.AllocateChunkCommand{
-		ObjectID:  m.ObjectID(req.GetObjectId()),
-		ChunkKey:  m.ChunkKey(req.GetChunkKey()),
+		ObjectID:  t.ObjectID(req.GetObjectId()),
+		ChunkKey:  t.ChunkKey(req.GetChunkKey()),
 		ChunkSize: req.GetChunkSize(),
 	}
 	chunks, err := s.service.AllocateChunk(ctx, cmd)
@@ -59,7 +62,7 @@ func (s *ClientServer) AllocateChunk(
 
 	rsp = &pb.AllocateChunkResponse{
 		ChunkId: string(chunks.ChunkID),
-		Nodes:   toPBNodeAccess(chunks.Nodes),
+		Nodes:   convert.NodeAccessToPB(chunks.Nodes),
 	}
 
 	return rsp, nil
@@ -76,7 +79,7 @@ func (s *ClientServer) GetObjectAccess(
 		return nil, err
 	}
 
-	object, err := s.service.GetObjectAccess(ctx, m.ObjectID(req.GetObjectId()))
+	object, err := s.service.GetObjectAccess(ctx, t.ObjectID(req.GetObjectId()))
 	if err != nil {
 		return nil, fmt.Errorf("get object access %s: %w", req.GetObjectId(), err)
 	}
@@ -84,7 +87,7 @@ func (s *ClientServer) GetObjectAccess(
 	rsp = &pb.GetObjectAccessResponse{
 		ObjectId:  string(object.ObjectID),
 		TotalSize: object.TotalSize,
-		Chunks:    toPBChunkPlacement(object.Chunks),
+		Chunks:    convert.ChunkPlacementToPB(object.Chunks),
 	}
 	return rsp, nil
 }

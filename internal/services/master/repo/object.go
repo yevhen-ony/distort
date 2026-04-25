@@ -4,32 +4,33 @@ import (
 	"context"
 
 	m "dos/internal/services/master"
+	t "dos/internal/common/types"
 
 )
 
 type InMemObjectRepo struct {
-	objects map[m.ObjectID]*m.Object
+	objects map[t.ObjectID]*m.Object
 }
 
 func NewInMemObjectRepo() *InMemObjectRepo {
 	return &InMemObjectRepo{
-		objects: map[m.ObjectID]*m.Object{},
+		objects: map[t.ObjectID]*m.Object{},
 	}
 }
 
-func (o *InMemObjectRepo) Create(_ context.Context, oid m.ObjectID) error {
+func (o *InMemObjectRepo) Create(_ context.Context, oid t.ObjectID) error {
 	if _, ok := o.objects[oid]; ok {
 		return m.ErrObjectExists 
 	}
 
 	o.objects[oid] = &m.Object{
 		ID: oid,
-		Chunks: map[m.ChunkKey]m.ChunkID{},
+		Chunks: map[t.ChunkKey]t.ChunkID{},
 	}
 	return nil
 }
 
-func (o *InMemObjectRepo) Get(_ context.Context, oid m.ObjectID) (m.Object, error) {
+func (o *InMemObjectRepo) Get(_ context.Context, oid t.ObjectID) (m.Object, error) {
 	obj, ok := o.objects[oid]
 	if !ok {
 		return m.Object{}, m.ErrObjectNotFound
@@ -37,7 +38,7 @@ func (o *InMemObjectRepo) Get(_ context.Context, oid m.ObjectID) (m.Object, erro
 	return *obj.Clone(), nil
 }
 
-func (o *InMemObjectRepo) AddChunk(_ context.Context, oid m.ObjectID, key m.ChunkKey, cid m.ChunkID) error {
+func (o *InMemObjectRepo) AddChunk(_ context.Context, oid t.ObjectID, key t.ChunkKey, cid t.ChunkID) error {
 	obj, ok := o.objects[oid]
 	if !ok {
 		return m.ErrObjectNotFound

@@ -8,97 +8,98 @@ import (
 	"github.com/stretchr/testify/require"
 
 	m "dos/internal/services/master"
+	t "dos/internal/common/types"
 )
 
-func TestInMemNodeRegistry_Register(t *testing.T) {
+func TestInMemNodeRegistry_Register(test *testing.T) {
 	r := NewInMemNodeRegistry()
 	ctx := context.Background()
 	addr := "127.0.0.1:9001"
-	report := m.NodeReport{Addr: addr, FreeBytes: 100}
+	report := t.NodeReport{Addr: addr, FreeBytes: 100}
 
-	t.Run("Success", func(t *testing.T) {
+	test.Run("Success", func(test *testing.T) {
 		nid, err := r.Register(ctx, &report)
-		require.NoError(t, err)
-		require.NotEmpty(t, nid)
+		require.NoError(test, err)
+		require.NotEmpty(test, nid)
 	})
 
-	t.Run("DuplicateAddr", func(t *testing.T) {
-		_, err := r.Register(ctx, &m.NodeReport{Addr: addr})
-		require.ErrorIs(t, err, m.ErrNodeAddrInUse)
+	test.Run("DuplicateAddr", func(test *testing.T) {
+		_, err := r.Register(ctx, &t.NodeReport{Addr: addr})
+		require.ErrorIs(test, err, m.ErrNodeAddrInUse)
 	})
 }
 
-func TestInMemNodeRegistry_GetChunkNodes(t *testing.T) {
+func TestInMemNodeRegistry_GetChunkNodes(test *testing.T) {
 	r := NewInMemNodeRegistry()
 	ctx := context.Background()
 	addr := "127.0.0.1:9001"
-	report := m.NodeReport{Addr: addr, FreeBytes: 100}
+	report := t.NodeReport{Addr: addr, FreeBytes: 100}
 
 	nid, err := r.Register(ctx, &report)
-	require.NoError(t, err)
+	require.NoError(test, err)
 	
-	cid := m.ChunkID("chunk-x")
-	require.NoError(t, r.AttachChunk(ctx, nid, cid))
+	cid := t.ChunkID("chunk-x")
+	require.NoError(test, r.AttachChunk(ctx, nid, cid))
 	
-	t.Run("Success", func(t *testing.T) {
+	test.Run("Success", func(test *testing.T) {
 		nodes, err := r.GetChunkNodes(ctx, cid)
-		require.NoError(t, err)
-		require.Len(t, nodes, 1)
+		require.NoError(test, err)
+		require.Len(test, nodes, 1)
 
 		node := nodes[0]
-		require.Equal(t, nid, node.ID)
+		require.Equal(test, nid, node.ID)
 	})
 }
 
-func TestInMemNodeRegistry_Unregister(t *testing.T) {
+func TestInMemNodeRegistry_Unregister(test *testing.T) {
 	r := NewInMemNodeRegistry()
 	ctx := context.Background()
 	addr := "127.0.0.1:9001"
-	report := m.NodeReport{Addr: addr, FreeBytes: 100}
+	report := t.NodeReport{Addr: addr, FreeBytes: 100}
 
 	nid, err := r.Register(ctx, &report)
-	require.NoError(t, err)
+	require.NoError(test, err)
 	
-	cid := m.ChunkID("chunk-x")
-	require.NoError(t, r.AttachChunk(ctx, nid, cid))
+	cid := t.ChunkID("chunk-x")
+	require.NoError(test, r.AttachChunk(ctx, nid, cid))
 
-	t.Run("Success", func(t *testing.T) {
-		require.NoError(t, r.Unregister(ctx, nid))
+	test.Run("Success", func(test *testing.T) {
+		require.NoError(test, r.Unregister(ctx, nid))
 
-		err := r.AttachChunk(ctx, nid, m.ChunkID("chunk-y"))
-		require.ErrorIs(t, err, m.ErrNodeNotFound)
+		err := r.AttachChunk(ctx, nid, t.ChunkID("chunk-y"))
+		require.ErrorIs(test, err, m.ErrNodeNotFound)
 
 		_, err = r.GetNodeChunks(ctx, nid)
-		require.ErrorIs(t, err, m.ErrNodeNotFound) 
+		require.ErrorIs(test, err, m.ErrNodeNotFound) 
 
 		nodes, err := r.GetChunkNodes(ctx, cid)
-		assert.Empty(t, nodes)
-		assert.NoError(t, err)
+		assert.Empty(test, nodes)
+		assert.NoError(test, err)
 	})
 }
 
-func TestInMemNodeRegistry_GetCandidateNodes(t *testing.T) {
+func TestInMemNodeRegistry_GetCandidateNodes(test *testing.T) {
 	r := NewInMemNodeRegistry()
 	ctx := context.Background()
 
-	n1, err := r.Register(ctx, &m.NodeReport{Addr: "127.0.0.1:9001", FreeBytes: 100})
-	require.NoError(t, err)
-	_, err = r.Register(ctx, &m.NodeReport{Addr: "127.0.0.1:9002", FreeBytes: 50})
-	require.NoError(t, err)
-	_, err = r.Register(ctx, &m.NodeReport{Addr: "127.0.0.1:9003", FreeBytes: 10})
-	require.NoError(t, err)
+	n1, err := r.Register(ctx, &t.NodeReport{Addr: "127.0.0.1:9001", FreeBytes: 100})
+	require.NoError(test, err)
+	_, err = r.Register(ctx, &t.NodeReport{Addr: "127.0.0.1:9002", FreeBytes: 50})
+	require.NoError(test, err)
+	_, err = r.Register(ctx, &t.NodeReport{Addr: "127.0.0.1:9003", FreeBytes: 10})
+	require.NoError(test, err)
 
 	// to test 'ExcludeChunk'
-	cid := m.ChunkID("chunk-x")
-	require.NoError(t, r.AttachChunk(ctx, n1, cid))
+	cid := t.ChunkID("chunk-x")
+	require.NoError(test, r.AttachChunk(ctx, n1, cid))
 
 	nodes, err := r.GetCandidateNodes(ctx, &m.CandidateNodesQuery{
 		MinFreeBytes: 40,
 		ExcludeChunk: cid,
 	})
-	require.NoError(t, err)
+	require.NoError(test, err)
 
-	assert.Len(t, nodes, 1)
-	assert.Equal(t, int64(50), nodes[0].Report.FreeBytes)
+	assert.Len(test, nodes, 1)
+	assert.Equal(test, int64(50), nodes[0].Report.FreeBytes)
 }
 

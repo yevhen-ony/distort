@@ -6,6 +6,7 @@ import (
 
 	pb "dos/gen/proto/chunk/v1"
 	"dos/internal/common/digest"
+	t "dos/internal/common/types"
 	s "dos/internal/services/storage"
 	"dos/internal/services/storage/core"
 )
@@ -38,10 +39,10 @@ func (srv *Server) PutChunk(stream pb.ChunkService_PutChunkServer) (err error) {
 	}
 
 	chunkInfo := &s.ChunkInfo{
-		ID: s.ChunkID(header.GetChunkId()),
+		ID: t.ChunkID(header.GetChunkId()),
 		Digest: digest.Digest{
 			Size:     header.GetChunkSize(),
-			Checksum: header.GetChecksum(),
+			Checksum: t.Checksum(header.GetChecksum()),
 		},
 	}
 
@@ -77,7 +78,7 @@ func (srv *Server) PutChunk(stream pb.ChunkService_PutChunkServer) (err error) {
 func (srv *Server) GetChunk(req *pb.GetChunkRequest, stream pb.ChunkService_GetChunkServer) (err error) {
 	defer func() { err = toStatus(err) }()
 
-	chunk, err := srv.service.GetChunk(s.ChunkID(req.GetChunkId()))
+	chunk, err := srv.service.GetChunk(t.ChunkID(req.GetChunkId()))
 	if err != nil {
 		return fmt.Errorf("get chunk: %w", err)
 	}
@@ -86,7 +87,7 @@ func (srv *Server) GetChunk(req *pb.GetChunkRequest, stream pb.ChunkService_GetC
 		Header: &pb.GetChunkHeader{
 			ChunkId:   string(chunk.ID),
 			ChunkSize: chunk.Meta.Digest.Size,
-			Checksum:  chunk.Meta.Digest.Checksum,
+			Checksum:  string(chunk.Meta.Digest.Checksum),
 		},
 	}
 	if err = stream.Send(rsp); err != nil {

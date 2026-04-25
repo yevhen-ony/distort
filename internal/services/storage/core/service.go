@@ -7,6 +7,7 @@ import (
 	"sync"
 
 	s "dos/internal/services/storage"
+	t "dos/internal/common/types"
 )
 
 type Service struct {
@@ -16,7 +17,7 @@ type Service struct {
 }
 
 func New(store s.ChunkStorage) (*Service, error) {
-	catalog := map[s.ChunkID]s.ChunkMeta{}
+	catalog := map[t.ChunkID]s.ChunkMeta{}
 
 	if store == nil {
 		return nil, errors.New("store must not be nil") 
@@ -84,7 +85,7 @@ func (svc *Service) CommitUploadSession(w s.ChunkWriter, info *s.ChunkInfo) erro
 	return nil
 }
 
-func (svc *Service) GetChunk(chunkID s.ChunkID) (*s.Chunk, error) {
+func (svc *Service) GetChunk(chunkID t.ChunkID) (*s.Chunk, error) {
 	svc.mu.RLock()
 	meta, ok := svc.catalog[chunkID]
 	svc.mu.RUnlock()

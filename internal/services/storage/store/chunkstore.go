@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"dos/internal/common/digest"
+	t "dos/internal/common/types"
 	s "dos/internal/services/storage"
 )
 
@@ -33,7 +34,7 @@ func New(config *ChunkStorageConfig) (*FSChunkStorage, error) {
 	return s, nil
 }
 
-func (stg *FSChunkStorage) Get(chunkID s.ChunkID) (io.ReadCloser, error) {
+func (stg *FSChunkStorage) Get(chunkID t.ChunkID) (io.ReadCloser, error) {
 	chunkPath := filepath.Join(stg.commitDir, string(chunkID))
 	f, err := os.OpenFile(chunkPath, os.O_RDONLY, 0)
 	if err != nil {
@@ -42,7 +43,7 @@ func (stg *FSChunkStorage) Get(chunkID s.ChunkID) (io.ReadCloser, error) {
 	return f, nil 
 }
 
-func (stg *FSChunkStorage) GetMeta(chunkID s.ChunkID) (*s.ChunkMeta, error) {
+func (stg *FSChunkStorage) GetMeta(chunkID t.ChunkID) (*s.ChunkMeta, error) {
 	chunkPath := filepath.Join(stg.commitDir, string(chunkID))
 	
 	fd, err := os.Open(chunkPath)
@@ -68,18 +69,18 @@ func (stg *FSChunkStorage) GetMeta(chunkID s.ChunkID) (*s.ChunkMeta, error) {
 	return meta, nil
 }
 
-func (stg *FSChunkStorage) GetAllIDs() ([]s.ChunkID, error) {
+func (stg *FSChunkStorage) GetAllIDs() ([]t.ChunkID, error) {
 	entries, err := os.ReadDir(stg.commitDir)
 	if err != nil {
 		return nil, err 
 	}
-	chunks := []s.ChunkID{}
+	chunks := []t.ChunkID{}
 	for _, e := range entries  {
 		if e.IsDir() {
 			continue
 		}
 		id := filepath.Base(e.Name())
-		chunks = append(chunks, s.ChunkID(id))
+		chunks = append(chunks, t.ChunkID(id))
 	}
 	return chunks, nil
 }

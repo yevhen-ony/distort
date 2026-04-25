@@ -9,72 +9,73 @@ import (
 
 	"dos/internal/common/digest"
 	m "dos/internal/services/master"
+	t "dos/internal/common/types"
 )
 
-func TestInMemChunkRepo_Create(t *testing.T) {
+func TestInMemChunkRepo_Create(test *testing.T) {
 	r := MakeInMemChunkRepo()
 	ctx := context.Background()
 
-	t.Run("Success", func(t *testing.T) {
+	test.Run("Success", func(test *testing.T) {
 		id, err := r.Create(ctx)
-		require.NoError(t, err)
-		require.NotEmpty(t, id)
+		require.NoError(test, err)
+		require.NotEmpty(test, id)
 	})
 }
 
-func TestInMemChunkRepo_Get(t *testing.T) {
+func TestInMemChunkRepo_Get(test *testing.T) {
 	r := MakeInMemChunkRepo()
 	ctx := context.Background()
 	id, err := r.Create(ctx)
-	require.NoError(t, err)
+	require.NoError(test, err)
 	
-	t.Run("NotFound", func(t *testing.T) {
-		_, err := r.Get(ctx, m.ChunkID("missing"))
-		require.ErrorIs(t, err, m.ErrChunkNotFound)
+	test.Run("NotFound", func(test *testing.T) {
+		_, err := r.Get(ctx, t.ChunkID("missing"))
+		require.ErrorIs(test, err, m.ErrChunkNotFound)
 	})
 
-	t.Run("Found", func(t *testing.T) {
+	test.Run("Found", func(test *testing.T) {
 		_, err := r.Get(ctx, id)
-		require.NoError(t, err)
+		require.NoError(test, err)
 	})
 
-	t.Run("WithDigest", func(t *testing.T) {
+	test.Run("WithDigest", func(test *testing.T) {
 		r.SetDigest(ctx, id, &digest.Digest{Size: 1, Checksum: "abc"})
 		
 		ch, err := r.Get(ctx, id)
-		require.NoError(t, err)
-		require.NotNil(t, ch.Digest)
-		assert.Equal(t, int64(1), ch.Digest.Size)
-		assert.Equal(t, "abc", ch.Digest.Checksum)
+		require.NoError(test, err)
+		require.NotNil(test, ch.Digest)
+		assert.Equal(test, int64(1), ch.Digest.Size)
+		assert.Equal(test, "abc", string(ch.Digest.Checksum))
 	})
 }
 
-func TestInMemChunkRepo_SetDigest(t *testing.T) {
+func TestInMemChunkRepo_SetDigest(test *testing.T) {
 	r := MakeInMemChunkRepo()
 	ctx := context.Background()
 
 	id, err := r.Create(ctx)
-	require.NoError(t, err)
+	require.NoError(test, err)
 
 	dgt := &digest.Digest{Size: 5, Checksum: "abc"}
-	t.Run("NewDigest", func(t *testing.T) {
-		require.NoError(t, r.SetDigest(ctx, id, dgt))
+	test.Run("NewDigest", func(test *testing.T) {
+		require.NoError(test, r.SetDigest(ctx, id, dgt))
 	})
 
-	t.Run("SameDigest", func(t *testing.T) {
-		require.NoError(t, r.SetDigest(ctx, id, dgt))
+	test.Run("SameDigest", func(test *testing.T) {
+		require.NoError(test, r.SetDigest(ctx, id, dgt))
 	})
 
-	t.Run("ConflictDigest", func(t *testing.T) {
+	test.Run("ConflictDigest", func(test *testing.T) {
 		err = r.SetDigest(ctx, id, &digest.Digest{
 			Size: 5,
 			Checksum: "xyz",
 		})
-		require.ErrorIs(t, err, m.ErrChunkDigestConflict)
+		require.ErrorIs(test, err, m.ErrChunkDigestConflict)
 	})
 	
-	t.Run("ChunkNotFound", func(t *testing.T) {
-		err := r.SetDigest(ctx, m.ChunkID("missing"), dgt)
-		require.ErrorIs(t, err, m.ErrChunkNotFound)
+	test.Run("ChunkNotFound", func(test *testing.T) {
+		err := r.SetDigest(ctx, t.ChunkID("missing"), dgt)
+		require.ErrorIs(test, err, m.ErrChunkNotFound)
 	})
 }

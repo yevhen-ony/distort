@@ -8,6 +8,7 @@ import (
 	"io"
 
 	pb "dos/gen/proto/chunk/v1"
+	t "dos/internal/common/types"
 	c "dos/internal/services/client"
 	"dos/internal/common/digest"
 )
@@ -27,7 +28,7 @@ func NewChunkTransport(conn *ConnectionPool, config *StorageTransportConfig) (*S
 	return &StorageTransport{conn: conn, config: config}, nil
 }
 
-func (ct *StorageTransport) SendChunk(ctx context.Context, node c.NodeAccess, chunk *c.Chunk) error {
+func (ct *StorageTransport) SendChunk(ctx context.Context, node t.NodeAccess, chunk *c.Chunk) error {
 	if err := SendChunkValidate(node, chunk); err != nil {
 		return err
 	}
@@ -44,10 +45,10 @@ func (ct *StorageTransport) SendChunk(ctx context.Context, node c.NodeAccess, ch
 		return fmt.Errorf("open put stream: %w", err)
 	}
 	header := &pb.PutChunkHeader{
-		NodeId: node.NodeID,
-		ChunkId: chunk.ID,
+		NodeId: string(node.NodeID),
+		ChunkId: string(chunk.ID),
 		ChunkSize: int64(len(chunk.Data)),
-		Checksum: chunk.Checksum,
+		Checksum: string(chunk.Checksum),
 	}
 
 	err = stream.Send(&pb.PutChunkRequest{Header: header})
@@ -66,7 +67,7 @@ func (ct *StorageTransport) SendChunk(ctx context.Context, node c.NodeAccess, ch
 	return nil
 }
 
-func (ct *StorageTransport) ReceiveChunk(ctx context.Context, node c.NodeAccess, chunkID string) (*c.Chunk, error) {
+func (ct *StorageTransport) ReceiveChunk(ctx context.Context, node t.NodeAccess, chunkID t.ChunkID) (*c.Chunk, error) {
 	if err := ReceiveChunkValidate(node, chunkID); err != nil {
 		return nil, err
 	}
@@ -82,8 +83,8 @@ func (ct *StorageTransport) ReceiveChunk(ctx context.Context, node c.NodeAccess,
 	defer cancel()
 
 	stream, err := client.GetChunk(ctx, &pb.GetChunkRequest{
-		NodeId: node.NodeID,
-		ChunkId: chunkID, 
+		NodeId: string(node.NodeID),
+		ChunkId: string(chunkID), 
 	})
 	if err != nil {
 		return nil, fmt.Errorf("send request: %w", err)
@@ -130,7 +131,7 @@ func (ct *StorageTransport) sendData(stream pb.ChunkService_PutChunkClient, data
 	return nil
 }
 
-func (ct *StorageTransport) recvData(stream pb.ChunkService_GetChunkClient) ([]byte, string, error) {
+func (ct *StorageTransport) recvData(stream pb.ChunkService_GetChunkClient) ([]byte, t.Checksum, error) {
 	var buf bytes.Buffer
 	dg := digest.New()
 

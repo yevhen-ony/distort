@@ -1,9 +1,13 @@
 package client
 
-import "context"
+import (
+	"context"
+
+	t "dos/internal/common/types"
+)
 
 type Transport interface {
-	SendChunk(context.Context, NodeAccess, *Chunk) error
-	ReceiveChunk(context.Context, NodeAccess, string) (*Chunk, error)
+	SendChunk(context.Context, t.NodeAccess, *Chunk) error
+	ReceiveChunk(context.Context, t.NodeAccess, string) (*Chunk, error)
 
 }

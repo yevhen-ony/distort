@@ -7,83 +7,84 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	t "dos/internal/common/types"
 	m "dos/internal/services/master"
 )
 
-func TestInMemObjectRepo_Create(t *testing.T) {
+func TestInMemObjectRepo_Create(test *testing.T) {
 	r := NewInMemObjectRepo()
 	ctx := context.Background()
 
-	t.Run("CreateNew", func(t *testing.T) {
-		err := r.Create(ctx, m.ObjectID("obj-1"))
-		require.NoError(t, err)
+	test.Run("CreateNew", func(test *testing.T) {
+		err := r.Create(ctx, t.ObjectID("obj-1"))
+		require.NoError(test, err)
 
-		got, err := r.Get(ctx, m.ObjectID("obj-1"))
-		require.NoError(t, err)
-		assert.Equal(t, m.ObjectID("obj-1"), got.ID)
-		assert.Empty(t, got.Chunks)
+		got, err := r.Get(ctx, t.ObjectID("obj-1"))
+		require.NoError(test, err)
+		assert.Equal(test, t.ObjectID("obj-1"), got.ID)
+		assert.Empty(test, got.Chunks)
 	})
 
-	t.Run("Conflict", func(t *testing.T) {
-		err := r.Create(ctx, m.ObjectID("obj-1"))
-		require.ErrorIs(t, err, m.ErrObjectExists)
+	test.Run("Conflict", func(test *testing.T) {
+		err := r.Create(ctx, t.ObjectID("obj-1"))
+		require.ErrorIs(test, err, m.ErrObjectExists)
 	})
 }
 
-func TestInMemObjectRepo_Get(t *testing.T) {
+func TestInMemObjectRepo_Get(test *testing.T) {
 	r := NewInMemObjectRepo()
 	ctx := context.Background()
-	oid := m.ObjectID("obj-1")
+	oid := t.ObjectID("obj-1")
 
-	require.NoError(t, r.Create(ctx, oid))
-	require.NoError(t, r.AddChunk(ctx, oid, m.ChunkKey("1"), m.ChunkID("chunk-a")))
+	require.NoError(test, r.Create(ctx, oid))
+	require.NoError(test, r.AddChunk(ctx, oid, t.ChunkKey("1"), t.ChunkID("chunk-a")))
 
-	t.Run("NotFound", func(t *testing.T) {
+	test.Run("NotFound", func(test *testing.T) {
 		ctx := context.Background()
-		_, err := r.Get(ctx, m.ObjectID("missing"))
-		require.ErrorIs(t, err, m.ErrObjectNotFound)
+		_, err := r.Get(ctx, t.ObjectID("missing"))
+		require.ErrorIs(test, err, m.ErrObjectNotFound)
 	})
 
-	t.Run("ReturnsClone", func(t *testing.T) {
+	test.Run("ReturnsClone", func(test *testing.T) {
 		obj, err := r.Get(ctx, oid)
-		require.NoError(t, err)
+		require.NoError(test, err)
 
 		// Mutate returned object.
-		obj.Chunks[m.ChunkKey("1")] = m.ChunkID("tampered")
-		obj.Chunks[m.ChunkKey("2")] = m.ChunkID("new")
+		obj.Chunks[t.ChunkKey("1")] = t.ChunkID("tampered")
+		obj.Chunks[t.ChunkKey("2")] = t.ChunkID("new")
 
 		// Repo state must stay unchanged.
 		again, err := r.Get(ctx, oid)
-		require.NoError(t, err)
-		assert.Equal(t, m.ChunkID("chunk-a"), again.Chunks[m.ChunkKey("1")])
-		_, ok := again.Chunks[m.ChunkKey("2")]
-		assert.False(t, ok)
+		require.NoError(test, err)
+		assert.Equal(test, t.ChunkID("chunk-a"), again.Chunks[t.ChunkKey("1")])
+		_, ok := again.Chunks[t.ChunkKey("2")]
+		assert.False(test, ok)
 	})
 }
 
-func TestInMemObjectRepo_AddChunk(t *testing.T) {
+func TestInMemObjectRepo_AddChunk(test *testing.T) {
 	r := NewInMemObjectRepo()
 	ctx := context.Background()
-	oid := m.ObjectID("obj-1")
+	oid := t.ObjectID("obj-1")
 
-	require.NoError(t, r.Create(ctx, oid))
+	require.NoError(test, r.Create(ctx, oid))
 
-	t.Run("UniqueKey", func(t *testing.T) {
-		err := r.AddChunk(ctx, oid, m.ChunkKey("0"), m.ChunkID("chunk-a"))
-		require.NoError(t, err)
+	test.Run("UniqueKey", func(test *testing.T) {
+		err := r.AddChunk(ctx, oid, t.ChunkKey("0"), t.ChunkID("chunk-a"))
+		require.NoError(test, err)
 
 		obj, err := r.Get(ctx, oid)
-		require.NoError(t, err)
-		require.Equal(t, m.ChunkID("chunk-a"), obj.Chunks[m.ChunkKey("0")])
+		require.NoError(test, err)
+		require.Equal(test, t.ChunkID("chunk-a"), obj.Chunks[t.ChunkKey("0")])
 	})
 
-	t.Run("DuplicateKey", func(t *testing.T) {
-		err := r.AddChunk(ctx, oid, m.ChunkKey("0"), m.ChunkID("chunk-b"))
-		require.ErrorIs(t, err, m.ErrChunkKeyExists)
+	test.Run("DuplicateKey", func(test *testing.T) {
+		err := r.AddChunk(ctx, oid, t.ChunkKey("0"), t.ChunkID("chunk-b"))
+		require.ErrorIs(test, err, m.ErrChunkKeyExists)
 	})
 
-	t.Run("NonExistingObject", func(t *testing.T) {
-		err := r.AddChunk(ctx, m.ObjectID("missing"), m.ChunkKey("1"), m.ChunkID("chunk-c"))
-		require.ErrorIs(t, err, m.ErrObjectNotFound)
+	test.Run("NonExistingObject", func(test *testing.T) {
+		err := r.AddChunk(ctx, t.ObjectID("missing"), t.ChunkKey("1"), t.ChunkID("chunk-c"))
+		require.ErrorIs(test, err, m.ErrObjectNotFound)
 	})
 }

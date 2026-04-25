@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	s "dos/internal/services/storage"
 	"dos/internal/common/digest"
+	t "dos/internal/common/types"
 )
 
 
@@ -37,7 +37,7 @@ func (w *FSChunkWriter) Close() error {
 	return errors.Join(errs...)
 }
 
-func (w *FSChunkWriter) Commit(chunkID s.ChunkID) (time.Time, error) {
+func (w *FSChunkWriter) Commit(chunkID t.ChunkID) (time.Time, error) {
 	if w.closed {
 		return time.Time{}, errors.New("cannot commit closed writer")
 	}

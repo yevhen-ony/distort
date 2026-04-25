@@ -5,11 +5,12 @@ import (
 	"fmt"
 
 	pb "dos/gen/proto/chunk/v1"
+	t "dos/internal/common/types"
 	c "dos/internal/services/client"
 )
 
 
-func SendChunkValidate(target c.NodeAccess, chunk *c.Chunk) error {
+func SendChunkValidate(target t.NodeAccess, chunk *c.Chunk) error {
 	if err := validateNodeAccess(&target); err != nil {
 		return err
 	}
@@ -19,7 +20,7 @@ func SendChunkValidate(target c.NodeAccess, chunk *c.Chunk) error {
 	return nil
 }
 
-func ReceiveChunkValidate(target c.NodeAccess, chunkID string) error {
+func ReceiveChunkValidate(target t.NodeAccess, chunkID t.ChunkID) error {
 	if err := validateNodeAccess(&target); err != nil {
 		return err
 	}
@@ -39,14 +40,14 @@ func validateChunk(chunk *c.Chunk) error {
 	return validateChunkID(chunk.ID)
 }
 
-func validateChunkID(chunkID string) error {
+func validateChunkID(chunkID t.ChunkID) error {
 	if chunkID == "" {
 		return fmt.Errorf("empty chunk id: %w", ErrInputInvalid)
 	}
 	return nil
 }
 
-func validateNodeAccess(node *c.NodeAccess) error {
+func validateNodeAccess(node *t.NodeAccess) error {
 	if node.NodeID == "" {
 		return fmt.Errorf("empty target id: %w", ErrInputInvalid)
 	}
@@ -60,13 +61,13 @@ func validateNodeAccess(node *c.NodeAccess) error {
 func ValidateReceivedChunk(chunk *c.Chunk, header *pb.GetChunkHeader) error {
 	var errs []error
 
-	if chunk.ID != header.ChunkId {
+	if string(chunk.ID) != header.ChunkId {
 		errs = append(errs, fmt.Errorf("id mismatch: %w", ErrChunkInvalid))
 	}
 	if int64(len(chunk.Data)) != header.ChunkSize {
 		errs = append(errs, fmt.Errorf("len mismatch: %w", ErrChunkInvalid))
 	}
-	if chunk.Checksum != header.Checksum {
+	if string(chunk.Checksum) != header.Checksum {
 		errs = append(errs, fmt.Errorf("checksum mismatch: %w", ErrChunkInvalid))
 	}
 	return errors.Join(errs...) 

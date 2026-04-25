@@ -10,28 +10,29 @@ import (
 	"sync"
 
 	m "dos/internal/services/master"
+	t "dos/internal/common/types"
 )
 
 
 type InMemNodeRegistry struct {
-	nodes map[m.NodeID]*m.Node
-	addrs map[string]m.NodeID
-	nodeChunks map[m.NodeID]map[m.ChunkID]struct{}
-	chunkNodes map[m.ChunkID]map[m.NodeID]struct{}
+	nodes map[t.NodeID]*m.Node
+	addrs map[string]t.NodeID
+	nodeChunks map[t.NodeID]map[t.ChunkID]struct{}
+	chunkNodes map[t.ChunkID]map[t.NodeID]struct{}
 
 	mu sync.RWMutex
 }
 
 func NewInMemNodeRegistry() *InMemNodeRegistry {
 	return &InMemNodeRegistry{
-		nodes: map[m.NodeID]*m.Node{},
-		addrs: map[string]m.NodeID{},
-		nodeChunks: map[m.NodeID]map[m.ChunkID]struct{}{},
-		chunkNodes: map[m.ChunkID]map[m.NodeID]struct{}{},
+		nodes: map[t.NodeID]*m.Node{},
+		addrs: map[string]t.NodeID{},
+		nodeChunks: map[t.NodeID]map[t.ChunkID]struct{}{},
+		chunkNodes: map[t.ChunkID]map[t.NodeID]struct{}{},
 	}
 }
 
-func (r *InMemNodeRegistry) Register(_ context.Context, report *m.NodeReport) (m.NodeID, error) {
+func (r *InMemNodeRegistry) Register(_ context.Context, report *t.NodeReport) (t.NodeID, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -43,11 +44,11 @@ func (r *InMemNodeRegistry) Register(_ context.Context, report *m.NodeReport) (m
 	nid := r.pickNodeID()
 	r.addrs[report.Addr] = nid 
 	r.nodes[nid] = &m.Node{ ID: nid, Report: *report }
-	r.nodeChunks[nid] = map[m.ChunkID]struct{}{}
+	r.nodeChunks[nid] = map[t.ChunkID]struct{}{}
 	return nid, nil 
 }
 
-func (r *InMemNodeRegistry) Unregister(_ context.Context, nid m.NodeID) error {
+func (r *InMemNodeRegistry) Unregister(_ context.Context, nid t.NodeID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -63,7 +64,7 @@ func (r *InMemNodeRegistry) Unregister(_ context.Context, nid m.NodeID) error {
 	return nil
 }
 
-func (r *InMemNodeRegistry) AttachChunk(_ context.Context, nid m.NodeID, cid m.ChunkID) error {
+func (r *InMemNodeRegistry) AttachChunk(_ context.Context, nid t.NodeID, cid t.ChunkID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 	
@@ -71,7 +72,7 @@ func (r *InMemNodeRegistry) AttachChunk(_ context.Context, nid m.NodeID, cid m.C
 		return m.ErrNodeNotFound	
 	}
 	if r.chunkNodes[cid] == nil {
-		r.chunkNodes[cid] = map[m.NodeID]struct{}{}
+		r.chunkNodes[cid] = map[t.NodeID]struct{}{}
 	}
 
 	r.nodeChunks[nid][cid] = struct{}{}
@@ -80,7 +81,7 @@ func (r *InMemNodeRegistry) AttachChunk(_ context.Context, nid m.NodeID, cid m.C
 	return nil
 }
 
-func (r *InMemNodeRegistry) GetNode(ctx context.Context, nid m.NodeID) (m.Node, error) {
+func (r *InMemNodeRegistry) GetNode(ctx context.Context, nid t.NodeID) (m.Node, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -91,7 +92,7 @@ func (r *InMemNodeRegistry) GetNode(ctx context.Context, nid m.NodeID) (m.Node, 
 	return *node, nil
 }
 
-func (r *InMemNodeRegistry) GetNodeChunks(_ context.Context, nid m.NodeID) ([]m.ChunkID, error) {
+func (r *InMemNodeRegistry) GetNodeChunks(_ context.Context, nid t.NodeID) ([]t.ChunkID, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 	
@@ -104,7 +105,7 @@ func (r *InMemNodeRegistry) GetNodeChunks(_ context.Context, nid m.NodeID) ([]m.
 	return result, nil
 }
 
-func (r *InMemNodeRegistry) GetChunkNodes(_ context.Context, cid m.ChunkID) ([]m.Node, error) {
+func (r *InMemNodeRegistry) GetChunkNodes(_ context.Context, cid t.ChunkID) ([]m.Node, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -144,7 +145,7 @@ func (r *InMemNodeRegistry) GetCandidateNodes(
 }
 
 
-func (r *InMemNodeRegistry) pickNodeID() m.NodeID {
+func (r *InMemNodeRegistry) pickNodeID() t.NodeID {
 	for {
 		id := newNodeID()
 		if _, ok := r.nodes[id]; !ok {
@@ -153,7 +154,7 @@ func (r *InMemNodeRegistry) pickNodeID() m.NodeID {
 	}
 }
 
-func (r *InMemNodeRegistry) cleanupNodeRelations(nid m.NodeID) {
+func (r *InMemNodeRegistry) cleanupNodeRelations(nid t.NodeID) {
 	chunks := r.nodeChunks[nid]
 	for cid := range chunks {
 		delete(r.chunkNodes[cid], nid)
@@ -164,9 +165,9 @@ func (r *InMemNodeRegistry) cleanupNodeRelations(nid m.NodeID) {
 	delete(r.nodeChunks, nid)
 }
 
-func newNodeID() m.NodeID {
+func newNodeID() t.NodeID {
 	var b [16]byte
 	rand.Read(b[:])
-	return m.NodeID(hex.EncodeToString(b[:]))
+	return t.NodeID(hex.EncodeToString(b[:]))
 }
 
