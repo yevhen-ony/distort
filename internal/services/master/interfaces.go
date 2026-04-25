@@ -2,7 +2,7 @@ package master
 
 import (
 	"context"
-	"dos/internal/libraries/digest"
+	"dos/internal/common/digest"
 )
 
 type Service interface {

@@ -1,10 +1,10 @@
-package chunkserver
+package storage 
 
 import (
 	"io"
 	"time"
 
-	"dos/internal/libraries/digest"
+	"dos/internal/common/digest"
 )
 
 type ChunkWriter interface {

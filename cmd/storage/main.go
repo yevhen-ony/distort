@@ -10,9 +10,9 @@ import (
 	"os/signal"
 
 	pb "dos/gen/proto/chunk/v1"
-	"dos/internal/services/chunkserver/api"
-	"dos/internal/services/chunkserver/core"
-	"dos/internal/services/chunkserver/storage"
+	"dos/internal/services/storage/api"
+	"dos/internal/services/storage/core"
+	"dos/internal/services/storage/store"
 
 	"google.golang.org/grpc"
 )
@@ -26,12 +26,12 @@ func main() {
 		panic(fmt.Errorf("load config: %w", err))
 	}
 
-	store, err := storage.New(&cfg.Store)
+	stg, err := store.New(&cfg.Store)
 	if err != nil {
 		panic(fmt.Errorf("construct storage: %w", err))
 	}
 
-	app, err := core.New(store)
+	app, err := core.New(stg)
 	if err != nil {
 		panic(fmt.Errorf("construct service: %w", err))
 	}

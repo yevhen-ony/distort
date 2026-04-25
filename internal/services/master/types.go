@@ -1,14 +1,14 @@
 package master
 
 import (
-	"dos/internal/libraries/digest"
+	"dos/internal/common/digest"
 	"maps"
 )
 
 type ObjectID string
 type ChunkID string
 type NodeID string
-type ChunkKey int
+type ChunkKey string 
 
 type Object struct {
 	ID     ObjectID

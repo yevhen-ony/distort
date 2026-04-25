@@ -1,8 +1,8 @@
 package main
 
 import (
-	"dos/internal/services/chunkserver/api"
-	"dos/internal/services/chunkserver/storage"
+	"dos/internal/services/storage/api"
+	"dos/internal/services/storage/store"
 	"fmt"
 	"strings"
 
@@ -13,9 +13,9 @@ import (
 )
 
 type Config struct {
-	API    api.ServerConfig           `yaml:"api"`
-	Store  storage.ChunkStorageConfig `yaml:"store"`
-	Listen ListenerConfig             `yaml:"listen"`
+	API    api.ServerConfig         `yaml:"api"`
+	Store  store.ChunkStorageConfig `yaml:"store"`
+	Listen ListenerConfig           `yaml:"listen"`
 }
 
 type ListenerConfig struct {

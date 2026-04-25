@@ -21,7 +21,7 @@ func toPBChunkPlacement(mChunks []m.ChunkPlacement) []*pb.ChunkPlacement {
 	for _, mChunk := range mChunks{
 		pbChunks = append(pbChunks, &pb.ChunkPlacement{
 			ChunkId: string(mChunk.ChunkID),
-			ChunkKey: int64(mChunk.ChunkKey),
+			ChunkKey: string(mChunk.ChunkKey),
 			Nodes: toPBNodeAccess(mChunk.Nodes),
 		})
 	}

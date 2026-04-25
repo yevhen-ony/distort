@@ -1,4 +1,4 @@
-package storage
+package store 
 
 import (
 	"io"
@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	cs "dos/internal/services/chunkserver"
+	s "dos/internal/services/storage"
 )
 
 func TestFSChunkStorage_New(t *testing.T) {
@@ -32,14 +32,14 @@ func TestFSChunkStorage_Get(t *testing.T) {
 		rootDir := t.TempDir()
 		cfg := &ChunkStorageConfig{RootDir: rootDir}
 
-		s, err := New(cfg)
+		store, err := New(cfg)
 		require.NoError(t, err)
 		
-		chunkID := cs.ChunkID("chunk-1")
+		chunkID := s.ChunkID("chunk-1")
 		content := []byte("1234567")
-		storeChunk(t, s.commitDir, chunkID, content)
+		storeChunk(t, store.commitDir, chunkID, content)
 
-		r, err := s.Get(chunkID)
+		r, err := store.Get(chunkID)
 		require.NoError(t, err)
 		defer r.Close()
 
@@ -51,22 +51,22 @@ func TestFSChunkStorage_Get(t *testing.T) {
 
 func TestFSChunkStorage_GetMeta(t *testing.T) {
 	cfg := &ChunkStorageConfig{RootDir: t.TempDir()}
-	s, err := New(cfg)
+	store, err := New(cfg)
 	require.NoError(t, err)
 
-	chunkID := cs.ChunkID("chunk-2")
+	chunkID := s.ChunkID("chunk-2")
 	content := []byte("1234567")
-	storeChunk(t, s.commitDir, chunkID, content)
+	storeChunk(t, store.commitDir, chunkID, content)
 
 	t.Run("ChunkExists", func(t *testing.T){
-		meta, err := s.GetMeta(chunkID)
+		meta, err := store.GetMeta(chunkID)
 		require.NoError(t, err)
 		require.NotNil(t, meta)
 		require.Equal(t, int64(len(content)), meta.Digest.Size)
 	})
 
 	t.Run("ChunkNotExists", func(t *testing.T) {
-		_, err := s.GetMeta(cs.ChunkID("notexist"))
+		_, err := store.GetMeta(s.ChunkID("notexist"))
 		require.Error(t, err, "access nonexisting chunk") 
 	})
 }
@@ -74,10 +74,10 @@ func TestFSChunkStorage_GetMeta(t *testing.T) {
 func TestFSChunkStorage_GetAllIDs(t *testing.T) {
 	t.Run("EmptyStorage", func(t *testing.T) {
 		cfg := &ChunkStorageConfig{RootDir: t.TempDir()}
-		s, err := New(cfg)
+		store, err := New(cfg)
 		require.NoError(t, err)
 
-		ids, err := s.GetAllIDs()
+		ids, err := store.GetAllIDs()
 		require.NoError(t, err, "get all ids")
 		require.Empty(t, ids, "no ids returned")
 
@@ -85,15 +85,15 @@ func TestFSChunkStorage_GetAllIDs(t *testing.T) {
 
 	t.Run("WithTwoChunks", func(t *testing.T) {
 		cfg := &ChunkStorageConfig{RootDir: t.TempDir()}
-		s, err := New(cfg)
+		store, err := New(cfg)
 		require.NoError(t, err)
 
-		storeChunk(t, s.commitDir, cs.ChunkID("ch-1"), []byte("hello"))
-		storeChunk(t, s.commitDir, cs.ChunkID("ch-2"), []byte("world"))
+		storeChunk(t, store.commitDir, s.ChunkID("ch-1"), []byte("hello"))
+		storeChunk(t, store.commitDir, s.ChunkID("ch-2"), []byte("world"))
 
-		ids, err := s.GetAllIDs()
+		ids, err := store.GetAllIDs()
 		require.NoError(t, err)
-		assert.ElementsMatch(t, []cs.ChunkID{"ch-1", "ch-2"}, ids)
+		assert.ElementsMatch(t, []s.ChunkID{"ch-1", "ch-2"}, ids)
 	})
 }
 
@@ -114,7 +114,7 @@ func TestFSChunkStorage_NewWriter(t *testing.T) {
 }
 
 
-func storeChunk(t *testing.T, dir string, id cs.ChunkID, content []byte) {
+func storeChunk(t *testing.T, dir string, id s.ChunkID, content []byte) {
 	path := filepath.Join(dir, string(id))
 	err := os.WriteFile(path, content, 0o600)
 	require.NoError(t, err, "store chunk")

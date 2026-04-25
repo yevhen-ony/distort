@@ -6,17 +6,17 @@ import (
 	"log/slog"
 	"sync"
 
-	cs "dos/internal/services/chunkserver"
+	s "dos/internal/services/storage"
 )
 
 type Service struct {
-	store   cs.ChunkStorage
-	catalog cs.ChunkCatalog
+	store   s.ChunkStorage
+	catalog s.ChunkCatalog
 	mu      sync.RWMutex
 }
 
-func New(store cs.ChunkStorage) (*Service, error) {
-	catalog := map[cs.ChunkID]cs.ChunkMeta{}
+func New(store s.ChunkStorage) (*Service, error) {
+	catalog := map[s.ChunkID]s.ChunkMeta{}
 
 	if store == nil {
 		return nil, errors.New("store must not be nil") 
@@ -44,59 +44,59 @@ func New(store cs.ChunkStorage) (*Service, error) {
 }
 
 
-func (s *Service) GetServerID() string {
+func (svc *Service) GetServerID() string {
 	return "service-id-123"
 }
 
-func (s *Service) StartUploadSession(info *cs.ChunkInfo) (cs.ChunkWriter, error) {
-	s.mu.RLock()
-	_, ok := s.catalog[info.ID]
-	s.mu.RUnlock()
+func (svc *Service) StartUploadSession(info *s.ChunkInfo) (s.ChunkWriter, error) {
+	svc.mu.RLock()
+	_, ok := svc.catalog[info.ID]
+	svc.mu.RUnlock()
 
 	if ok {
-		return nil, ErrConflict
+		return nil, s.ErrChunkConflict
 	}
-	w, err := s.store.NewWriter()
+	w, err := svc.store.NewWriter()
 	if err != nil {
 		return nil, fmt.Errorf("create chunk writer: %w", err)
 	}
 	return w, nil
 }
 
-func (s *Service) CommitUploadSession(w cs.ChunkWriter, info *cs.ChunkInfo) error {
-	meta := cs.ChunkMeta{Digest: w.Digest()} 
+func (svc *Service) CommitUploadSession(w s.ChunkWriter, info *s.ChunkInfo) error {
+	meta := s.ChunkMeta{Digest: w.Digest()} 
 	if !info.Digest.Equal(&meta.Digest) {
 		return fmt.Errorf("session validation: digest missmatch") 
 	}
 
-	s.mu.Lock()	
-	defer s.mu.Unlock()
+	svc.mu.Lock()	
+	defer svc.mu.Unlock()
 
-	if _, ok := s.catalog[info.ID]; ok {
-		return ErrConflict
+	if _, ok := svc.catalog[info.ID]; ok {
+		return s.ErrChunkConflict
 	}
 	if ts, err := w.Commit(info.ID); err != nil {
 		return fmt.Errorf("session commit: %w", err)
 	} else {
 		meta.ModifiedAt = ts
 	}
-	s.catalog[info.ID] = meta
+	svc.catalog[info.ID] = meta
 	return nil
 }
 
-func (s *Service) GetChunk(chunkID cs.ChunkID) (*cs.Chunk, error) {
-	s.mu.RLock()
-	meta, ok := s.catalog[chunkID]
-	s.mu.RUnlock()
+func (svc *Service) GetChunk(chunkID s.ChunkID) (*s.Chunk, error) {
+	svc.mu.RLock()
+	meta, ok := svc.catalog[chunkID]
+	svc.mu.RUnlock()
 
 	if !ok {
-		return nil, ErrNotFound
+		return nil, s.ErrChunkNotFound
 	}
-	reader, err := s.store.Get(chunkID)
+	reader, err := svc.store.Get(chunkID)
 	if err != nil {
 		return nil, fmt.Errorf("get from store: %w", err)
 	}
-	chunk := &cs.Chunk{
+	chunk := &s.Chunk{
 		ID: chunkID,
 		Meta: &meta,
 		Reader: reader,
@@ -104,13 +104,13 @@ func (s *Service) GetChunk(chunkID cs.ChunkID) (*cs.Chunk, error) {
 	return chunk, nil
 }
 
-func (s *Service) validate(want, got cs.ChunkDigest) error {
+func (svc *Service) validate(want, got s.ChunkDigest) error {
 	// skip if not set
 	if want.Checksum != "" && want.Checksum != got.Checksum {
-		return fmt.Errorf("checksum: %w", ErrInvalid)
+		return fmt.Errorf("checksum: %w", s.ErrDigestInvalid)
 	}
 	if want.Size != got.Size {
-		return fmt.Errorf("size: %w", ErrInvalid)
+		return fmt.Errorf("size: %w", s.ErrDigestInvalid)
 	}
 	return nil
 }

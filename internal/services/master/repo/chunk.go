@@ -5,7 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 
-	"dos/internal/libraries/digest"
+	"dos/internal/common/digest"
 	m "dos/internal/services/master"
 )
 

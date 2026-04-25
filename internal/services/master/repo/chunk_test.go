@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"dos/internal/libraries/digest"
+	"dos/internal/common/digest"
 	m "dos/internal/services/master"
 )
 

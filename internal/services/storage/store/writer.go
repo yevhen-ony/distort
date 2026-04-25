@@ -1,4 +1,4 @@
-package storage
+package store 
 
 import (
 	"errors"
@@ -7,8 +7,8 @@ import (
 	"path/filepath"
 	"time"
 
-	cs "dos/internal/services/chunkserver"
-	"dos/internal/libraries/digest"
+	s "dos/internal/services/storage"
+	"dos/internal/common/digest"
 )
 
 
@@ -37,7 +37,7 @@ func (w *FSChunkWriter) Close() error {
 	return errors.Join(errs...)
 }
 
-func (w *FSChunkWriter) Commit(chunkID cs.ChunkID) (time.Time, error) {
+func (w *FSChunkWriter) Commit(chunkID s.ChunkID) (time.Time, error) {
 	if w.closed {
 		return time.Time{}, errors.New("cannot commit closed writer")
 	}

@@ -36,7 +36,7 @@ func TestInMemObjectRepo_Get(t *testing.T) {
 	oid := m.ObjectID("obj-1")
 
 	require.NoError(t, r.Create(ctx, oid))
-	require.NoError(t, r.AddChunk(ctx, oid, m.ChunkKey(1), m.ChunkID("chunk-a")))
+	require.NoError(t, r.AddChunk(ctx, oid, m.ChunkKey("1"), m.ChunkID("chunk-a")))
 
 	t.Run("NotFound", func(t *testing.T) {
 		ctx := context.Background()
@@ -49,14 +49,14 @@ func TestInMemObjectRepo_Get(t *testing.T) {
 		require.NoError(t, err)
 
 		// Mutate returned object.
-		obj.Chunks[m.ChunkKey(1)] = m.ChunkID("tampered")
-		obj.Chunks[m.ChunkKey(2)] = m.ChunkID("new")
+		obj.Chunks[m.ChunkKey("1")] = m.ChunkID("tampered")
+		obj.Chunks[m.ChunkKey("2")] = m.ChunkID("new")
 
 		// Repo state must stay unchanged.
 		again, err := r.Get(ctx, oid)
 		require.NoError(t, err)
-		assert.Equal(t, m.ChunkID("chunk-a"), again.Chunks[m.ChunkKey(1)])
-		_, ok := again.Chunks[m.ChunkKey(2)]
+		assert.Equal(t, m.ChunkID("chunk-a"), again.Chunks[m.ChunkKey("1")])
+		_, ok := again.Chunks[m.ChunkKey("2")]
 		assert.False(t, ok)
 	})
 }
@@ -69,21 +69,21 @@ func TestInMemObjectRepo_AddChunk(t *testing.T) {
 	require.NoError(t, r.Create(ctx, oid))
 
 	t.Run("UniqueKey", func(t *testing.T) {
-		err := r.AddChunk(ctx, oid, m.ChunkKey(0), m.ChunkID("chunk-a"))
+		err := r.AddChunk(ctx, oid, m.ChunkKey("0"), m.ChunkID("chunk-a"))
 		require.NoError(t, err)
 
 		obj, err := r.Get(ctx, oid)
 		require.NoError(t, err)
-		require.Equal(t, m.ChunkID("chunk-a"), obj.Chunks[m.ChunkKey(0)])
+		require.Equal(t, m.ChunkID("chunk-a"), obj.Chunks[m.ChunkKey("0")])
 	})
 
 	t.Run("DuplicateKey", func(t *testing.T) {
-		err := r.AddChunk(ctx, oid, m.ChunkKey(0), m.ChunkID("chunk-b"))
+		err := r.AddChunk(ctx, oid, m.ChunkKey("0"), m.ChunkID("chunk-b"))
 		require.ErrorIs(t, err, m.ErrChunkKeyExists)
 	})
 
 	t.Run("NonExistingObject", func(t *testing.T) {
-		err := r.AddChunk(ctx, m.ObjectID("missing"), m.ChunkKey(1), m.ChunkID("chunk-c"))
+		err := r.AddChunk(ctx, m.ObjectID("missing"), m.ChunkKey("1"), m.ChunkID("chunk-c"))
 		require.ErrorIs(t, err, m.ErrObjectNotFound)
 	})
 }

@@ -1,4 +1,4 @@
-package storage
+package store
 
 import (
 	"os"
@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	cs "dos/internal/services/chunkserver"
-	"dos/internal/libraries/digest"
+	s "dos/internal/services/storage"
+	"dos/internal/common/digest"
 )
 
 func newTestWriter(t *testing.T) *FSChunkWriter {
@@ -53,7 +53,7 @@ func TestFSChunkWriter_Commit(t *testing.T) {
 	t.Run("CreateCommitedFile", func(t *testing.T) {
 		w := newTestWriter(t)
 
-		chunkID := cs.ChunkID("chunk-001")
+		chunkID := s.ChunkID("chunk-001")
 		want := []byte("payload")
 
 		_, err := w.Write(want)
@@ -72,7 +72,7 @@ func TestFSChunkWriter_Commit(t *testing.T) {
   	t.Run("TargetAlreadyExists", func (t *testing.T) {
 		w := newTestWriter(t)
 
-		chunkID := cs.ChunkID("chunk-precreated")
+		chunkID := s.ChunkID("chunk-precreated")
 		commitPath := filepath.Join(w.commitDir, string(chunkID))
 
 		origContent := []byte("dummy data")

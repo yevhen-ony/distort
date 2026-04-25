@@ -14,7 +14,7 @@ import (
 	"google.golang.org/grpc/status"
 
 	pb "dos/gen/proto/master/v1"
-	"dos/internal/libraries/digest"
+	"dos/internal/common/digest"
 	m "dos/internal/services/master"
 	"dos/internal/services/master/api"
 	"dos/internal/services/master/domain"
@@ -83,7 +83,7 @@ func TestClientServer_CreateAllocateGetObjectAccess_HappyPath(t *testing.T) {
 	defer cancel()
 
 	const objectID = "obj-1"
-	const chunkKey = int64(0)
+	const chunkKey = "0" 
 	const chunkSize = int64(123)
 
 	_, err := client.CreateObject(ctx, &pb.CreateObjectRequest{
@@ -159,7 +159,7 @@ func TestClientServer_AllocateChunk_NoCandidateNodes(t *testing.T) {
 
 	_, err = client.AllocateChunk(ctx, &pb.AllocateChunkRequest{
 		ObjectId:  "obj-1",
-		ChunkKey:  0,
+		ChunkKey:  "0",
 		ChunkSize: 1,
 	})
 	require.Error(t, err)

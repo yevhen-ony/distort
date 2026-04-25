@@ -104,7 +104,7 @@ func (*CreateObjectResponse) Descriptor() ([]byte, []int) {
 type AllocateChunkRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ObjectId      string                 `protobuf:"bytes,1,opt,name=object_id,json=objectId,proto3" json:"object_id,omitempty"`
-	ChunkKey      int64                  `protobuf:"varint,2,opt,name=chunk_key,json=chunkKey,proto3" json:"chunk_key,omitempty"`
+	ChunkKey      string                 `protobuf:"bytes,2,opt,name=chunk_key,json=chunkKey,proto3" json:"chunk_key,omitempty"`
 	ChunkSize     int64                  `protobuf:"varint,3,opt,name=chunk_size,json=chunkSize,proto3" json:"chunk_size,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -147,11 +147,11 @@ func (x *AllocateChunkRequest) GetObjectId() string {
 	return ""
 }
 
-func (x *AllocateChunkRequest) GetChunkKey() int64 {
+func (x *AllocateChunkRequest) GetChunkKey() string {
 	if x != nil {
 		return x.ChunkKey
 	}
-	return 0
+	return ""
 }
 
 func (x *AllocateChunkRequest) GetChunkSize() int64 {
@@ -320,7 +320,7 @@ func (x *GetObjectAccessResponse) GetChunks() []*ChunkPlacement {
 type ChunkPlacement struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
-	ChunkKey      int64                  `protobuf:"varint,2,opt,name=chunk_key,json=chunkKey,proto3" json:"chunk_key,omitempty"`
+	ChunkKey      string                 `protobuf:"bytes,2,opt,name=chunk_key,json=chunkKey,proto3" json:"chunk_key,omitempty"`
 	ChunkSize     int64                  `protobuf:"varint,3,opt,name=chunk_size,json=chunkSize,proto3" json:"chunk_size,omitempty"`
 	Nodes         []*NodeAccess          `protobuf:"bytes,4,rep,name=nodes,proto3" json:"nodes,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -364,11 +364,11 @@ func (x *ChunkPlacement) GetChunkId() string {
 	return ""
 }
 
-func (x *ChunkPlacement) GetChunkKey() int64 {
+func (x *ChunkPlacement) GetChunkKey() string {
 	if x != nil {
 		return x.ChunkKey
 	}
-	return 0
+	return ""
 }
 
 func (x *ChunkPlacement) GetChunkSize() int64 {
@@ -447,7 +447,7 @@ const file_master_v1_client_proto_rawDesc = "" +
 	"\x14CreateObjectResponse\"o\n" +
 	"\x14AllocateChunkRequest\x12\x1b\n" +
 	"\tobject_id\x18\x01 \x01(\tR\bobjectId\x12\x1b\n" +
-	"\tchunk_key\x18\x02 \x01(\x03R\bchunkKey\x12\x1d\n" +
+	"\tchunk_key\x18\x02 \x01(\tR\bchunkKey\x12\x1d\n" +
 	"\n" +
 	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\"_\n" +
 	"\x15AllocateChunkResponse\x12\x19\n" +
@@ -462,7 +462,7 @@ const file_master_v1_client_proto_rawDesc = "" +
 	"\x06chunks\x18\x03 \x03(\v2\x19.master.v1.ChunkPlacementR\x06chunks\"\x94\x01\n" +
 	"\x0eChunkPlacement\x12\x19\n" +
 	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12\x1b\n" +
-	"\tchunk_key\x18\x02 \x01(\x03R\bchunkKey\x12\x1d\n" +
+	"\tchunk_key\x18\x02 \x01(\tR\bchunkKey\x12\x1d\n" +
 	"\n" +
 	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\x12+\n" +
 	"\x05nodes\x18\x04 \x03(\v2\x15.master.v1.NodeAccessR\x05nodes\"?\n" +

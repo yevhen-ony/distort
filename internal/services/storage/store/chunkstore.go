@@ -1,4 +1,4 @@
-package storage
+package store 
 
 import (
 	"fmt"
@@ -6,8 +6,8 @@ import (
 	"os"
 	"path/filepath"
 
-	"dos/internal/libraries/digest"
-	cs "dos/internal/services/chunkserver"
+	"dos/internal/common/digest"
+	s "dos/internal/services/storage"
 )
 
 type FSChunkStorage struct {
@@ -33,8 +33,8 @@ func New(config *ChunkStorageConfig) (*FSChunkStorage, error) {
 	return s, nil
 }
 
-func (s *FSChunkStorage) Get(chunkID cs.ChunkID) (io.ReadCloser, error) {
-	chunkPath := filepath.Join(s.commitDir, string(chunkID))
+func (stg *FSChunkStorage) Get(chunkID s.ChunkID) (io.ReadCloser, error) {
+	chunkPath := filepath.Join(stg.commitDir, string(chunkID))
 	f, err := os.OpenFile(chunkPath, os.O_RDONLY, 0)
 	if err != nil {
 		return nil, err
@@ -42,8 +42,8 @@ func (s *FSChunkStorage) Get(chunkID cs.ChunkID) (io.ReadCloser, error) {
 	return f, nil 
 }
 
-func (s *FSChunkStorage) GetMeta(chunkID cs.ChunkID) (*cs.ChunkMeta, error) {
-	chunkPath := filepath.Join(s.commitDir, string(chunkID))
+func (stg *FSChunkStorage) GetMeta(chunkID s.ChunkID) (*s.ChunkMeta, error) {
+	chunkPath := filepath.Join(stg.commitDir, string(chunkID))
 	
 	fd, err := os.Open(chunkPath)
 	if err != nil {
@@ -60,7 +60,7 @@ func (s *FSChunkStorage) GetMeta(chunkID cs.ChunkID) (*cs.ChunkMeta, error) {
 	if err != nil {
 		return nil, fmt.Errorf("stat chunk: %w", err)
 	}
-	meta := &cs.ChunkMeta{
+	meta := &s.ChunkMeta{
 		Digest: dg.Digest(),
 		ModifiedAt: fi.ModTime(),
 	}
@@ -68,31 +68,31 @@ func (s *FSChunkStorage) GetMeta(chunkID cs.ChunkID) (*cs.ChunkMeta, error) {
 	return meta, nil
 }
 
-func (s *FSChunkStorage) GetAllIDs() ([]cs.ChunkID, error) {
-	entries, err := os.ReadDir(s.commitDir)
+func (stg *FSChunkStorage) GetAllIDs() ([]s.ChunkID, error) {
+	entries, err := os.ReadDir(stg.commitDir)
 	if err != nil {
 		return nil, err 
 	}
-	chunks := []cs.ChunkID{}
+	chunks := []s.ChunkID{}
 	for _, e := range entries  {
 		if e.IsDir() {
 			continue
 		}
 		id := filepath.Base(e.Name())
-		chunks = append(chunks, cs.ChunkID(id))
+		chunks = append(chunks, s.ChunkID(id))
 	}
 	return chunks, nil
 }
 
-func (s *FSChunkStorage) NewWriter() (cs.ChunkWriter, error) {
-	fd, err := os.CreateTemp(s.tempDir, "chunk-*")
+func (stg *FSChunkStorage) NewWriter() (s.ChunkWriter, error) {
+	fd, err := os.CreateTemp(stg.tempDir, "chunk-*")
 	if err != nil {
 		return nil, fmt.Errorf("create temp: %w", err)
 	}
 
 	w := &FSChunkWriter{
 		fd: fd,
-		commitDir: s.commitDir, 
+		commitDir: stg.commitDir, 
 		dg: digest.New(),
 	}
 	return w, nil

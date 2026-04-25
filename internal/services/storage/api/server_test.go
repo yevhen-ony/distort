@@ -10,9 +10,9 @@ import (
 	"time"
 
 	pb "dos/gen/proto/chunk/v1"
-	"dos/internal/services/chunkserver/api"
-	"dos/internal/services/chunkserver/core"
-	"dos/internal/services/chunkserver/storage"
+	"dos/internal/services/storage/api"
+	"dos/internal/services/storage/core"
+	"dos/internal/services/storage/store"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -32,8 +32,8 @@ func checksumHex(data []byte) string {
 func startChunkServer(t *testing.T) (pb.ChunkServiceClient, func()) {
 	t.Helper()
 
-	storeConfig := &storage.ChunkStorageConfig{RootDir: t.TempDir()}
-	store, err := storage.New(storeConfig)
+	storeConfig := &store.ChunkStorageConfig{RootDir: t.TempDir()}
+	store, err := store.New(storeConfig)
 	require.NoError(t, err)
 
 	service, err := core.New(store)

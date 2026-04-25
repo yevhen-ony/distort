@@ -5,9 +5,9 @@ import (
 	"io"
 
 	pb "dos/gen/proto/chunk/v1"
-	"dos/internal/libraries/digest"
-	cs "dos/internal/services/chunkserver"
-	"dos/internal/services/chunkserver/core"
+	"dos/internal/common/digest"
+	s "dos/internal/services/storage"
+	"dos/internal/services/storage/core"
 )
 
 type Server struct {
@@ -24,7 +24,7 @@ func New(service *core.Service, config *ServerConfig) *Server {
 	}
 }
 
-func (s *Server) PutChunk(stream pb.ChunkService_PutChunkServer) (err error) {
+func (srv *Server) PutChunk(stream pb.ChunkService_PutChunkServer) (err error) {
 	defer func() { err = toStatus(err) }()
 
 	req, err := stream.Recv()
@@ -33,19 +33,19 @@ func (s *Server) PutChunk(stream pb.ChunkService_PutChunkServer) (err error) {
 	}
 
 	header := req.GetHeader()
-	if err := s.validatePutChunkHeader(header); err != nil {
+	if err := srv.validatePutChunkHeader(header); err != nil {
 		return err
 	}
 
-	chunkInfo := &cs.ChunkInfo{
-		ID: cs.ChunkID(header.GetChunkId()),
+	chunkInfo := &s.ChunkInfo{
+		ID: s.ChunkID(header.GetChunkId()),
 		Digest: digest.Digest{
 			Size:     header.GetChunkSize(),
 			Checksum: header.GetChecksum(),
 		},
 	}
 
-	session, err := s.service.StartUploadSession(chunkInfo)
+	session, err := srv.service.StartUploadSession(chunkInfo)
 	if err != nil {
 		return fmt.Errorf("start upload session: %w", err)
 	}
@@ -65,7 +65,7 @@ func (s *Server) PutChunk(stream pb.ChunkService_PutChunkServer) (err error) {
 		}
 	}
 
-	if err := s.service.CommitUploadSession(session, chunkInfo); err != nil {
+	if err := srv.service.CommitUploadSession(session, chunkInfo); err != nil {
 		return fmt.Errorf("commit upload session: %w", err)
 	}
 	if err := stream.SendAndClose(&pb.PutChunkResponse{}); err != nil {
@@ -74,10 +74,10 @@ func (s *Server) PutChunk(stream pb.ChunkService_PutChunkServer) (err error) {
 	return nil
 }
 
-func (s *Server) GetChunk(req *pb.GetChunkRequest, stream pb.ChunkService_GetChunkServer) (err error) {
+func (srv *Server) GetChunk(req *pb.GetChunkRequest, stream pb.ChunkService_GetChunkServer) (err error) {
 	defer func() { err = toStatus(err) }()
 
-	chunk, err := s.service.GetChunk(cs.ChunkID(req.GetChunkId()))
+	chunk, err := srv.service.GetChunk(s.ChunkID(req.GetChunkId()))
 	if err != nil {
 		return fmt.Errorf("get chunk: %w", err)
 	}
@@ -93,7 +93,7 @@ func (s *Server) GetChunk(req *pb.GetChunkRequest, stream pb.ChunkService_GetChu
 		return fmt.Errorf("send header: %w", err)
 	}
 
-	buf := make([]byte, s.config.FrameSize)
+	buf := make([]byte, srv.config.FrameSize)
 	for {
 		n, readErr := chunk.Reader.Read(buf)
 		if n > 0 {
@@ -112,12 +112,12 @@ func (s *Server) GetChunk(req *pb.GetChunkRequest, stream pb.ChunkService_GetChu
 	return nil
 }
 
-func (s *Server) validatePutChunkHeader(header *pb.PutChunkHeader) error {
+func (srv *Server) validatePutChunkHeader(header *pb.PutChunkHeader) error {
 	if header == nil {
-		return fmt.Errorf("missing header: %w", ErrHeaderInvalid)
+		return fmt.Errorf("missing header: %w", s.ErrHeaderInvalid)
 	}
-	if header.GetServerId() != s.service.GetServerID() {
-		return fmt.Errorf("invalid server id: %w", ErrHeaderInvalid)
+	if header.GetServerId() != srv.service.GetServerID() {
+		return fmt.Errorf("invalid server id: %w", s.ErrHeaderInvalid)
 	}
 	return nil
 }

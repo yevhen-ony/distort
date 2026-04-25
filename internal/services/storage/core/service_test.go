@@ -9,9 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	cs "dos/internal/services/chunkserver"
-	"dos/internal/services/chunkserver/storage"
-	"dos/internal/libraries/digest"
+	s "dos/internal/services/storage"
+	"dos/internal/services/storage/store"
+	"dos/internal/common/digest"
 )
 
 func checksumHex(data []byte) string {
@@ -19,16 +19,16 @@ func checksumHex(data []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func newTestService(t *testing.T) (*Service, *storage.FSChunkStorage) {
+func newTestService(t *testing.T) (*Service, *store.FSChunkStorage) {
   	t.Helper()
 
-	cfg := &storage.ChunkStorageConfig{RootDir: t.TempDir()}
-  	store, err := storage.New(cfg)
+	cfg := &store.ChunkStorageConfig{RootDir: t.TempDir()}
+  	store, err := store.New(cfg)
   	require.NoError(t, err)
 
   	svc := &Service{
   		store:   store,
-  		catalog: make(cs.ChunkCatalog),
+  		catalog: make(s.ChunkCatalog),
   	}
   	return svc, store
 }
@@ -39,7 +39,7 @@ func TestService_CommitUploadSession(t *testing.T) {
 	dg := digest.New()
 	dg.Write(payload)
 
-	info := &cs.ChunkInfo{
+	info := &s.ChunkInfo{
 		ID: "chunk-1",
 		Digest: dg.Digest(),
 	}
@@ -77,7 +77,7 @@ func TestService_CommitUploadSession(t *testing.T) {
 		dg := digest.New()
 		dg.Write(payload)
 
-		info := &cs.ChunkInfo{
+		info := &s.ChunkInfo{
 			ID: "chunk-2",
 			Digest: dg.Digest(),
 		}
@@ -89,7 +89,7 @@ func TestService_CommitUploadSession(t *testing.T) {
 		require.NoError(t, err)
 
   		// Simulate race: ID becomes taken after session start but before commit.
-		svc.catalog[info.ID] = cs.ChunkMeta{
+		svc.catalog[info.ID] = s.ChunkMeta{
 			Digest: digest.Digest{Size: int64(999), Checksum: "existing"},
 		}
 

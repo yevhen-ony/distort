@@ -9,10 +9,10 @@ import (
 	pb "dos/gen/proto/chunk/v1"
 	c "dos/internal/services/client"
 	tr "dos/internal/services/client/transport"
-	"dos/internal/services/chunkserver/api"
-	"dos/internal/services/chunkserver/core"
-	"dos/internal/services/chunkserver/storage"
-	"dos/internal/libraries/digest"
+	"dos/internal/services/storage/api"
+	"dos/internal/services/storage/core"
+	"dos/internal/services/storage/store"
+	"dos/internal/common/digest"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -22,8 +22,8 @@ import (
 func startChunkServer(t *testing.T) (string, func()) {
 	t.Helper()
 
-	storeConfig := &storage.ChunkStorageConfig{RootDir: t.TempDir()}
-	store, err := storage.New(storeConfig)
+	storeConfig := &store.ChunkStorageConfig{RootDir: t.TempDir()}
+	store, err := store.New(storeConfig)
 	require.NoError(t, err)
 
 	svc, err := core.New(store)
@@ -55,7 +55,7 @@ func TestChunkTransport_HappyPath_AgainstChunkServer(t *testing.T) {
 	cp := tr.NewConnectionPool()
 	defer func() { _ = cp.Close() }()
 
-	cfg := &tr.ChunkTransportConfig{FrameSize: 3}
+	cfg := &tr.NodeTransportConfig{FrameSize: 3}
 	tr, err := tr.NewChunkTransport(cp, cfg)
 	require.NoError(t, err)
 
@@ -69,7 +69,7 @@ func TestChunkTransport_HappyPath_AgainstChunkServer(t *testing.T) {
 		Checksum: dg.Checksum(),
 		Data:     payload,
 	}
-	target := c.Target{
+	target := c.NodeAccess{
 		ID:   "service-id-123",
 		Addr: addr,
 	}

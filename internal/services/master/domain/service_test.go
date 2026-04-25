@@ -49,7 +49,7 @@ func TestMasterService_AllocateChunk_HappyPath(t *testing.T) {
 
 	placement, err := svc.AllocateChunk(ctx, &m.AllocateChunkCommand{
 		ObjectID:  m.ObjectID("obj-1"),
-		ChunkKey:  m.ChunkKey(0),
+		ChunkKey:  m.ChunkKey("0"),
 		ChunkSize: 100,
 	})
 	require.NoError(t, err)
