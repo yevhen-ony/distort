@@ -15,7 +15,7 @@ message PutChunkRequest {
 }
 
 message PutChunkHeader {
-  string server_id = 1;
+  string node_id = 1;
   string chunk_id = 2;
   int64 chunk_size = 3;
   string checksum = 4;
@@ -24,7 +24,7 @@ message PutChunkHeader {
 message PutChunkResponse {}
 
 message GetChunkRequest {
-  string server_id = 1;
+  string node_id = 1;
   string chunk_id = 2;
 }
 

@@ -10,7 +10,7 @@ import (
 
 
 func SendChunkValidate(target c.NodeAccess, chunk *c.Chunk) error {
-	if err := validateTarget(&target); err != nil {
+	if err := validateNodeAccess(&target); err != nil {
 		return err
 	}
 	if err := validateChunk(chunk); err != nil {
@@ -20,7 +20,7 @@ func SendChunkValidate(target c.NodeAccess, chunk *c.Chunk) error {
 }
 
 func ReceiveChunkValidate(target c.NodeAccess, chunkID string) error {
-	if err := validateTarget(&target); err != nil {
+	if err := validateNodeAccess(&target); err != nil {
 		return err
 	}
 	if err := validateChunkID(chunkID); err != nil {
@@ -46,11 +46,11 @@ func validateChunkID(chunkID string) error {
 	return nil
 }
 
-func validateTarget(target *c.NodeAccess) error {
-	if target.ID == "" {
+func validateNodeAccess(node *c.NodeAccess) error {
+	if node.NodeID == "" {
 		return fmt.Errorf("empty target id: %w", ErrInputInvalid)
 	}
-	if target.Addr == "" {
+	if node.Addr == "" {
 		return fmt.Errorf("empty target addr: %w", ErrInputInvalid)
 	}
 	return nil

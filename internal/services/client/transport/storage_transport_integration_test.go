@@ -55,7 +55,7 @@ func TestChunkTransport_HappyPath_AgainstChunkServer(t *testing.T) {
 	cp := tr.NewConnectionPool()
 	defer func() { _ = cp.Close() }()
 
-	cfg := &tr.NodeTransportConfig{FrameSize: 3}
+	cfg := &tr.StorageTransportConfig{FrameSize: 3}
 	tr, err := tr.NewChunkTransport(cp, cfg)
 	require.NoError(t, err)
 
@@ -70,7 +70,7 @@ func TestChunkTransport_HappyPath_AgainstChunkServer(t *testing.T) {
 		Data:     payload,
 	}
 	target := c.NodeAccess{
-		ID:   "service-id-123",
+		NodeID:   "service-id-123",
 		Addr: addr,
 	}
 

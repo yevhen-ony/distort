@@ -27,8 +27,6 @@ func checksumHex(data []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-
-
 func startChunkServer(t *testing.T) (pb.ChunkServiceClient, func()) {
 	t.Helper()
 
@@ -80,7 +78,7 @@ func TestServer_PutAndGetChunk_HappyPath(t *testing.T) {
 
 	require.NoError(t, put.Send(&pb.PutChunkRequest{
 		Header: &pb.PutChunkHeader{
-			ServerId:  "service-id-123",
+			NodeId:  "service-id-123",
 			ChunkId:   chunkID,
 			ChunkSize: int64(len(payload)),
 			Checksum:  checksumHex(payload),
@@ -131,7 +129,7 @@ func TestServer_PutChunk_InvalidServerID(t *testing.T) {
 
 	require.NoError(t, put.Send(&pb.PutChunkRequest{
 		Header: &pb.PutChunkHeader{
-			ServerId:  "wrong-id",
+			NodeId:  "wrong-id",
 			ChunkId:   "chunk-x",
 			ChunkSize: 1,
 		},

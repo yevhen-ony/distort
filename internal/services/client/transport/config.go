@@ -1,6 +1,6 @@
 package transport
 
-type NodeTransportConfig struct {
+type StorageTransportConfig struct {
 	FrameSize int `yaml:"frame_size"`
 }
 

@@ -124,7 +124,7 @@ func TestClientServer_CreateAllocateGetObjectAccess_HappyPath(t *testing.T) {
 	require.NoError(t, err)
 
 	assert.Equal(t, objectID, got.GetObjectId())
-	assert.Equal(t, chunkSize, got.GetObjectSize())
+	assert.Equal(t, chunkSize, got.GetTotalSize())
 	require.Len(t, got.GetChunks(), 1)
 	assert.Equal(t, alloc.GetChunkId(), got.GetChunks()[0].GetChunkId())
 	assert.Equal(t, chunkKey, got.GetChunks()[0].GetChunkKey())

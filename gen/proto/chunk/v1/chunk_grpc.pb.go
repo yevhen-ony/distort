@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.6.1
 // - protoc             v6.33.6
-// source: chunk/v1/chunk.proto
+// source: storage/v1/chunk.proto
 
 package chunk
 
@@ -151,5 +151,5 @@ var ChunkService_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "chunk/v1/chunk.proto",
+	Metadata: "storage/v1/chunk.proto",
 }

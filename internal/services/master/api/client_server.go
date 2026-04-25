@@ -82,10 +82,9 @@ func (s *ClientServer) GetObjectAccess(
 	}
 
 	rsp = &pb.GetObjectAccessResponse{
-		ObjectId:   string(object.ObjectID),
-		ObjectSize: object.TotalSize,
-		Chunks:     toPBChunkPlacement(object.Chunks),
+		ObjectId:  string(object.ObjectID),
+		TotalSize: object.TotalSize,
+		Chunks:    toPBChunkPlacement(object.Chunks),
 	}
 	return rsp, nil
 }
-

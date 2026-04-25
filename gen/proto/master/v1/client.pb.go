@@ -164,7 +164,8 @@ func (x *AllocateChunkRequest) GetChunkSize() int64 {
 type AllocateChunkResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
-	Nodes         []*NodeAccess          `protobuf:"bytes,2,rep,name=nodes,proto3" json:"nodes,omitempty"`
+	ChunkKey      string                 `protobuf:"bytes,2,opt,name=chunk_key,json=chunkKey,proto3" json:"chunk_key,omitempty"`
+	Nodes         []*NodeAccess          `protobuf:"bytes,3,rep,name=nodes,proto3" json:"nodes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -202,6 +203,13 @@ func (*AllocateChunkResponse) Descriptor() ([]byte, []int) {
 func (x *AllocateChunkResponse) GetChunkId() string {
 	if x != nil {
 		return x.ChunkId
+	}
+	return ""
+}
+
+func (x *AllocateChunkResponse) GetChunkKey() string {
+	if x != nil {
+		return x.ChunkKey
 	}
 	return ""
 }
@@ -260,7 +268,7 @@ func (x *GetObjectAccessRequest) GetObjectId() string {
 type GetObjectAccessResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ObjectId      string                 `protobuf:"bytes,1,opt,name=object_id,json=objectId,proto3" json:"object_id,omitempty"`
-	ObjectSize    int64                  `protobuf:"varint,2,opt,name=object_size,json=objectSize,proto3" json:"object_size,omitempty"`
+	TotalSize     int64                  `protobuf:"varint,2,opt,name=total_size,json=totalSize,proto3" json:"total_size,omitempty"`
 	Chunks        []*ChunkPlacement      `protobuf:"bytes,3,rep,name=chunks,proto3" json:"chunks,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
@@ -303,9 +311,9 @@ func (x *GetObjectAccessResponse) GetObjectId() string {
 	return ""
 }
 
-func (x *GetObjectAccessResponse) GetObjectSize() int64 {
+func (x *GetObjectAccessResponse) GetTotalSize() int64 {
 	if x != nil {
-		return x.ObjectSize
+		return x.TotalSize
 	}
 	return 0
 }
@@ -449,16 +457,17 @@ const file_master_v1_client_proto_rawDesc = "" +
 	"\tobject_id\x18\x01 \x01(\tR\bobjectId\x12\x1b\n" +
 	"\tchunk_key\x18\x02 \x01(\tR\bchunkKey\x12\x1d\n" +
 	"\n" +
-	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\"_\n" +
+	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\"|\n" +
 	"\x15AllocateChunkResponse\x12\x19\n" +
-	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12+\n" +
-	"\x05nodes\x18\x02 \x03(\v2\x15.master.v1.NodeAccessR\x05nodes\"5\n" +
+	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12\x1b\n" +
+	"\tchunk_key\x18\x02 \x01(\tR\bchunkKey\x12+\n" +
+	"\x05nodes\x18\x03 \x03(\v2\x15.master.v1.NodeAccessR\x05nodes\"5\n" +
 	"\x16GetObjectAccessRequest\x12\x1b\n" +
-	"\tobject_id\x18\x01 \x01(\tR\bobjectId\"\x8a\x01\n" +
+	"\tobject_id\x18\x01 \x01(\tR\bobjectId\"\x88\x01\n" +
 	"\x17GetObjectAccessResponse\x12\x1b\n" +
-	"\tobject_id\x18\x01 \x01(\tR\bobjectId\x12\x1f\n" +
-	"\vobject_size\x18\x02 \x01(\x03R\n" +
-	"objectSize\x121\n" +
+	"\tobject_id\x18\x01 \x01(\tR\bobjectId\x12\x1d\n" +
+	"\n" +
+	"total_size\x18\x02 \x01(\x03R\ttotalSize\x121\n" +
 	"\x06chunks\x18\x03 \x03(\v2\x19.master.v1.ChunkPlacementR\x06chunks\"\x94\x01\n" +
 	"\x0eChunkPlacement\x12\x19\n" +
 	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12\x1b\n" +

@@ -9,7 +9,6 @@ import (
 	c "dos/internal/services/client"
 )
 
-
 type MasterTransport struct {
 	conn   *ConnectionPool
 	config *MasterTransportConfig
@@ -48,10 +47,42 @@ type AllocateChunkQuery struct {
 	ChunkSize int64
 }
 
-type ChunkPlacement struct {
-	ChunkID c.ChunkID
-	
+func (mt *MasterTransport) AllocateChunk(
+	ctx context.Context, query *AllocateChunkQuery,
+) (c.ChunkPlacement, error)  {
+	conn, err := mt.conn.Get(mt.config.Addr)
+	if err != nil {
+		return c.ChunkPlacement{}, fmt.Errorf("get conn: %w", err) 
+	}
+	client := pb.NewMasterClientServiceClient(conn)
+
+	req := &pb.AllocateChunkRequest{
+		ObjectId: string(query.ObjectID),
+		ChunkKey: string(query.ChunkKey),
+		ChunkSize: query.ChunkSize,
+	}
+	rsp, err := client.AllocateChunk(ctx, req)
+	if err != nil {
+		return c.ChunkPlacement{}, fmt.Errorf("allocate chunk: %w", err) 
+	}
+	chunks := *ChunkPlacementFromPB(rsp)
+	return chunks, nil
 }
 
-func (mt *MasterTransport) AllocateChunk(ctx context.Context, query *AllocateChunkQuery)  {
+func (mt *MasterTransport) GetObjectAccess(
+	ctx context.Context, oid c.ObjectID,
+) (c.ObjectAccess, error)  {
+	conn, err := mt.conn.Get(mt.config.Addr)
+	if err != nil {
+		return c.ObjectAccess{}, fmt.Errorf("get conn: %w", err)
+	}
+	client :=  pb.NewMasterClientServiceClient(conn)
+
+	req := &pb.GetObjectAccessRequest{ObjectId: string(oid)}
+	rsp, err := client.GetObjectAccess(ctx, req)
+	if err != nil {
+		return c.ObjectAccess{}, fmt.Errorf("get object access: %w", err)
+	}
+	objAccess := *ObjectAccessFromPB(rsp)
+	return objAccess, nil  
 }

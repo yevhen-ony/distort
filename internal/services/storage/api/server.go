@@ -116,7 +116,7 @@ func (srv *Server) validatePutChunkHeader(header *pb.PutChunkHeader) error {
 	if header == nil {
 		return fmt.Errorf("missing header: %w", s.ErrHeaderInvalid)
 	}
-	if header.GetServerId() != srv.service.GetServerID() {
+	if header.GetNodeId() != srv.service.GetServerID() {
 		return fmt.Errorf("invalid server id: %w", s.ErrHeaderInvalid)
 	}
 	return nil

@@ -2,7 +2,7 @@ package client
 
 type ObjectID string
 type ChunkID string
-type ChunkKey int64
+type ChunkKey string
 
 type Chunk struct {
 	ID       string
@@ -11,6 +11,18 @@ type Chunk struct {
 }
 
 type NodeAccess struct {
-	ID   string
+	NodeID   string
 	Addr string
+}
+
+type ChunkPlacement struct {
+	ChunkID ChunkID
+	ChunkKey ChunkKey
+	Nodes []NodeAccess
+}
+
+type ObjectAccess struct {
+	ObjectID ObjectID
+	TotalSize int64
+	Chunks []ChunkPlacement
 }

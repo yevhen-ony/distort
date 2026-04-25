@@ -24,7 +24,8 @@ message AllocateChunkRequest {
 
 message AllocateChunkResponse {
   string chunk_id = 1;
-  repeated NodeAccess nodes = 2;
+  string chunk_key = 2;
+  repeated NodeAccess nodes = 3;
 }
 
 message GetObjectAccessRequest {
@@ -33,7 +34,7 @@ message GetObjectAccessRequest {
 
 message GetObjectAccessResponse {
   string object_id = 1;
-  int64 object_size = 2;
+  int64 total_size = 2;
   repeated ChunkPlacement chunks = 3;
 }
 

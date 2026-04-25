@@ -12,22 +12,22 @@ import (
 	"dos/internal/common/digest"
 )
 
-type NodeTransport struct {
+type StorageTransport struct {
 	conn *ConnectionPool
-	config *NodeTransportConfig
+	config *StorageTransportConfig
 } 
 
-func NewChunkTransport(conn *ConnectionPool, config *NodeTransportConfig) (*NodeTransport, error) {
+func NewChunkTransport(conn *ConnectionPool, config *StorageTransportConfig) (*StorageTransport, error) {
 	if conn == nil {
 		return nil, errors.New("missing connection pool")
 	}
 	if config == nil {
 		return nil, errors.New("missing config")
 	}
-	return &NodeTransport{conn: conn, config: config}, nil
+	return &StorageTransport{conn: conn, config: config}, nil
 }
 
-func (ct *NodeTransport) SendChunk(ctx context.Context, node c.NodeAccess, chunk *c.Chunk) error {
+func (ct *StorageTransport) SendChunk(ctx context.Context, node c.NodeAccess, chunk *c.Chunk) error {
 	if err := SendChunkValidate(node, chunk); err != nil {
 		return err
 	}
@@ -44,7 +44,7 @@ func (ct *NodeTransport) SendChunk(ctx context.Context, node c.NodeAccess, chunk
 		return fmt.Errorf("open put stream: %w", err)
 	}
 	header := &pb.PutChunkHeader{
-		ServerId: node.ID,
+		NodeId: node.NodeID,
 		ChunkId: chunk.ID,
 		ChunkSize: int64(len(chunk.Data)),
 		Checksum: chunk.Checksum,
@@ -66,7 +66,7 @@ func (ct *NodeTransport) SendChunk(ctx context.Context, node c.NodeAccess, chunk
 	return nil
 }
 
-func (ct *NodeTransport) ReceiveChunk(ctx context.Context, node c.NodeAccess, chunkID string) (*c.Chunk, error) {
+func (ct *StorageTransport) ReceiveChunk(ctx context.Context, node c.NodeAccess, chunkID string) (*c.Chunk, error) {
 	if err := ReceiveChunkValidate(node, chunkID); err != nil {
 		return nil, err
 	}
@@ -82,7 +82,7 @@ func (ct *NodeTransport) ReceiveChunk(ctx context.Context, node c.NodeAccess, ch
 	defer cancel()
 
 	stream, err := client.GetChunk(ctx, &pb.GetChunkRequest{
-		ServerId: node.ID,
+		NodeId: node.NodeID,
 		ChunkId: chunkID, 
 	})
 	if err != nil {
@@ -114,7 +114,7 @@ func (ct *NodeTransport) ReceiveChunk(ctx context.Context, node c.NodeAccess, ch
 	return chunk, nil 
 }
 
-func (ct *NodeTransport) sendData(stream pb.ChunkService_PutChunkClient, data []byte) error {
+func (ct *StorageTransport) sendData(stream pb.ChunkService_PutChunkClient, data []byte) error {
 	for len(data) > 0 {
 		n := ct.config.FrameSize
 		if len(data) < n {
@@ -130,7 +130,7 @@ func (ct *NodeTransport) sendData(stream pb.ChunkService_PutChunkClient, data []
 	return nil
 }
 
-func (ct *NodeTransport) recvData(stream pb.ChunkService_GetChunkClient) ([]byte, string, error) {
+func (ct *StorageTransport) recvData(stream pb.ChunkService_GetChunkClient) ([]byte, string, error) {
 	var buf bytes.Buffer
 	dg := digest.New()
 
