@@ -8,9 +8,10 @@ import (
 	"io"
 
 	pb "dos/gen/proto/chunk/v1"
+	"dos/internal/common/convert"
+	"dos/internal/common/digest"
 	t "dos/internal/common/types"
 	c "dos/internal/services/client"
-	"dos/internal/common/digest"
 )
 
 type StorageTransport struct {
@@ -47,8 +48,8 @@ func (ct *StorageTransport) SendChunk(ctx context.Context, node t.NodeRef, chunk
 	header := &pb.PutChunkHeader{
 		NodeId: string(node.ID),
 		ChunkId: string(chunk.ID),
-		ChunkSize: int64(len(chunk.Data)),
-		Checksum: string(chunk.Checksum),
+		ChunkSize: int64(chunk.Digest.Size),
+		Checksum: string(chunk.Digest.Checksum),
 	}
 
 	err = stream.Send(&pb.PutChunkRequest{Header: header})
@@ -67,14 +68,14 @@ func (ct *StorageTransport) SendChunk(ctx context.Context, node t.NodeRef, chunk
 	return nil
 }
 
-func (ct *StorageTransport) ReceiveChunk(ctx context.Context, node t.NodeRef, chunkID t.ChunkID) (*c.Chunk, error) {
+func (ct *StorageTransport) ReceiveChunk(ctx context.Context, node t.NodeRef, chunkID t.ChunkID) (c.Chunk, error) {
 	if err := ReceiveChunkValidate(node, chunkID); err != nil {
-		return nil, err
+		return c.Chunk{}, err
 	}
 
 	conn, err := ct.conn.Get(node.Addr)
 	if err != nil {
-		return nil, fmt.Errorf("get conn: %w", err)
+		return c.Chunk{}, fmt.Errorf("get conn: %w", err)
 	}
 	
 	client := pb.NewChunkServiceClient(conn)
@@ -87,30 +88,37 @@ func (ct *StorageTransport) ReceiveChunk(ctx context.Context, node t.NodeRef, ch
 		ChunkId: string(chunkID), 
 	})
 	if err != nil {
-		return nil, fmt.Errorf("send request: %w", err)
+		return c.Chunk{}, fmt.Errorf("send request: %w", err)
 	}
 
 	rsp, err := stream.Recv()
 	if err != nil {
-		return nil, fmt.Errorf("recv header: %w", err)
+		return c.Chunk{}, fmt.Errorf("recv header: %w", err)
 	}
 
 	header := rsp.GetHeader()
 	if header == nil {
-		return nil, ErrHeaderInvalid 
+		return c.Chunk{}, ErrHeaderInvalid 
 	}
 
-	data, checksum, err := ct.recvData(stream)
+	data, digest, err := ct.recvData(stream)
 	if err != nil {
-		return nil, fmt.Errorf("recv data: %w", err)
+		return c.Chunk{}, fmt.Errorf("recv data: %w", err)
 	}
-	chunk :=  &c.Chunk{
+
+	chunkDesc := t.ChunkDesc{
 		ID: chunkID,
-		Checksum: checksum,
-		Data: data,
+		Digest: digest,
 	}
-	if err := ValidateReceivedChunk(chunk, header); err != nil {
-		return nil, err 
+
+	err = matchChunkDesc(convert.ChunkDescFromPB(header), chunkDesc)
+	if err != nil {
+		return c.Chunk{}, err 
+	}
+
+	chunk :=  c.Chunk{
+		ChunkDesc: chunkDesc,
+		Data: data,
 	}
 	return chunk, nil 
 }
@@ -131,7 +139,7 @@ func (ct *StorageTransport) sendData(stream pb.ChunkService_PutChunkClient, data
 	return nil
 }
 
-func (ct *StorageTransport) recvData(stream pb.ChunkService_GetChunkClient) ([]byte, digest.Checksum, error) {
+func (ct *StorageTransport) recvData(stream pb.ChunkService_GetChunkClient) ([]byte, digest.Digest, error) {
 	var buf bytes.Buffer
 	dg := digest.New()
 
@@ -141,16 +149,26 @@ func (ct *StorageTransport) recvData(stream pb.ChunkService_GetChunkClient) ([]b
 			break
 		}
 		if err != nil {
-			return nil, "", err
+			return nil, digest.Digest{}, err
 		}
 
 		data := rsp.GetData()
 		if data == nil {
-			return nil, "", ErrDataInvalid 
+			return nil, digest.Digest{}, ErrDataInvalid 
 		}
 
 		buf.Write(rsp.Data)
 		dg.Write(rsp.Data)
 	}
-	return buf.Bytes(), dg.Checksum(), nil
+	return buf.Bytes(), dg.Digest(), nil
+}
+
+func matchChunkDesc(want, got t.ChunkDesc) error {
+	if !want.Digest.Equal(got.Digest) {
+		return fmt.Errorf("digest mismatch: %w", ErrChunkDescMismatch)
+	}
+	if want.ID != got.ID {
+		return fmt.Errorf("id mismatch: %w", ErrChunkDescMismatch)
+	}
+	return nil
 }

@@ -66,8 +66,10 @@ func TestChunkTransport_HappyPath_AgainstChunkServer(test *testing.T) {
 	require.NoError(test, err)
 
 	src := &c.Chunk{
-		ID:       t.ChunkID("chunk-1"),
-		Checksum: dg.Checksum(),
+		ChunkDesc: t.ChunkDesc{
+			ID:       t.ChunkID("chunk-1"),
+			Digest: dg.Digest(),
+		},
 		Data:     payload,
 	}
 	target := t.NodeRef{
@@ -84,6 +86,6 @@ func TestChunkTransport_HappyPath_AgainstChunkServer(test *testing.T) {
 	require.NoError(test, err)
 
 	assert.Equal(test, src.ID, got.ID)
-	assert.Equal(test, src.Checksum, got.Checksum)
+	assert.Equal(test, src.Digest.Checksum, got.Digest.Checksum)
 	assert.Equal(test, src.Data, got.Data)
 }

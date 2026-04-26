@@ -1,9 +1,10 @@
-package convert 
+package convert
 
 import (
 	pb "dos/gen/proto/common/v1"
 	mpb "dos/gen/proto/master/v1"
 
+	"dos/internal/common/digest"
 	t "dos/internal/common/types"
 )
 
@@ -68,3 +69,26 @@ func NodeStatsFromPB(pbObj NodeStatsLike) *t.NodeStats {
 	}
 }
 
+type DigestLike interface {
+	GetChecksum() string
+	GetChunkSize() int64
+}
+
+func DigestFromPB(pbObj DigestLike) digest.Digest {
+	return digest.Digest{
+		Checksum: digest.Checksum(pbObj.GetChecksum()),
+		Size: pbObj.GetChunkSize(),
+	}
+}
+
+type ChunkDescLike interface {
+	DigestLike
+	GetChunkId() string
+}
+
+func ChunkDescFromPB(pbObj ChunkDescLike) t.ChunkDesc {
+	return t.ChunkDesc{
+		ID: t.ChunkID(pbObj.GetChunkId()),
+		Digest: DigestFromPB(pbObj),
+	}
+}

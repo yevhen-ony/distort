@@ -1,10 +1,8 @@
 package transport
 
 import (
-	"errors"
 	"fmt"
 
-	pb "dos/gen/proto/chunk/v1"
 	t "dos/internal/common/types"
 	c "dos/internal/services/client"
 )
@@ -56,20 +54,3 @@ func validateNodeAccess(node *t.NodeRef) error {
 	}
 	return nil
 }
-
-
-func ValidateReceivedChunk(chunk *c.Chunk, header *pb.GetChunkHeader) error {
-	var errs []error
-
-	if string(chunk.ID) != header.ChunkId {
-		errs = append(errs, fmt.Errorf("id mismatch: %w", ErrChunkInvalid))
-	}
-	if int64(len(chunk.Data)) != header.ChunkSize {
-		errs = append(errs, fmt.Errorf("len mismatch: %w", ErrChunkInvalid))
-	}
-	if string(chunk.Checksum) != header.Checksum {
-		errs = append(errs, fmt.Errorf("checksum mismatch: %w", ErrChunkInvalid))
-	}
-	return errors.Join(errs...) 
-}
-

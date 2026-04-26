@@ -8,6 +8,6 @@ import (
 
 type Transport interface {
 	SendChunk(context.Context, t.NodeRef, *Chunk) error
-	ReceiveChunk(context.Context, t.NodeRef, string) (*Chunk, error)
+	ReceiveChunk(context.Context, t.NodeRef, string) (Chunk, error)
 
 }
