@@ -70,7 +70,7 @@ func TestChunkTransport_HappyPath_AgainstChunkServer(test *testing.T) {
 		Checksum: dg.Checksum(),
 		Data:     payload,
 	}
-	target := t.NodeAccess{
+	target := t.NodeRef{
 		NodeID:   "service-id-123",
 		Addr: addr,
 	}

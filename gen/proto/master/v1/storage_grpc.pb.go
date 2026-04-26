@@ -19,18 +19,18 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
+	MasterStorageService_RegisterStorageNode_FullMethodName = "/master.v1.MasterStorageService/RegisterStorageNode"
 	MasterStorageService_Heartbeat_FullMethodName           = "/master.v1.MasterStorageService/Heartbeat"
 	MasterStorageService_ReportStorage_FullMethodName       = "/master.v1.MasterStorageService/ReportStorage"
-	MasterStorageService_RegisterStorageNode_FullMethodName = "/master.v1.MasterStorageService/RegisterStorageNode"
 )
 
 // MasterStorageServiceClient is the client API for MasterStorageService service.
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MasterStorageServiceClient interface {
+	RegisterStorageNode(ctx context.Context, in *RegisterStorageNodeRequest, opts ...grpc.CallOption) (*RegisterStorageNodeResponse, error)
 	Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error)
 	ReportStorage(ctx context.Context, in *ReportStorageRequest, opts ...grpc.CallOption) (*ReportStorageResponse, error)
-	RegisterStorageNode(ctx context.Context, in *RegisterStorageNodeRequest, opts ...grpc.CallOption) (*RegisterStorageNodeResponse, error)
 }
 
 type masterStorageServiceClient struct {
@@ -39,6 +39,16 @@ type masterStorageServiceClient struct {
 
 func NewMasterStorageServiceClient(cc grpc.ClientConnInterface) MasterStorageServiceClient {
 	return &masterStorageServiceClient{cc}
+}
+
+func (c *masterStorageServiceClient) RegisterStorageNode(ctx context.Context, in *RegisterStorageNodeRequest, opts ...grpc.CallOption) (*RegisterStorageNodeResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(RegisterStorageNodeResponse)
+	err := c.cc.Invoke(ctx, MasterStorageService_RegisterStorageNode_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
 }
 
 func (c *masterStorageServiceClient) Heartbeat(ctx context.Context, in *HeartbeatRequest, opts ...grpc.CallOption) (*HeartbeatResponse, error) {
@@ -61,23 +71,13 @@ func (c *masterStorageServiceClient) ReportStorage(ctx context.Context, in *Repo
 	return out, nil
 }
 
-func (c *masterStorageServiceClient) RegisterStorageNode(ctx context.Context, in *RegisterStorageNodeRequest, opts ...grpc.CallOption) (*RegisterStorageNodeResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(RegisterStorageNodeResponse)
-	err := c.cc.Invoke(ctx, MasterStorageService_RegisterStorageNode_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
 // MasterStorageServiceServer is the server API for MasterStorageService service.
 // All implementations must embed UnimplementedMasterStorageServiceServer
 // for forward compatibility.
 type MasterStorageServiceServer interface {
+	RegisterStorageNode(context.Context, *RegisterStorageNodeRequest) (*RegisterStorageNodeResponse, error)
 	Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error)
 	ReportStorage(context.Context, *ReportStorageRequest) (*ReportStorageResponse, error)
-	RegisterStorageNode(context.Context, *RegisterStorageNodeRequest) (*RegisterStorageNodeResponse, error)
 	mustEmbedUnimplementedMasterStorageServiceServer()
 }
 
@@ -88,14 +88,14 @@ type MasterStorageServiceServer interface {
 // pointer dereference when methods are called.
 type UnimplementedMasterStorageServiceServer struct{}
 
+func (UnimplementedMasterStorageServiceServer) RegisterStorageNode(context.Context, *RegisterStorageNodeRequest) (*RegisterStorageNodeResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method RegisterStorageNode not implemented")
+}
 func (UnimplementedMasterStorageServiceServer) Heartbeat(context.Context, *HeartbeatRequest) (*HeartbeatResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method Heartbeat not implemented")
 }
 func (UnimplementedMasterStorageServiceServer) ReportStorage(context.Context, *ReportStorageRequest) (*ReportStorageResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReportStorage not implemented")
-}
-func (UnimplementedMasterStorageServiceServer) RegisterStorageNode(context.Context, *RegisterStorageNodeRequest) (*RegisterStorageNodeResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method RegisterStorageNode not implemented")
 }
 func (UnimplementedMasterStorageServiceServer) mustEmbedUnimplementedMasterStorageServiceServer() {}
 func (UnimplementedMasterStorageServiceServer) testEmbeddedByValue()                              {}
@@ -116,6 +116,24 @@ func RegisterMasterStorageServiceServer(s grpc.ServiceRegistrar, srv MasterStora
 		t.testEmbeddedByValue()
 	}
 	s.RegisterService(&MasterStorageService_ServiceDesc, srv)
+}
+
+func _MasterStorageService_RegisterStorageNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(RegisterStorageNodeRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MasterStorageServiceServer).RegisterStorageNode(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MasterStorageService_RegisterStorageNode_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MasterStorageServiceServer).RegisterStorageNode(ctx, req.(*RegisterStorageNodeRequest))
+	}
+	return interceptor(ctx, in, info, handler)
 }
 
 func _MasterStorageService_Heartbeat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
@@ -154,24 +172,6 @@ func _MasterStorageService_ReportStorage_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MasterStorageService_RegisterStorageNode_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(RegisterStorageNodeRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MasterStorageServiceServer).RegisterStorageNode(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MasterStorageService_RegisterStorageNode_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MasterStorageServiceServer).RegisterStorageNode(ctx, req.(*RegisterStorageNodeRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 // MasterStorageService_ServiceDesc is the grpc.ServiceDesc for MasterStorageService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -180,16 +180,16 @@ var MasterStorageService_ServiceDesc = grpc.ServiceDesc{
 	HandlerType: (*MasterStorageServiceServer)(nil),
 	Methods: []grpc.MethodDesc{
 		{
+			MethodName: "RegisterStorageNode",
+			Handler:    _MasterStorageService_RegisterStorageNode_Handler,
+		},
+		{
 			MethodName: "Heartbeat",
 			Handler:    _MasterStorageService_Heartbeat_Handler,
 		},
 		{
 			MethodName: "ReportStorage",
 			Handler:    _MasterStorageService_ReportStorage_Handler,
-		},
-		{
-			MethodName: "RegisterStorageNode",
-			Handler:    _MasterStorageService_RegisterStorageNode_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

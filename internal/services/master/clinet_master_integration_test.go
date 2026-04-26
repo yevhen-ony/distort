@@ -130,7 +130,7 @@ func TestClientServer_CreateAllocateGetObjectAccess_HappyPath(test *testing.T) {
 	assert.Equal(test, chunkKey, got.GetChunks()[0].GetChunkKey())
 	require.Len(test, got.GetChunks()[0].GetNodes(), 1)
 	assert.Equal(test, string(nid), got.GetChunks()[0].GetNodes()[0].GetNodeId())
-	assert.Equal(test, "127.0.0.1:9001", got.GetChunks()[0].GetNodes()[0].GetAddress())
+	assert.Equal(test, "127.0.0.1:9001", got.GetChunks()[0].GetNodes()[0].GetAddr())
 }
 
 func TestClientServer_CreateObject_InvalidArgument(test *testing.T) {

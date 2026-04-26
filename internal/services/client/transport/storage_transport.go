@@ -28,7 +28,7 @@ func NewChunkTransport(conn *ConnectionPool, config *StorageTransportConfig) (*S
 	return &StorageTransport{conn: conn, config: config}, nil
 }
 
-func (ct *StorageTransport) SendChunk(ctx context.Context, node t.NodeAccess, chunk *c.Chunk) error {
+func (ct *StorageTransport) SendChunk(ctx context.Context, node t.NodeRef, chunk *c.Chunk) error {
 	if err := SendChunkValidate(node, chunk); err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (ct *StorageTransport) SendChunk(ctx context.Context, node t.NodeAccess, ch
 	return nil
 }
 
-func (ct *StorageTransport) ReceiveChunk(ctx context.Context, node t.NodeAccess, chunkID t.ChunkID) (*c.Chunk, error) {
+func (ct *StorageTransport) ReceiveChunk(ctx context.Context, node t.NodeRef, chunkID t.ChunkID) (*c.Chunk, error) {
 	if err := ReceiveChunkValidate(node, chunkID); err != nil {
 		return nil, err
 	}

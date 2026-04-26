@@ -7,7 +7,7 @@ type NodeID string
 
 type Checksum string
 
-type NodeAccess struct {
+type NodeRef struct {
 	NodeID NodeID
 	Addr   string
 }
@@ -15,7 +15,7 @@ type NodeAccess struct {
 type ChunkPlacement struct {
 	ChunkID  ChunkID
 	ChunkKey ChunkKey
-	Nodes    []NodeAccess
+	Nodes    []NodeRef
 }
 
 type ObjectAccess struct {

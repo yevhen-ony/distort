@@ -1,0 +1,21 @@
+syntax = "proto3";
+
+package common.v1;
+
+option go_package = "dos/gen/proto/common/v1;common";
+
+message NodeRef {
+  string node_id = 1;
+  string addr = 2;
+}
+
+message ChunkPlacement {
+  string chunk_id = 1;
+  repeated NodeRef nodes = 2;
+}
+
+message ChunkDigest {
+  string Checksum = 1;
+  int64 Size = 2;
+}
+

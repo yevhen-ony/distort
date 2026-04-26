@@ -7,6 +7,7 @@
 package master
 
 import (
+	v1 "dos/gen/proto/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -165,7 +166,7 @@ type AllocateChunkResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
 	ChunkKey      string                 `protobuf:"bytes,2,opt,name=chunk_key,json=chunkKey,proto3" json:"chunk_key,omitempty"`
-	Nodes         []*NodeAccess          `protobuf:"bytes,3,rep,name=nodes,proto3" json:"nodes,omitempty"`
+	Nodes         []*v1.NodeRef          `protobuf:"bytes,3,rep,name=nodes,proto3" json:"nodes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -214,7 +215,7 @@ func (x *AllocateChunkResponse) GetChunkKey() string {
 	return ""
 }
 
-func (x *AllocateChunkResponse) GetNodes() []*NodeAccess {
+func (x *AllocateChunkResponse) GetNodes() []*v1.NodeRef {
 	if x != nil {
 		return x.Nodes
 	}
@@ -330,7 +331,7 @@ type ChunkPlacement struct {
 	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
 	ChunkKey      string                 `protobuf:"bytes,2,opt,name=chunk_key,json=chunkKey,proto3" json:"chunk_key,omitempty"`
 	ChunkSize     int64                  `protobuf:"varint,3,opt,name=chunk_size,json=chunkSize,proto3" json:"chunk_size,omitempty"`
-	Nodes         []*NodeAccess          `protobuf:"bytes,4,rep,name=nodes,proto3" json:"nodes,omitempty"`
+	Nodes         []*v1.NodeRef          `protobuf:"bytes,4,rep,name=nodes,proto3" json:"nodes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -386,70 +387,18 @@ func (x *ChunkPlacement) GetChunkSize() int64 {
 	return 0
 }
 
-func (x *ChunkPlacement) GetNodes() []*NodeAccess {
+func (x *ChunkPlacement) GetNodes() []*v1.NodeRef {
 	if x != nil {
 		return x.Nodes
 	}
 	return nil
 }
 
-type NodeAccess struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	Address       string                 `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *NodeAccess) Reset() {
-	*x = NodeAccess{}
-	mi := &file_master_v1_client_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *NodeAccess) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*NodeAccess) ProtoMessage() {}
-
-func (x *NodeAccess) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use NodeAccess.ProtoReflect.Descriptor instead.
-func (*NodeAccess) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *NodeAccess) GetNodeId() string {
-	if x != nil {
-		return x.NodeId
-	}
-	return ""
-}
-
-func (x *NodeAccess) GetAddress() string {
-	if x != nil {
-		return x.Address
-	}
-	return ""
-}
-
 var File_master_v1_client_proto protoreflect.FileDescriptor
 
 const file_master_v1_client_proto_rawDesc = "" +
 	"\n" +
-	"\x16master/v1/client.proto\x12\tmaster.v1\"2\n" +
+	"\x16master/v1/client.proto\x12\tmaster.v1\x1a\x15common/v1/types.proto\"2\n" +
 	"\x13CreateObjectRequest\x12\x1b\n" +
 	"\tobject_id\x18\x01 \x01(\tR\bobjectId\"\x16\n" +
 	"\x14CreateObjectResponse\"o\n" +
@@ -457,28 +406,24 @@ const file_master_v1_client_proto_rawDesc = "" +
 	"\tobject_id\x18\x01 \x01(\tR\bobjectId\x12\x1b\n" +
 	"\tchunk_key\x18\x02 \x01(\tR\bchunkKey\x12\x1d\n" +
 	"\n" +
-	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\"|\n" +
+	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\"y\n" +
 	"\x15AllocateChunkResponse\x12\x19\n" +
 	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12\x1b\n" +
-	"\tchunk_key\x18\x02 \x01(\tR\bchunkKey\x12+\n" +
-	"\x05nodes\x18\x03 \x03(\v2\x15.master.v1.NodeAccessR\x05nodes\"5\n" +
+	"\tchunk_key\x18\x02 \x01(\tR\bchunkKey\x12(\n" +
+	"\x05nodes\x18\x03 \x03(\v2\x12.common.v1.NodeRefR\x05nodes\"5\n" +
 	"\x16GetObjectAccessRequest\x12\x1b\n" +
 	"\tobject_id\x18\x01 \x01(\tR\bobjectId\"\x88\x01\n" +
 	"\x17GetObjectAccessResponse\x12\x1b\n" +
 	"\tobject_id\x18\x01 \x01(\tR\bobjectId\x12\x1d\n" +
 	"\n" +
 	"total_size\x18\x02 \x01(\x03R\ttotalSize\x121\n" +
-	"\x06chunks\x18\x03 \x03(\v2\x19.master.v1.ChunkPlacementR\x06chunks\"\x94\x01\n" +
+	"\x06chunks\x18\x03 \x03(\v2\x19.master.v1.ChunkPlacementR\x06chunks\"\x91\x01\n" +
 	"\x0eChunkPlacement\x12\x19\n" +
 	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12\x1b\n" +
 	"\tchunk_key\x18\x02 \x01(\tR\bchunkKey\x12\x1d\n" +
 	"\n" +
-	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\x12+\n" +
-	"\x05nodes\x18\x04 \x03(\v2\x15.master.v1.NodeAccessR\x05nodes\"?\n" +
-	"\n" +
-	"NodeAccess\x12\x17\n" +
-	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x18\n" +
-	"\aaddress\x18\x02 \x01(\tR\aaddress2\x94\x02\n" +
+	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\x12(\n" +
+	"\x05nodes\x18\x04 \x03(\v2\x12.common.v1.NodeRefR\x05nodes2\x94\x02\n" +
 	"\x13MasterClientService\x12O\n" +
 	"\fCreateObject\x12\x1e.master.v1.CreateObjectRequest\x1a\x1f.master.v1.CreateObjectResponse\x12R\n" +
 	"\rAllocateChunk\x12\x1f.master.v1.AllocateChunkRequest\x1a .master.v1.AllocateChunkResponse\x12X\n" +
@@ -496,7 +441,7 @@ func file_master_v1_client_proto_rawDescGZIP() []byte {
 	return file_master_v1_client_proto_rawDescData
 }
 
-var file_master_v1_client_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
+var file_master_v1_client_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_master_v1_client_proto_goTypes = []any{
 	(*CreateObjectRequest)(nil),     // 0: master.v1.CreateObjectRequest
 	(*CreateObjectResponse)(nil),    // 1: master.v1.CreateObjectResponse
@@ -505,12 +450,12 @@ var file_master_v1_client_proto_goTypes = []any{
 	(*GetObjectAccessRequest)(nil),  // 4: master.v1.GetObjectAccessRequest
 	(*GetObjectAccessResponse)(nil), // 5: master.v1.GetObjectAccessResponse
 	(*ChunkPlacement)(nil),          // 6: master.v1.ChunkPlacement
-	(*NodeAccess)(nil),              // 7: master.v1.NodeAccess
+	(*v1.NodeRef)(nil),              // 7: common.v1.NodeRef
 }
 var file_master_v1_client_proto_depIdxs = []int32{
-	7, // 0: master.v1.AllocateChunkResponse.nodes:type_name -> master.v1.NodeAccess
+	7, // 0: master.v1.AllocateChunkResponse.nodes:type_name -> common.v1.NodeRef
 	6, // 1: master.v1.GetObjectAccessResponse.chunks:type_name -> master.v1.ChunkPlacement
-	7, // 2: master.v1.ChunkPlacement.nodes:type_name -> master.v1.NodeAccess
+	7, // 2: master.v1.ChunkPlacement.nodes:type_name -> common.v1.NodeRef
 	0, // 3: master.v1.MasterClientService.CreateObject:input_type -> master.v1.CreateObjectRequest
 	2, // 4: master.v1.MasterClientService.AllocateChunk:input_type -> master.v1.AllocateChunkRequest
 	4, // 5: master.v1.MasterClientService.GetObjectAccess:input_type -> master.v1.GetObjectAccessRequest
@@ -535,7 +480,7 @@ func file_master_v1_client_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_master_v1_client_proto_rawDesc), len(file_master_v1_client_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   8,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

@@ -2,15 +2,16 @@ package convert
 
 import (
 	t "dos/internal/common/types"
+	pb "dos/gen/proto/common/v1"
 	mpb "dos/gen/proto/master/v1"
 )
 
-func NodeAccessToPB(mNodes []t.NodeAccess) []*mpb.NodeAccess {
-	pbNodes	:= make([]*mpb.NodeAccess, 0, len(mNodes))
+func NodeRefToPB(mNodes []t.NodeRef) []*pb.NodeRef {
+	pbNodes	:= make([]*pb.NodeRef, 0, len(mNodes))
 	for _, mNode := range mNodes {
-		pbNodes = append(pbNodes, &mpb.NodeAccess{
+		pbNodes = append(pbNodes, &pb.NodeRef{
 			NodeId: string(mNode.NodeID),
-			Address: mNode.Addr,
+			Addr: mNode.Addr,
 		})
 	}
 	return pbNodes
@@ -22,7 +23,7 @@ func ChunkPlacementToPB(mChunks []t.ChunkPlacement) []*mpb.ChunkPlacement {
 		pbChunks = append(pbChunks, &mpb.ChunkPlacement{
 			ChunkId: string(mChunk.ChunkID),
 			ChunkKey: string(mChunk.ChunkKey),
-			Nodes: NodeAccessToPB(mChunk.Nodes),
+			Nodes: NodeRefToPB(mChunk.Nodes),
 		})
 	}
 	return pbChunks 

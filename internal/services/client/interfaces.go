@@ -7,7 +7,7 @@ import (
 )
 
 type Transport interface {
-	SendChunk(context.Context, t.NodeAccess, *Chunk) error
-	ReceiveChunk(context.Context, t.NodeAccess, string) (*Chunk, error)
+	SendChunk(context.Context, t.NodeRef, *Chunk) error
+	ReceiveChunk(context.Context, t.NodeRef, string) (*Chunk, error)
 
 }

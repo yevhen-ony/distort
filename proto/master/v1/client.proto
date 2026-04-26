@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package master.v1;
 
+import "common/v1/types.proto";
+
 option go_package = "dos/gen/proto/master/v1;master";
 
 service MasterClientService {
@@ -25,7 +27,7 @@ message AllocateChunkRequest {
 message AllocateChunkResponse {
   string chunk_id = 1;
   string chunk_key = 2;
-  repeated NodeAccess nodes = 3;
+  repeated common.v1.NodeRef nodes = 3;
 }
 
 message GetObjectAccessRequest {
@@ -42,11 +44,6 @@ message ChunkPlacement {
   string chunk_id = 1;
   string chunk_key = 2;
   int64 chunk_size = 3;
-  repeated NodeAccess nodes = 4;
-}
-
-message NodeAccess {
-  string node_id = 1;
-  string address = 2;
+  repeated common.v1.NodeRef nodes = 4;
 }
 

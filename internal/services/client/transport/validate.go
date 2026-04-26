@@ -10,7 +10,7 @@ import (
 )
 
 
-func SendChunkValidate(target t.NodeAccess, chunk *c.Chunk) error {
+func SendChunkValidate(target t.NodeRef, chunk *c.Chunk) error {
 	if err := validateNodeAccess(&target); err != nil {
 		return err
 	}
@@ -20,7 +20,7 @@ func SendChunkValidate(target t.NodeAccess, chunk *c.Chunk) error {
 	return nil
 }
 
-func ReceiveChunkValidate(target t.NodeAccess, chunkID t.ChunkID) error {
+func ReceiveChunkValidate(target t.NodeRef, chunkID t.ChunkID) error {
 	if err := validateNodeAccess(&target); err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func validateChunkID(chunkID t.ChunkID) error {
 	return nil
 }
 
-func validateNodeAccess(node *t.NodeAccess) error {
+func validateNodeAccess(node *t.NodeRef) error {
 	if node.NodeID == "" {
 		return fmt.Errorf("empty target id: %w", ErrInputInvalid)
 	}

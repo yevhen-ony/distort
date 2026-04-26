@@ -62,7 +62,7 @@ func (s *ClientServer) AllocateChunk(
 
 	rsp = &pb.AllocateChunkResponse{
 		ChunkId: string(chunks.ChunkID),
-		Nodes:   convert.NodeAccessToPB(chunks.Nodes),
+		Nodes:   convert.NodeRefToPB(chunks.Nodes),
 	}
 
 	return rsp, nil

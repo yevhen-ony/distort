@@ -104,5 +104,14 @@ func (s *MasterService) GetObjectAccess(ctx context.Context, oid t.ObjectID) (m.
 	return objectAccess, nil
 }
 
+func (s *MasterService) RegisterStorageNode(ctx context.Context, report *t.NodeReport) (t.NodeID, error) {
+	nid, err := s.nodeReg.Register(ctx, report)
+	if err != nil {
+		return "", fmt.Errorf("register node: %w", err)
+	}
+	return nid, err
+}
+
+
 
 

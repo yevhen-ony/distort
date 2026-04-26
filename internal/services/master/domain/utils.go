@@ -6,13 +6,13 @@ import (
 )
 
 
-func toNodeAccess(nodes ...m.Node) []t.NodeAccess {
+func toNodeAccess(nodes ...m.Node) []t.NodeRef {
 	if nodes == nil {
 		return nil
 	}
-	result := make([]t.NodeAccess, 0, len(nodes))
+	result := make([]t.NodeRef, 0, len(nodes))
 	for _, node := range nodes {
-		result = append(result, t.NodeAccess{
+		result = append(result, t.NodeRef{
 			NodeID: node.ID,
 			Addr: node.Report.Addr,
 		})

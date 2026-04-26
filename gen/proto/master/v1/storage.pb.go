@@ -7,6 +7,7 @@
 package master
 
 import (
+	v1 "dos/gen/proto/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -23,8 +24,7 @@ const (
 
 type HeartbeatRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ServerId      string                 `protobuf:"bytes,1,opt,name=server_id,json=serverId,proto3" json:"server_id,omitempty"`
-	Address       string                 `protobuf:"bytes,2,opt,name=address,proto3" json:"address,omitempty"`
+	NodeRef       *v1.NodeRef            `protobuf:"bytes,1,opt,name=node_ref,json=nodeRef,proto3" json:"node_ref,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -59,18 +59,11 @@ func (*HeartbeatRequest) Descriptor() ([]byte, []int) {
 	return file_master_v1_storage_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *HeartbeatRequest) GetServerId() string {
+func (x *HeartbeatRequest) GetNodeRef() *v1.NodeRef {
 	if x != nil {
-		return x.ServerId
+		return x.NodeRef
 	}
-	return ""
-}
-
-func (x *HeartbeatRequest) GetAddress() string {
-	if x != nil {
-		return x.Address
-	}
-	return ""
+	return nil
 }
 
 type HeartbeatResponse struct {
@@ -112,9 +105,7 @@ func (*HeartbeatResponse) Descriptor() ([]byte, []int) {
 type ReportStorageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	Addr          string                 `protobuf:"bytes,2,opt,name=addr,proto3" json:"addr,omitempty"`
-	Chunks        []*ChunkReport         `protobuf:"bytes,3,rep,name=chunks,proto3" json:"chunks,omitempty"`
-	FullSync      bool                   `protobuf:"varint,4,opt,name=full_sync,json=fullSync,proto3" json:"full_sync,omitempty"`
+	Chunks        []*ChunkReport         `protobuf:"bytes,2,rep,name=chunks,proto3" json:"chunks,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -156,13 +147,6 @@ func (x *ReportStorageRequest) GetNodeId() string {
 	return ""
 }
 
-func (x *ReportStorageRequest) GetAddr() string {
-	if x != nil {
-		return x.Addr
-	}
-	return ""
-}
-
 func (x *ReportStorageRequest) GetChunks() []*ChunkReport {
 	if x != nil {
 		return x.Chunks
@@ -170,17 +154,12 @@ func (x *ReportStorageRequest) GetChunks() []*ChunkReport {
 	return nil
 }
 
-func (x *ReportStorageRequest) GetFullSync() bool {
-	if x != nil {
-		return x.FullSync
-	}
-	return false
-}
-
 type ReportStorageResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	state            protoimpl.MessageState `protogen:"open.v1"`
+	AcceptedChunkIds []string               `protobuf:"bytes,1,rep,name=accepted_chunk_ids,json=acceptedChunkIds,proto3" json:"accepted_chunk_ids,omitempty"`
+	UnknownChunkIds  []string               `protobuf:"bytes,2,rep,name=unknown_chunk_ids,json=unknownChunkIds,proto3" json:"unknown_chunk_ids,omitempty"`
+	unknownFields    protoimpl.UnknownFields
+	sizeCache        protoimpl.SizeCache
 }
 
 func (x *ReportStorageResponse) Reset() {
@@ -213,11 +192,24 @@ func (*ReportStorageResponse) Descriptor() ([]byte, []int) {
 	return file_master_v1_storage_proto_rawDescGZIP(), []int{3}
 }
 
+func (x *ReportStorageResponse) GetAcceptedChunkIds() []string {
+	if x != nil {
+		return x.AcceptedChunkIds
+	}
+	return nil
+}
+
+func (x *ReportStorageResponse) GetUnknownChunkIds() []string {
+	if x != nil {
+		return x.UnknownChunkIds
+	}
+	return nil
+}
+
 type ChunkReport struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
-	ChunkSize     int64                  `protobuf:"varint,2,opt,name=chunk_size,json=chunkSize,proto3" json:"chunk_size,omitempty"`
-	Checksum      string                 `protobuf:"bytes,3,opt,name=checksum,proto3" json:"checksum,omitempty"`
+	ChunkDigest   *v1.ChunkDigest        `protobuf:"bytes,2,opt,name=chunk_digest,json=chunkDigest,proto3" json:"chunk_digest,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -259,23 +251,19 @@ func (x *ChunkReport) GetChunkId() string {
 	return ""
 }
 
-func (x *ChunkReport) GetChunkSize() int64 {
+func (x *ChunkReport) GetChunkDigest() *v1.ChunkDigest {
 	if x != nil {
-		return x.ChunkSize
+		return x.ChunkDigest
 	}
-	return 0
-}
-
-func (x *ChunkReport) GetChecksum() string {
-	if x != nil {
-		return x.Checksum
-	}
-	return ""
+	return nil
 }
 
 type RegisterStorageNodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Addr          string                 `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"`
+	FreeBytes     int64                  `protobuf:"varint,2,opt,name=free_bytes,json=freeBytes,proto3" json:"free_bytes,omitempty"`
+	UsedBytes     int64                  `protobuf:"varint,3,opt,name=used_bytes,json=usedBytes,proto3" json:"used_bytes,omitempty"`
+	ChunkCount    int32                  `protobuf:"varint,4,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -315,6 +303,27 @@ func (x *RegisterStorageNodeRequest) GetAddr() string {
 		return x.Addr
 	}
 	return ""
+}
+
+func (x *RegisterStorageNodeRequest) GetFreeBytes() int64 {
+	if x != nil {
+		return x.FreeBytes
+	}
+	return 0
+}
+
+func (x *RegisterStorageNodeRequest) GetUsedBytes() int64 {
+	if x != nil {
+		return x.UsedBytes
+	}
+	return 0
+}
+
+func (x *RegisterStorageNodeRequest) GetChunkCount() int32 {
+	if x != nil {
+		return x.ChunkCount
+	}
+	return 0
 }
 
 type RegisterStorageNodeResponse struct {
@@ -365,30 +374,33 @@ var File_master_v1_storage_proto protoreflect.FileDescriptor
 
 const file_master_v1_storage_proto_rawDesc = "" +
 	"\n" +
-	"\x17master/v1/storage.proto\x12\tmaster.v1\"I\n" +
-	"\x10HeartbeatRequest\x12\x1b\n" +
-	"\tserver_id\x18\x01 \x01(\tR\bserverId\x12\x18\n" +
-	"\aaddress\x18\x02 \x01(\tR\aaddress\"\x13\n" +
-	"\x11HeartbeatResponse\"\x90\x01\n" +
+	"\x17master/v1/storage.proto\x12\tmaster.v1\x1a\x15common/v1/types.proto\"A\n" +
+	"\x10HeartbeatRequest\x12-\n" +
+	"\bnode_ref\x18\x01 \x01(\v2\x12.common.v1.NodeRefR\anodeRef\"\x13\n" +
+	"\x11HeartbeatResponse\"_\n" +
 	"\x14ReportStorageRequest\x12\x17\n" +
-	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x12\n" +
-	"\x04addr\x18\x02 \x01(\tR\x04addr\x12.\n" +
-	"\x06chunks\x18\x03 \x03(\v2\x16.master.v1.ChunkReportR\x06chunks\x12\x1b\n" +
-	"\tfull_sync\x18\x04 \x01(\bR\bfullSync\"\x17\n" +
-	"\x15ReportStorageResponse\"c\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12.\n" +
+	"\x06chunks\x18\x02 \x03(\v2\x16.master.v1.ChunkReportR\x06chunks\"q\n" +
+	"\x15ReportStorageResponse\x12,\n" +
+	"\x12accepted_chunk_ids\x18\x01 \x03(\tR\x10acceptedChunkIds\x12*\n" +
+	"\x11unknown_chunk_ids\x18\x02 \x03(\tR\x0funknownChunkIds\"c\n" +
 	"\vChunkReport\x12\x19\n" +
-	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12\x1d\n" +
-	"\n" +
-	"chunk_size\x18\x02 \x01(\x03R\tchunkSize\x12\x1a\n" +
-	"\bchecksum\x18\x03 \x01(\tR\bchecksum\"0\n" +
+	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x129\n" +
+	"\fchunk_digest\x18\x02 \x01(\v2\x16.common.v1.ChunkDigestR\vchunkDigest\"\x8f\x01\n" +
 	"\x1aRegisterStorageNodeRequest\x12\x12\n" +
-	"\x04addr\x18\x01 \x01(\tR\x04addr\"6\n" +
+	"\x04addr\x18\x01 \x01(\tR\x04addr\x12\x1d\n" +
+	"\n" +
+	"free_bytes\x18\x02 \x01(\x03R\tfreeBytes\x12\x1d\n" +
+	"\n" +
+	"used_bytes\x18\x03 \x01(\x03R\tusedBytes\x12\x1f\n" +
+	"\vchunk_count\x18\x04 \x01(\x05R\n" +
+	"chunkCount\"6\n" +
 	"\x1bRegisterStorageNodeResponse\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId2\x98\x02\n" +
-	"\x14MasterStorageService\x12F\n" +
+	"\x14MasterStorageService\x12d\n" +
+	"\x13RegisterStorageNode\x12%.master.v1.RegisterStorageNodeRequest\x1a&.master.v1.RegisterStorageNodeResponse\x12F\n" +
 	"\tHeartbeat\x12\x1b.master.v1.HeartbeatRequest\x1a\x1c.master.v1.HeartbeatResponse\x12R\n" +
-	"\rReportStorage\x12\x1f.master.v1.ReportStorageRequest\x1a .master.v1.ReportStorageResponse\x12d\n" +
-	"\x13RegisterStorageNode\x12%.master.v1.RegisterStorageNodeRequest\x1a&.master.v1.RegisterStorageNodeResponseB Z\x1edos/gen/proto/master/v1;masterb\x06proto3"
+	"\rReportStorage\x12\x1f.master.v1.ReportStorageRequest\x1a .master.v1.ReportStorageResponseB Z\x1edos/gen/proto/master/v1;masterb\x06proto3"
 
 var (
 	file_master_v1_storage_proto_rawDescOnce sync.Once
@@ -411,20 +423,24 @@ var file_master_v1_storage_proto_goTypes = []any{
 	(*ChunkReport)(nil),                 // 4: master.v1.ChunkReport
 	(*RegisterStorageNodeRequest)(nil),  // 5: master.v1.RegisterStorageNodeRequest
 	(*RegisterStorageNodeResponse)(nil), // 6: master.v1.RegisterStorageNodeResponse
+	(*v1.NodeRef)(nil),                  // 7: common.v1.NodeRef
+	(*v1.ChunkDigest)(nil),              // 8: common.v1.ChunkDigest
 }
 var file_master_v1_storage_proto_depIdxs = []int32{
-	4, // 0: master.v1.ReportStorageRequest.chunks:type_name -> master.v1.ChunkReport
-	0, // 1: master.v1.MasterStorageService.Heartbeat:input_type -> master.v1.HeartbeatRequest
-	2, // 2: master.v1.MasterStorageService.ReportStorage:input_type -> master.v1.ReportStorageRequest
+	7, // 0: master.v1.HeartbeatRequest.node_ref:type_name -> common.v1.NodeRef
+	4, // 1: master.v1.ReportStorageRequest.chunks:type_name -> master.v1.ChunkReport
+	8, // 2: master.v1.ChunkReport.chunk_digest:type_name -> common.v1.ChunkDigest
 	5, // 3: master.v1.MasterStorageService.RegisterStorageNode:input_type -> master.v1.RegisterStorageNodeRequest
-	1, // 4: master.v1.MasterStorageService.Heartbeat:output_type -> master.v1.HeartbeatResponse
-	3, // 5: master.v1.MasterStorageService.ReportStorage:output_type -> master.v1.ReportStorageResponse
+	0, // 4: master.v1.MasterStorageService.Heartbeat:input_type -> master.v1.HeartbeatRequest
+	2, // 5: master.v1.MasterStorageService.ReportStorage:input_type -> master.v1.ReportStorageRequest
 	6, // 6: master.v1.MasterStorageService.RegisterStorageNode:output_type -> master.v1.RegisterStorageNodeResponse
-	4, // [4:7] is the sub-list for method output_type
-	1, // [1:4] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	1, // 7: master.v1.MasterStorageService.Heartbeat:output_type -> master.v1.HeartbeatResponse
+	3, // 8: master.v1.MasterStorageService.ReportStorage:output_type -> master.v1.ReportStorageResponse
+	6, // [6:9] is the sub-list for method output_type
+	3, // [3:6] is the sub-list for method input_type
+	3, // [3:3] is the sub-list for extension type_name
+	3, // [3:3] is the sub-list for extension extendee
+	0, // [0:3] is the sub-list for field type_name
 }
 
 func init() { file_master_v1_storage_proto_init() }
