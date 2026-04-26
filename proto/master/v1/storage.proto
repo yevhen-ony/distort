@@ -20,7 +20,7 @@ message HeartbeatResponse {}
 
 message ReportStorageRequest {
   string node_id = 1;
-  repeated ChunkReport chunks = 2;
+  repeated ChunkReport chunk_reports = 2;
 }
 
 message ReportStorageResponse {

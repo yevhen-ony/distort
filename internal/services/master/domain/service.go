@@ -73,8 +73,8 @@ func (s *MasterService) AllocateChunk(
 		return placement, fmt.Errorf("add chunk to object: %w", err)
 	}
 		
-	placement.ChunkID = chunkID	
-	placement.Nodes = toNodeAccess(nodes...) 
+	placement.ID = chunkID	
+	placement.Nodes = toNodeRef(nodes...) 
 	return placement, nil
 }
 
@@ -91,12 +91,12 @@ func (s *MasterService) GetObjectAccess(ctx context.Context, oid t.ObjectID) (m.
 			return m.ObjectAccess{}, fmt.Errorf("access chunk %s: %w", chunkID, err)
 		}
 		
-		chunkPlacement := t.ChunkPlacement{ChunkID: chunkID, ChunkKey: key}
+		chunkPlacement := t.ChunkPlacement{ID: chunkID, Key: key}
 		nodes, err := s.nodeReg.GetChunkNodes(ctx, chunkID)
 		if err != nil {
 			return m.ObjectAccess{}, fmt.Errorf("access %s chunk's nodes: %w", chunkID, err)
 		}
-		chunkPlacement.Nodes = toNodeAccess(nodes...)
+		chunkPlacement.Nodes = toNodeRef(nodes...)
 		
 		objectAccess.TotalSize += chunk.Digest.Size
 		objectAccess.Chunks = append(objectAccess.Chunks, chunkPlacement)
@@ -104,14 +104,13 @@ func (s *MasterService) GetObjectAccess(ctx context.Context, oid t.ObjectID) (m.
 	return objectAccess, nil
 }
 
-func (s *MasterService) RegisterStorageNode(ctx context.Context, report *t.NodeReport) (t.NodeID, error) {
-	nid, err := s.nodeReg.Register(ctx, report)
+func (s *MasterService) RegisterStorageNode(ctx context.Context, stats *t.NodeStats) (t.NodeID, error) {
+	nid, err := s.nodeReg.Register(ctx, stats)
 	if err != nil {
 		return "", fmt.Errorf("register node: %w", err)
 	}
 	return nid, err
 }
-
 
 
 

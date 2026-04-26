@@ -51,6 +51,7 @@ func (c *Chunk) Clone() *Chunk {
 
 type Node struct {
 	ID     t.NodeID
-	Report t.NodeReport
+	Stats t.NodeStats
 }
+
 

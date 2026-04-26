@@ -45,7 +45,7 @@ func (ct *StorageTransport) SendChunk(ctx context.Context, node t.NodeRef, chunk
 		return fmt.Errorf("open put stream: %w", err)
 	}
 	header := &pb.PutChunkHeader{
-		NodeId: string(node.NodeID),
+		NodeId: string(node.ID),
 		ChunkId: string(chunk.ID),
 		ChunkSize: int64(len(chunk.Data)),
 		Checksum: string(chunk.Checksum),
@@ -83,7 +83,7 @@ func (ct *StorageTransport) ReceiveChunk(ctx context.Context, node t.NodeRef, ch
 	defer cancel()
 
 	stream, err := client.GetChunk(ctx, &pb.GetChunkRequest{
-		NodeId: string(node.NodeID),
+		NodeId: string(node.ID),
 		ChunkId: string(chunkID), 
 	})
 	if err != nil {
@@ -131,7 +131,7 @@ func (ct *StorageTransport) sendData(stream pb.ChunkService_PutChunkClient, data
 	return nil
 }
 
-func (ct *StorageTransport) recvData(stream pb.ChunkService_GetChunkClient) ([]byte, t.Checksum, error) {
+func (ct *StorageTransport) recvData(stream pb.ChunkService_GetChunkClient) ([]byte, digest.Checksum, error) {
 	var buf bytes.Buffer
 	dg := digest.New()
 

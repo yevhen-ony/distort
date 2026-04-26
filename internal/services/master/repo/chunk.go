@@ -41,7 +41,7 @@ func newChunkID() t.ChunkID {
 	return t.ChunkID(hex.EncodeToString(b[:]))
 }
 
-func (r *InMemChunkRepo) SetDigest(_ context.Context, id t.ChunkID, digest *digest.Digest) error {
+func (r *InMemChunkRepo) SetDigest(_ context.Context, id t.ChunkID, digest digest.Digest) error {
 	chunk, ok := r.chunks[id]	
 	if !ok {
 		return m.ErrChunkNotFound 

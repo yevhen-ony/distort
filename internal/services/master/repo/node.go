@@ -32,7 +32,7 @@ func NewInMemNodeRegistry() *InMemNodeRegistry {
 	}
 }
 
-func (r *InMemNodeRegistry) Register(_ context.Context, report *t.NodeReport) (t.NodeID, error) {
+func (r *InMemNodeRegistry) Register(_ context.Context, report *t.NodeStats) (t.NodeID, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -43,7 +43,7 @@ func (r *InMemNodeRegistry) Register(_ context.Context, report *t.NodeReport) (t
 
 	nid := r.pickNodeID()
 	r.addrs[report.Addr] = nid 
-	r.nodes[nid] = &m.Node{ ID: nid, Report: *report }
+	r.nodes[nid] = &m.Node{ ID: nid, Stats: *report }
 	r.nodeChunks[nid] = map[t.ChunkID]struct{}{}
 	return nid, nil 
 }
@@ -59,7 +59,7 @@ func (r *InMemNodeRegistry) Unregister(_ context.Context, nid t.NodeID) error {
 
 	r.cleanupNodeRelations(nid)
 	delete(r.nodes, nid)
-	delete(r.addrs, node.Report.Addr)
+	delete(r.addrs, node.Stats.Addr)
 
 	return nil
 }
@@ -130,7 +130,7 @@ func (r *InMemNodeRegistry) GetCandidateNodes(
 	
 	result := make([]m.Node, 0, len(r.nodes))
 	for _, node := range r.nodes {
-		if node.Report.FreeBytes < query.MinFreeBytes {
+		if node.Stats.FreeBytes < query.MinFreeBytes {
 			continue
 		}
 		if query.ExcludeChunk != "" {

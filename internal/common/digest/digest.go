@@ -4,15 +4,16 @@ import (
 	"encoding/hex"
 	"hash"
 
-	t "dos/internal/common/types"
 )
 
+type Checksum string
+
 type Digest struct {
-	Checksum t.Checksum
+	Checksum Checksum
 	Size int64 
 }
 
-func (d Digest) Equal(o *Digest) bool {
+func (d Digest) Equal(o Digest) bool {
 	return d.Size == o.Size &&
 		d.Checksum == o.Checksum
 }
@@ -50,8 +51,8 @@ func (d *Digester) Digest() Digest {
 	}
 }
 
-func (d *Digester) Checksum() t.Checksum {
+func (d *Digester) Checksum() Checksum {
 	sum := d.hash.Sum(nil)
 	enc := hex.EncodeToString(sum)
-	return t.Checksum(enc)
+	return Checksum(enc)
 }	

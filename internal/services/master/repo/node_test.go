@@ -15,7 +15,7 @@ func TestInMemNodeRegistry_Register(test *testing.T) {
 	r := NewInMemNodeRegistry()
 	ctx := context.Background()
 	addr := "127.0.0.1:9001"
-	report := t.NodeReport{Addr: addr, FreeBytes: 100}
+	report := t.NodeStats{Addr: addr, FreeBytes: 100}
 
 	test.Run("Success", func(test *testing.T) {
 		nid, err := r.Register(ctx, &report)
@@ -24,7 +24,7 @@ func TestInMemNodeRegistry_Register(test *testing.T) {
 	})
 
 	test.Run("DuplicateAddr", func(test *testing.T) {
-		_, err := r.Register(ctx, &t.NodeReport{Addr: addr})
+		_, err := r.Register(ctx, &t.NodeStats{Addr: addr})
 		require.ErrorIs(test, err, m.ErrNodeAddrInUse)
 	})
 }
@@ -33,7 +33,7 @@ func TestInMemNodeRegistry_GetChunkNodes(test *testing.T) {
 	r := NewInMemNodeRegistry()
 	ctx := context.Background()
 	addr := "127.0.0.1:9001"
-	report := t.NodeReport{Addr: addr, FreeBytes: 100}
+	report := t.NodeStats{Addr: addr, FreeBytes: 100}
 
 	nid, err := r.Register(ctx, &report)
 	require.NoError(test, err)
@@ -55,7 +55,7 @@ func TestInMemNodeRegistry_Unregister(test *testing.T) {
 	r := NewInMemNodeRegistry()
 	ctx := context.Background()
 	addr := "127.0.0.1:9001"
-	report := t.NodeReport{Addr: addr, FreeBytes: 100}
+	report := t.NodeStats{Addr: addr, FreeBytes: 100}
 
 	nid, err := r.Register(ctx, &report)
 	require.NoError(test, err)
@@ -82,11 +82,11 @@ func TestInMemNodeRegistry_GetCandidateNodes(test *testing.T) {
 	r := NewInMemNodeRegistry()
 	ctx := context.Background()
 
-	n1, err := r.Register(ctx, &t.NodeReport{Addr: "127.0.0.1:9001", FreeBytes: 100})
+	n1, err := r.Register(ctx, &t.NodeStats{Addr: "127.0.0.1:9001", FreeBytes: 100})
 	require.NoError(test, err)
-	_, err = r.Register(ctx, &t.NodeReport{Addr: "127.0.0.1:9002", FreeBytes: 50})
+	_, err = r.Register(ctx, &t.NodeStats{Addr: "127.0.0.1:9002", FreeBytes: 50})
 	require.NoError(test, err)
-	_, err = r.Register(ctx, &t.NodeReport{Addr: "127.0.0.1:9003", FreeBytes: 10})
+	_, err = r.Register(ctx, &t.NodeStats{Addr: "127.0.0.1:9003", FreeBytes: 10})
 	require.NoError(test, err)
 
 	// to test 'ExcludeChunk'
@@ -100,6 +100,6 @@ func TestInMemNodeRegistry_GetCandidateNodes(test *testing.T) {
 	require.NoError(test, err)
 
 	assert.Len(test, nodes, 1)
-	assert.Equal(test, int64(50), nodes[0].Report.FreeBytes)
+	assert.Equal(test, int64(50), nodes[0].Stats.FreeBytes)
 }
 

@@ -48,7 +48,7 @@ func validateChunkID(chunkID t.ChunkID) error {
 }
 
 func validateNodeAccess(node *t.NodeRef) error {
-	if node.NodeID == "" {
+	if node.ID == "" {
 		return fmt.Errorf("empty target id: %w", ErrInputInvalid)
 	}
 	if node.Addr == "" {

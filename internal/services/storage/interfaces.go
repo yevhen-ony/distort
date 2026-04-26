@@ -16,7 +16,7 @@ type ChunkWriter interface {
 
 type ChunkStorage interface {
 	Get(chunkID t.ChunkID) (io.ReadCloser, error)
-	GetMeta(chunkID t.ChunkID) (*ChunkMeta, error)
+	GetMeta(chunkID t.ChunkID) (*t.ChunkMeta, error)
 	NewWriter() (ChunkWriter, error)
 	GetAllIDs() ([]t.ChunkID, error)
 }

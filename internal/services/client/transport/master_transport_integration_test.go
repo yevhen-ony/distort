@@ -75,7 +75,7 @@ func TestMasterTransport_HappyPath_AgainstMasterServer(test *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	nodeID, err := deps.nodeReg.Register(ctx, &t.NodeReport{
+	nodeID, err := deps.nodeReg.Register(ctx, &t.NodeStats{
 		Addr:      "127.0.0.1:9001",
 		FreeBytes: 1024,
 	})
@@ -95,28 +95,28 @@ func TestMasterTransport_HappyPath_AgainstMasterServer(test *testing.T) {
 		ChunkSize: chunkSize,
 	})
 	require.NoError(test, err)
-	require.NotEmpty(test, placement.ChunkID)
+	require.NotEmpty(test, placement.ID)
 	require.Len(test, placement.Nodes, 1)
 
-	assert.Equal(test, nodeID, placement.Nodes[0].NodeID)
+	assert.Equal(test, nodeID, placement.Nodes[0].ID)
 	assert.Equal(test, "127.0.0.1:9001", placement.Nodes[0].Addr)
 
 	// Seed metadata needed by GetObjectAccess.
 	require.NoError(test, deps.chunkRepo.SetDigest(
 		ctx,
-		t.ChunkID(placement.ChunkID),
-		&digest.Digest{Size: chunkSize, Checksum: "checksum-1"},
+		t.ChunkID(placement.ID),
+		digest.Digest{Size: chunkSize, Checksum: "checksum-1"},
 	))
-	require.NoError(test, deps.nodeReg.AttachChunk(ctx, nodeID, t.ChunkID(placement.ChunkID)))
+	require.NoError(test, deps.nodeReg.AttachChunk(ctx, nodeID, t.ChunkID(placement.ID)))
 
 	obj, err := mt.GetObjectAccess(ctx, objectID)
 	require.NoError(test, err)
 
-	assert.Equal(test, objectID, obj.ObjectID)
+	assert.Equal(test, objectID, obj.ID)
 	assert.Equal(test, chunkSize, obj.TotalSize)
 	require.Len(test, obj.Chunks, 1)
-	assert.Equal(test, placement.ChunkID, obj.Chunks[0].ChunkID)
-	assert.Equal(test, chunkKey, obj.Chunks[0].ChunkKey)
+	assert.Equal(test, placement.ID, obj.Chunks[0].ID)
+	assert.Equal(test, chunkKey, obj.Chunks[0].Key)
 	require.Len(test, obj.Chunks[0].Nodes, 1)
-	assert.Equal(test, nodeID, obj.Chunks[0].Nodes[0].NodeID)
+	assert.Equal(test, nodeID, obj.Chunks[0].Nodes[0].ID)
 }

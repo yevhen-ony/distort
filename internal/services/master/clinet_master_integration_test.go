@@ -91,7 +91,7 @@ func TestClientServer_CreateAllocateGetObjectAccess_HappyPath(test *testing.T) {
 	})
 	require.NoError(test, err)
 
-	nid, err := deps.nodeReg.Register(ctx, &t.NodeReport{
+	nid, err := deps.nodeReg.Register(ctx, &t.NodeStats{
 		Addr:      "127.0.0.1:9001",
 		FreeBytes: 1024,
 	})
@@ -110,7 +110,7 @@ func TestClientServer_CreateAllocateGetObjectAccess_HappyPath(test *testing.T) {
 	require.NoError(test, deps.chunkRepo.SetDigest(
 		ctx,
 		t.ChunkID(alloc.GetChunkId()),
-		&digest.Digest{Size: chunkSize, Checksum: "checksum-1"},
+		digest.Digest{Size: chunkSize, Checksum: "checksum-1"},
 	))
 	require.NoError(test, deps.nodeReg.AttachChunk(
 		ctx,

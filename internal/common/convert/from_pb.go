@@ -15,7 +15,7 @@ type ChunkPlacementLike interface {
 
 func NodeRefFromPB(pbNode *pb.NodeRef) *t.NodeRef {
 	return &t.NodeRef{
-		NodeID: t.NodeID(pbNode.GetNodeId()),
+		ID: t.NodeID(pbNode.GetNodeId()),
 		Addr: pbNode.GetAddr(),
 	}
 }
@@ -27,8 +27,8 @@ func ChunkPlacementFromPB(pbObj ChunkPlacementLike) *t.ChunkPlacement {
 		nodes = append(nodes, *NodeRefFromPB(pbNode))
 	}
 	return &t.ChunkPlacement{
-		ChunkID: t.ChunkID(pbObj.GetChunkId()),
-		ChunkKey: t.ChunkKey(pbObj.GetChunkKey()),
+		ID: t.ChunkID(pbObj.GetChunkId()),
+		Key: t.ChunkKey(pbObj.GetChunkKey()),
 		Nodes: nodes,
 	}
 }
@@ -46,21 +46,21 @@ func ObjectAccessFromPB(pbObj ObjectAccessLike) *t.ObjectAccess {
 		chunks = append(chunks, *ChunkPlacementFromPB(pbChunk))
 	}
 	return &t.ObjectAccess{
-		ObjectID: t.ObjectID(pbObj.GetObjectId()),
+		ID: t.ObjectID(pbObj.GetObjectId()),
 		TotalSize: pbObj.GetTotalSize(),
 		Chunks: chunks,
 	}
 }
 
-type NodeReportLike interface {
+type NodeStatsLike interface {
 	GetAddr() string
 	GetFreeBytes() int64
 	GetUsedBytes() int64
 	GetChunkCount() int32
 }
 
-func NodeReportFromPB(pbObj NodeReportLike) *t.NodeReport {
-	return &t.NodeReport{
+func NodeStatsFromPB(pbObj NodeStatsLike) *t.NodeStats {
+	return &t.NodeStats{
 		Addr: pbObj.GetAddr(),
 		FreeBytes: pbObj.GetFreeBytes(),
 		UsedBytes: pbObj.GetUsedBytes(),

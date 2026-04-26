@@ -9,9 +9,10 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
+	t "dos/internal/common/types"
+	"dos/internal/common/digest"
 	s "dos/internal/services/storage"
 	"dos/internal/services/storage/store"
-	"dos/internal/common/digest"
 )
 
 func checksumHex(data []byte) string {
@@ -19,12 +20,12 @@ func checksumHex(data []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func newTestService(t *testing.T) (*Service, *store.FSChunkStorage) {
-  	t.Helper()
+func newTestService(test *testing.T) (*Service, *store.FSChunkStorage) {
+  	test.Helper()
 
-	cfg := &store.ChunkStorageConfig{RootDir: t.TempDir()}
+	cfg := &store.ChunkStorageConfig{RootDir: test.TempDir()}
   	store, err := store.New(cfg)
-  	require.NoError(t, err)
+  	require.NoError(test, err)
 
   	svc := &Service{
   		store:   store,
@@ -33,72 +34,70 @@ func newTestService(t *testing.T) (*Service, *store.FSChunkStorage) {
   	return svc, store
 }
 
-func TestService_CommitUploadSession(t *testing.T) {
-	svc, st := newTestService(t)
+func TestService_CommitUploadSession(test *testing.T) {
+	svc, st := newTestService(test)
 	payload := []byte("hello")
 	dg := digest.New()
 	dg.Write(payload)
 
-	info := &s.ChunkInfo{
+	desc := &t.ChunkDesc{
 		ID: "chunk-1",
 		Digest: dg.Digest(),
 	}
 
-	t.Run("HappyPath", func(t *testing.T) {
-		writer, err := svc.StartUploadSession(info)
-		require.NoError(t, err)
+	test.Run("HappyPath", func(test *testing.T) {
+		writer, err := svc.StartUploadSession(desc)
+		require.NoError(test, err)
 
 		_, err = writer.Write(payload)
-		require.NoError(t, err)
+		require.NoError(test, err)
 
-		require.NoError(t, svc.CommitUploadSession(writer, info))
+		require.NoError(test, svc.CommitUploadSession(writer, desc))
 
-		meta, ok := svc.catalog[info.ID]
-		require.True(t, ok)
-		assert.Equal(t, info.Digest.Size, meta.Digest.Size)
-		assert.Equal(t, info.Digest.Checksum, meta.Digest.Checksum)
+		meta, ok := svc.catalog[desc.ID]
+		require.True(test, ok)
+		assert.Equal(test, desc.Digest.Size, meta.Digest.Size)
+		assert.Equal(test, desc.Digest.Checksum, meta.Digest.Checksum)
 
-		r, err := st.Get(info.ID)
-		require.NoError(t, err)
+		r, err := st.Get(desc.ID)
+		require.NoError(test, err)
 		defer r.Close()
 
 		got, err := io.ReadAll(r)
-		require.NoError(t, err)
-		assert.Equal(t, payload, got)
+		require.NoError(test, err)
+		assert.Equal(test, payload, got)
 	})
 
-  	t.Run("CollitionOnStart", func(t *testing.T) {
-		_, err := svc.StartUploadSession(info)
-		require.Error(t, err, "chunk id collision")
+  	test.Run("CollitionOnStart", func(test *testing.T) {
+		_, err := svc.StartUploadSession(desc)
+		require.Error(test, err, "chunk id collision")
 	})
 
-  	t.Run("CollitionOnCommit", func(t *testing.T) {
+  	test.Run("CollitionOnCommit", func(test *testing.T) {
 		payload := []byte("hello")
 		dg := digest.New()
 		dg.Write(payload)
 
-		info := &s.ChunkInfo{
+		desc := &t.ChunkDesc{
 			ID: "chunk-2",
 			Digest: dg.Digest(),
 		}
 
-		session, err := svc.StartUploadSession(info)
-		require.NoError(t, err)
+		session, err := svc.StartUploadSession(desc)
+		require.NoError(test, err)
 
 		_, err = session.Write(payload)
-		require.NoError(t, err)
+		require.NoError(test, err)
 
   		// Simulate race: ID becomes taken after session start but before commit.
-		svc.catalog[info.ID] = s.ChunkMeta{
-			Digest: digest.Digest{Size: int64(999), Checksum: "existing"},
-		}
+		svc.catalog[desc.ID] = t.ChunkMeta{}
 
-		err = svc.CommitUploadSession(session, info)
-		require.Error(t, err)
+		err = svc.CommitUploadSession(session, desc)
+		require.Error(test, err)
 
 		// Existing entry must stay untouched.
-		meta := svc.catalog[info.ID]
-		assert.Equal(t, int64(999), meta.Digest.Size)
-		assert.Equal(t, "existing", string(meta.Digest.Checksum))
+		meta := svc.catalog[desc.ID]
+		assert.Equal(test, int64(0), meta.Digest.Size)
+		assert.Equal(test, "", string(meta.Digest.Checksum))
 	})
 }

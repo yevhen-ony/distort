@@ -1,4 +1,4 @@
-package core 
+package core
 
 import (
 	"errors"
@@ -6,8 +6,8 @@ import (
 	"log/slog"
 	"sync"
 
-	s "dos/internal/services/storage"
 	t "dos/internal/common/types"
+	s "dos/internal/services/storage"
 )
 
 type Service struct {
@@ -17,7 +17,7 @@ type Service struct {
 }
 
 func New(store s.ChunkStorage) (*Service, error) {
-	catalog := map[t.ChunkID]s.ChunkMeta{}
+	catalog := map[t.ChunkID]t.ChunkMeta{}
 
 	if store == nil {
 		return nil, errors.New("store must not be nil") 
@@ -49,9 +49,9 @@ func (svc *Service) GetServerID() string {
 	return "service-id-123"
 }
 
-func (svc *Service) StartUploadSession(info *s.ChunkInfo) (s.ChunkWriter, error) {
+func (svc *Service) StartUploadSession(desc *t.ChunkDesc) (s.ChunkWriter, error) {
 	svc.mu.RLock()
-	_, ok := svc.catalog[info.ID]
+	_, ok := svc.catalog[desc.ID]
 	svc.mu.RUnlock()
 
 	if ok {
@@ -64,24 +64,27 @@ func (svc *Service) StartUploadSession(info *s.ChunkInfo) (s.ChunkWriter, error)
 	return w, nil
 }
 
-func (svc *Service) CommitUploadSession(w s.ChunkWriter, info *s.ChunkInfo) error {
-	meta := s.ChunkMeta{Digest: w.Digest()} 
-	if !info.Digest.Equal(&meta.Digest) {
+func (svc *Service) CommitUploadSession(w s.ChunkWriter, desc *t.ChunkDesc) error {
+	if !desc.Digest.Equal(w.Digest()) {
 		return fmt.Errorf("session validation: digest missmatch") 
 	}
 
 	svc.mu.Lock()	
 	defer svc.mu.Unlock()
 
-	if _, ok := svc.catalog[info.ID]; ok {
+	if _, ok := svc.catalog[desc.ID]; ok {
 		return s.ErrChunkConflict
 	}
-	if ts, err := w.Commit(info.ID); err != nil {
+
+	ts, err := w.Commit(desc.ID)
+	if err != nil {
 		return fmt.Errorf("session commit: %w", err)
-	} else {
-		meta.ModifiedAt = ts
+	} 
+	meta := &t.ChunkMeta{
+		ChunkDesc: *desc,
+		ModifiedAt: ts, 
 	}
-	svc.catalog[info.ID] = meta
+	svc.catalog[meta.ID] = *meta
 	return nil
 }
 
@@ -98,21 +101,9 @@ func (svc *Service) GetChunk(chunkID t.ChunkID) (*s.Chunk, error) {
 		return nil, fmt.Errorf("get from store: %w", err)
 	}
 	chunk := &s.Chunk{
-		ID: chunkID,
-		Meta: &meta,
-		Reader: reader,
+		ChunkMeta: meta,
+		Data: reader,
 	}
 	return chunk, nil
-}
-
-func (svc *Service) validate(want, got s.ChunkDigest) error {
-	// skip if not set
-	if want.Checksum != "" && want.Checksum != got.Checksum {
-		return fmt.Errorf("checksum: %w", s.ErrDigestInvalid)
-	}
-	if want.Size != got.Size {
-		return fmt.Errorf("size: %w", s.ErrDigestInvalid)
-	}
-	return nil
 }
 

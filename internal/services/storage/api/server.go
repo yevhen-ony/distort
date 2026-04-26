@@ -38,15 +38,15 @@ func (srv *Server) PutChunk(stream pb.ChunkService_PutChunkServer) (err error) {
 		return err
 	}
 
-	chunkInfo := &s.ChunkInfo{
+	chunkDesc := &t.ChunkDesc{
 		ID: t.ChunkID(header.GetChunkId()),
 		Digest: digest.Digest{
 			Size:     header.GetChunkSize(),
-			Checksum: t.Checksum(header.GetChecksum()),
+			Checksum: digest.Checksum(header.GetChecksum()),
 		},
 	}
 
-	session, err := srv.service.StartUploadSession(chunkInfo)
+	session, err := srv.service.StartUploadSession(chunkDesc)
 	if err != nil {
 		return fmt.Errorf("start upload session: %w", err)
 	}
@@ -66,7 +66,7 @@ func (srv *Server) PutChunk(stream pb.ChunkService_PutChunkServer) (err error) {
 		}
 	}
 
-	if err := srv.service.CommitUploadSession(session, chunkInfo); err != nil {
+	if err := srv.service.CommitUploadSession(session, chunkDesc); err != nil {
 		return fmt.Errorf("commit upload session: %w", err)
 	}
 	if err := stream.SendAndClose(&pb.PutChunkResponse{}); err != nil {
@@ -86,8 +86,8 @@ func (srv *Server) GetChunk(req *pb.GetChunkRequest, stream pb.ChunkService_GetC
 	rsp := &pb.GetChunkResponse{
 		Header: &pb.GetChunkHeader{
 			ChunkId:   string(chunk.ID),
-			ChunkSize: chunk.Meta.Digest.Size,
-			Checksum:  string(chunk.Meta.Digest.Checksum),
+			ChunkSize: chunk.Digest.Size,
+			Checksum:  string(chunk.Digest.Checksum),
 		},
 	}
 	if err = stream.Send(rsp); err != nil {
@@ -96,7 +96,7 @@ func (srv *Server) GetChunk(req *pb.GetChunkRequest, stream pb.ChunkService_GetC
 
 	buf := make([]byte, srv.config.FrameSize)
 	for {
-		n, readErr := chunk.Reader.Read(buf)
+		n, readErr := chunk.Data.Read(buf)
 		if n > 0 {
 			rsp := &pb.GetChunkResponse{Data: buf[:n]}
 			if sendErr := stream.Send(rsp); sendErr != nil {

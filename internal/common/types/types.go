@@ -1,32 +1,46 @@
 package types
 
+import (
+	"dos/internal/common/digest"
+	"time"
+)
+
 type ObjectID string
 type ChunkID string
 type ChunkKey string
 type NodeID string
 
-type Checksum string
 
 type NodeRef struct {
-	NodeID NodeID
+	ID NodeID
 	Addr   string
 }
 
 type ChunkPlacement struct {
-	ChunkID  ChunkID
-	ChunkKey ChunkKey
+	ID  ChunkID
+	Key ChunkKey
 	Nodes    []NodeRef
 }
 
 type ObjectAccess struct {
-	ObjectID  ObjectID
+	ID  ObjectID
 	TotalSize int64
 	Chunks    []ChunkPlacement
 }
 
-type NodeReport struct {
+type NodeStats struct {
 	Addr       string
 	FreeBytes  int64
 	UsedBytes  int64
 	ChunkCount int
+}
+
+type ChunkDesc struct {
+	ID ChunkID
+	Digest digest.Digest
+}
+
+type ChunkMeta struct {
+	ChunkDesc
+	ModifiedAt time.Time
 }
