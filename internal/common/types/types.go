@@ -29,7 +29,6 @@ type ObjectAccess struct {
 }
 
 type NodeStats struct {
-	Addr       string
 	FreeBytes  int64
 	UsedBytes  int64
 	ChunkCount int

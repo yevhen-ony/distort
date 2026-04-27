@@ -4,8 +4,8 @@ import (
 	"dos/internal/common/digest"
 	t "dos/internal/common/types"
 	"maps"
+	"time"
 )
-
 
 type Object struct {
 	ID     t.ObjectID
@@ -50,8 +50,7 @@ func (c *Chunk) Clone() *Chunk {
 }
 
 type Node struct {
-	ID     t.NodeID
-	Stats t.NodeStats
+	t.NodeRef
+	Stats      t.NodeStats
+	LastSeenAt time.Time
 }
-
-

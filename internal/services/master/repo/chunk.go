@@ -20,22 +20,24 @@ func MakeInMemChunkRepo() *InMemChunkRepo {
 	}
 }
 
-func (r *InMemChunkRepo) Create(_ context.Context) (t.ChunkID, error) {
-	id := r.pickChunkID()
+func (r *InMemChunkRepo) Create(_ context.Context, id t.ChunkID) error {
+	if _, ok := r.chunks[id]; ok {
+		return m.ErrChunkExists
+	}
 	r.chunks[id] = &m.Chunk{ ID: id }
-	return id, nil
+	return nil
 }
 
-func (r *InMemChunkRepo) pickChunkID() t.ChunkID {
+func (r *InMemChunkRepo) NewChunkID() t.ChunkID {
 	for {
-		id := newChunkID()
+		id := genChunkID()
 		if _, ok := r.chunks[id]; !ok {
 			return id	
 		}
 	}
 }
 
-func newChunkID() t.ChunkID {
+func genChunkID() t.ChunkID {
 	var b [16]byte
 	rand.Read(b[:])
 	return t.ChunkID(hex.EncodeToString(b[:]))

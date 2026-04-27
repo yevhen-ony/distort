@@ -54,7 +54,6 @@ func ObjectAccessFromPB(pbObj ObjectAccessLike) *t.ObjectAccess {
 }
 
 type NodeStatsLike interface {
-	GetAddr() string
 	GetFreeBytes() int64
 	GetUsedBytes() int64
 	GetChunkCount() int32
@@ -62,7 +61,6 @@ type NodeStatsLike interface {
 
 func NodeStatsFromPB(pbObj NodeStatsLike) *t.NodeStats {
 	return &t.NodeStats{
-		Addr: pbObj.GetAddr(),
 		FreeBytes: pbObj.GetFreeBytes(),
 		UsedBytes: pbObj.GetUsedBytes(),
 		ChunkCount: int(pbObj.GetChunkCount()),

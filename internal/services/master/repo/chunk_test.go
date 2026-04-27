@@ -17,7 +17,8 @@ func TestInMemChunkRepo_Create(test *testing.T) {
 	ctx := context.Background()
 
 	test.Run("Success", func(test *testing.T) {
-		id, err := r.Create(ctx)
+		id := r.NewChunkID()
+		err := r.Create(ctx, id)
 		require.NoError(test, err)
 		require.NotEmpty(test, id)
 	})
@@ -26,7 +27,8 @@ func TestInMemChunkRepo_Create(test *testing.T) {
 func TestInMemChunkRepo_Get(test *testing.T) {
 	r := MakeInMemChunkRepo()
 	ctx := context.Background()
-	id, err := r.Create(ctx)
+	id := r.NewChunkID()
+	err := r.Create(ctx, id)
 	require.NoError(test, err)
 	
 	test.Run("NotFound", func(test *testing.T) {
@@ -54,7 +56,8 @@ func TestInMemChunkRepo_SetDigest(test *testing.T) {
 	r := MakeInMemChunkRepo()
 	ctx := context.Background()
 
-	id, err := r.Create(ctx)
+	id := r.NewChunkID()
+	err := r.Create(ctx, id)
 	require.NoError(test, err)
 
 	dgt := digest.Digest{Size: 5, Checksum: "abc"}

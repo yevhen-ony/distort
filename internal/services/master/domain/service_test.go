@@ -42,11 +42,11 @@ func TestMasterService_AllocateChunk_HappyPath(test *testing.T) {
 	require.NoError(test, svc.CreateObject(ctx, t.ObjectID("obj-1")))
 
 	// Prepare at least one candidate node.
-	_, err := svc.nodeReg.Register(ctx, &t.NodeStats{
-		Addr:      "127.0.0.1:9001",
-		FreeBytes: 1024,
-	})
+	nref, err := svc.nodeReg.Register(ctx, "127.0.0.1:9001")
 	require.NoError(test, err)
+	err = svc.nodeReg.UpdateStats(ctx, nref.ID, t.NodeStats{FreeBytes: 1024})
+	require.NoError(test, err)
+
 
 	placement, err := svc.AllocateChunk(ctx, &m.AllocateChunkCommand{
 		ObjectID:  t.ObjectID("obj-1"),

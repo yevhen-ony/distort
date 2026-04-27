@@ -19,22 +19,33 @@ type ObjectRepo interface {
 }
 
 type ChunkRepo interface {
-	Create(context.Context) (t.ChunkID, error)
+	NewChunkID() t.ChunkID
+	Create(context.Context, t.ChunkID) error
 	Get(context.Context, t.ChunkID) (Chunk, error)
 	SetDigest(context.Context, t.ChunkID, digest.Digest) error
 }
 
+type NodeQuery struct {
+	MinFreeBytes int64
+	ExcludeIDs []t.NodeID
+}
+
 type NodeRegistry interface {
-	Register(context.Context, *t.NodeStats) (t.NodeID, error)
-	Unregister(context.Context, t.NodeID) error
+	Register(context.Context, string) (t.NodeRef, error)
+	Unregister(context.Context, t.NodeID) 
 
-	GetNode(context.Context, t.NodeID) (Node, error)
+	Get(context.Context, t.NodeID) (Node, error)
+	GetMany(context.Context, ...t.NodeID) []Node
+	Find(context.Context, NodeQuery) ([]Node, error)
+	UpdateStats(context.Context, t.NodeID, t.NodeStats) error
+}
 
-	AttachChunk(context.Context, t.NodeID, t.ChunkID) error
-	GetNodeChunks(context.Context, t.NodeID) ([]t.ChunkID, error)
-	GetChunkNodes(context.Context, t.ChunkID) ([]Node, error)
+type ChunkNodeIndex interface {
+	AttachChunk(ctx context.Context, nodeID t.NodeID, chunkID t.ChunkID)
+	DetachNode(ctx context.Context, nodeID t.NodeID)
 
-	GetCandidateNodes(context.Context, *CandidateNodesQuery) ([]Node, error)
+	GetChunkNodes(ctx context.Context, chunkID t.ChunkID) []t.NodeID
+	GetNodeChunks(ctx context.Context, nodeID t.NodeID) []t.ChunkID
 }
 
 type CandidateNodesQuery struct {
