@@ -1,26 +1,51 @@
 package core
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
+	"time"
 
 	t "dos/internal/common/types"
 	s "dos/internal/services/storage"
 )
 
-type Service struct {
-	store   s.ChunkStorage
-	catalog s.ChunkCatalog
-	mu      sync.RWMutex
+type StorageServiceConfig struct{
+	AdvertiseAddr string `yaml:"advertise_addr"`
+	MaxStorageBytes int64 `yaml:"max_storage_bytes"`
 }
 
-func New(store s.ChunkStorage) (*Service, error) {
+type Service struct {
+	catalog s.ChunkCatalog
+	totalBytes int64
+	mu      sync.RWMutex
+
+	store   s.ChunkStorage
+	master s.MasterTransport
+	
+	config StorageServiceConfig
+	nodeID t.NodeID
+
+}
+
+func New(store s.ChunkStorage, master s.MasterTransport, config StorageServiceConfig) (*Service, error) {
 	catalog := map[t.ChunkID]t.ChunkMeta{}
 
 	if store == nil {
-		return nil, errors.New("store must not be nil") 
+		return nil, errors.New("missing store") 
+	}
+	if master == nil {
+		return nil, errors.New("missing master transport")
+	}
+	
+	ctx, cancel := context.WithTimeout(context.Background(), 15 * time.Second)
+	defer cancel()
+
+	nodeID, err := master.RegisterStorageNode(ctx, config.AdvertiseAddr)
+	if err != nil {
+		return nil, fmt.Errorf("register node: %w", err)
 	}
 
 	ids, err := store.GetAllIDs()
@@ -28,6 +53,7 @@ func New(store s.ChunkStorage) (*Service, error) {
 		return nil, fmt.Errorf("get all ids: %w", err)
 	}
 
+	var totalBytes int64
 	for _, id := range ids {
 		meta, err := store.GetMeta(id)
 		if err != nil {
@@ -35,18 +61,20 @@ func New(store s.ChunkStorage) (*Service, error) {
 			continue
 		}
 		catalog[id] = *meta
+		totalBytes += meta.Digest.Size
 	}
 
 	service := &Service{
-		store: store,
 		catalog: catalog,
+		totalBytes: totalBytes,
+
+		store: store,
+		master: master,
+
+		config: config,
+		nodeID: nodeID,
 	}
 	return service, nil
-}
-
-
-func (svc *Service) GetServerID() string {
-	return "service-id-123"
 }
 
 func (svc *Service) StartUploadSession(desc *t.ChunkDesc) (s.ChunkWriter, error) {
@@ -106,4 +134,46 @@ func (svc *Service) GetChunk(chunkID t.ChunkID) (*s.Chunk, error) {
 	}
 	return chunk, nil
 }
+
+func (svc *Service) Heartbeat(ctx context.Context) {
+	svc.mu.RLock()
+	stats := t.NodeStats{
+		FreeBytes: svc.config.MaxStorageBytes - svc.totalBytes,	
+		UsedBytes: svc.totalBytes,
+		ChunkCount: len(svc.catalog),
+	}
+	svc.mu.RUnlock()
+
+	res, err := svc.master.Heartbeat(ctx, svc.nodeID, stats)
+	if err != nil {
+		slog.Error("heartbeat failed", "error", err)
+	}
+
+	if res.NodeUnknown {
+		slog.Warn("request new node id")
+		if err := svc.Register(ctx); err != nil {
+			slog.Error(err.Error())
+		}
+	}
+}
+
+func (svc *Service) Register(ctx context.Context) error {
+	svc.mu.Lock()
+	defer svc.mu.Unlock()
+
+	nodeID, err := svc.master.RegisterStorageNode(ctx, svc.config.AdvertiseAddr)
+	if err != nil {
+		return fmt.Errorf("register storage node: %w", err) 
+	}
+	svc.nodeID = nodeID
+	return nil
+}
+
+func (svc *Service) ValidateNodeID(nodeID t.NodeID) error {
+	if nodeID != svc.nodeID {
+		return s.ErrInvalidNodeID
+	}
+	return nil
+}
+
 

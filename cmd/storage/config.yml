@@ -8,3 +8,10 @@ listen:
   host: "0.0.0.0"
   port: 10001
 
+transport:
+  master_addr: localhost:10010 
+
+service:
+  advertise_addr: localhost:10001
+  max_storage_bytes: 1073741824 
+

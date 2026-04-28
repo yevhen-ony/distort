@@ -31,3 +31,40 @@ func validateGetObjectAccessRequest(req *pb.GetObjectAccessRequest) error {
 	}
 	return nil
 }
+
+func validateRegisterStorageNodeRequest(req *pb.RegisterStorageNodeRequest) error {
+	if req.GetAddr() == "" {
+		return status.Error(codes.InvalidArgument, "missing addr")
+	}
+	return nil
+}
+
+func validateHeartbeatRequest(req *pb.HeartbeatRequest) error {
+	if req.GetNodeId() == "" {
+		return status.Error(codes.InvalidArgument, "missing node id")
+	}
+	if req.GetStats() == nil {
+		return status.Error(codes.InvalidArgument, "missing stats")
+	}
+	return nil
+}
+
+func validateReportStorageRequest(req *pb.ReportStorageRequest) error {
+	if req.GetNodeId() == "" {
+		return status.Error(codes.InvalidArgument, "missing node id")
+	}
+	if len(req.GetChunkReports()) == 0 {
+		return status.Error(codes.InvalidArgument, "missing reports")
+	}
+	
+	for _, report := range req.GetChunkReports() {
+		if report.GetChunkId() == "" {
+			return status.Error(codes.InvalidArgument, "missing chunk id")
+		}
+		if report.GetDigest() == nil {
+			return status.Error(codes.InvalidArgument, "missing digest")
+		}
+	}
+	return nil
+}
+

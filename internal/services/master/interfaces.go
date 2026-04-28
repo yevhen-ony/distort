@@ -6,10 +6,15 @@ import (
 	t "dos/internal/common/types"
 )
 
+
 type Service interface {
 	CreateObject(context.Context, t.ObjectID) error
 	AllocateChunk(context.Context, *AllocateChunkCommand) (t.ChunkPlacement, error)
 	GetObjectAccess(context.Context, t.ObjectID) (ObjectAccess, error)
+
+	RegisterStorageNode(context.Context, string) (t.NodeRef, error)
+	ReportChunkStorage(context.Context, t.NodeID, []t.ChunkDesc) ([]t.ChunkStorageReject, error)
+	Heartbeat(context.Context, t.NodeID, t.NodeStats) error
 }
 
 type ObjectRepo interface {

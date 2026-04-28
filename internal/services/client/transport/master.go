@@ -5,20 +5,21 @@ import (
 	"errors"
 	"fmt"
 
-	pb "dos/gen/proto/master/v1"
-	t "dos/internal/common/types"
-	"dos/internal/common/convert"
 	
+	pb "dos/gen/proto/master/v1"
+	"dos/internal/common/connect"
+	"dos/internal/common/convert"
+	t "dos/internal/common/types"
 )
 
 type MasterTransport struct {
-	conn   *ConnectionPool
+	conn   *connect.ConnCache
 	config *MasterTransportConfig
 }
 
-func NewMasterTransport(conn *ConnectionPool, config *MasterTransportConfig) (*MasterTransport, error) {
+func NewMasterTransport(conn *connect.ConnCache, config *MasterTransportConfig) (*MasterTransport, error) {
 	if conn == nil {
-		return nil, errors.New("missing connection pool")
+		return nil, errors.New("missing conn")
 	}
 	if config == nil {
 		return nil, errors.New("missing config")

@@ -7,7 +7,9 @@ import (
 	"fmt"
 	"io"
 
-	pb "dos/gen/proto/chunk/v1"
+	pb "dos/gen/proto/common/v1"
+	spb "dos/gen/proto/storage/v1"
+	"dos/internal/common/connect"
 	"dos/internal/common/convert"
 	"dos/internal/common/digest"
 	t "dos/internal/common/types"
@@ -15,11 +17,11 @@ import (
 )
 
 type StorageTransport struct {
-	conn *ConnectionPool
+	conn *connect.ConnCache
 	config *StorageTransportConfig
 } 
 
-func NewChunkTransport(conn *ConnectionPool, config *StorageTransportConfig) (*StorageTransport, error) {
+func NewChunkTransport(conn *connect.ConnCache, config *StorageTransportConfig) (*StorageTransport, error) {
 	if conn == nil {
 		return nil, errors.New("missing connection pool")
 	}
@@ -39,20 +41,22 @@ func (ct *StorageTransport) SendChunk(ctx context.Context, node t.NodeRef, chunk
 		return fmt.Errorf("get conn: %w", err) 
 	}
 
-	client := pb.NewChunkServiceClient(conn)
+	client := spb.NewChunkServiceClient(conn)
 
 	stream, err := client.PutChunk(ctx)
 	if err != nil {
 		return fmt.Errorf("open put stream: %w", err)
 	}
-	header := &pb.PutChunkHeader{
+	header := &spb.PutChunkHeader{
 		NodeId: string(node.ID),
 		ChunkId: string(chunk.ID),
-		ChunkSize: int64(chunk.Digest.Size),
-		Checksum: string(chunk.Digest.Checksum),
+		Digest: &pb.Digest{
+			Size: int64(chunk.Digest.Size),
+			Checksum: string(chunk.Digest.Checksum),
+		},
 	}
 
-	err = stream.Send(&pb.PutChunkRequest{Header: header})
+	err = stream.Send(&spb.PutChunkRequest{Header: header})
 	if err != nil {
 		return fmt.Errorf("send header: %w", err)
 	}
@@ -78,12 +82,12 @@ func (ct *StorageTransport) ReceiveChunk(ctx context.Context, node t.NodeRef, ch
 		return c.Chunk{}, fmt.Errorf("get conn: %w", err)
 	}
 	
-	client := pb.NewChunkServiceClient(conn)
+	client := spb.NewChunkServiceClient(conn)
 
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	stream, err := client.GetChunk(ctx, &pb.GetChunkRequest{
+	stream, err := client.GetChunk(ctx, &spb.GetChunkRequest{
 		NodeId: string(node.ID),
 		ChunkId: string(chunkID), 
 	})
@@ -123,14 +127,14 @@ func (ct *StorageTransport) ReceiveChunk(ctx context.Context, node t.NodeRef, ch
 	return chunk, nil 
 }
 
-func (ct *StorageTransport) sendData(stream pb.ChunkService_PutChunkClient, data []byte) error {
+func (ct *StorageTransport) sendData(stream spb.ChunkService_PutChunkClient, data []byte) error {
 	for len(data) > 0 {
 		n := ct.config.FrameSize
 		if len(data) < n {
 			n = len(data)
 		}
 
-		err := stream.Send(&pb.PutChunkRequest{Data: data[:n]})
+		err := stream.Send(&spb.PutChunkRequest{Data: data[:n]})
 		if err != nil {
 			return err 
 		}
@@ -139,7 +143,7 @@ func (ct *StorageTransport) sendData(stream pb.ChunkService_PutChunkClient, data
 	return nil
 }
 
-func (ct *StorageTransport) recvData(stream pb.ChunkService_GetChunkClient) ([]byte, digest.Digest, error) {
+func (ct *StorageTransport) recvData(stream spb.ChunkService_GetChunkClient) ([]byte, digest.Digest, error) {
 	var buf bytes.Buffer
 	dg := digest.New()
 

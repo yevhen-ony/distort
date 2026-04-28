@@ -4,9 +4,10 @@
 // 	protoc        v6.33.6
 // source: storage/v1/chunk.proto
 
-package chunk
+package storage
 
 import (
+	v1 "dos/gen/proto/common/v1"
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"
 	protoimpl "google.golang.org/protobuf/runtime/protoimpl"
 	reflect "reflect"
@@ -77,8 +78,7 @@ type PutChunkHeader struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	ChunkId       string                 `protobuf:"bytes,2,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
-	ChunkSize     int64                  `protobuf:"varint,3,opt,name=chunk_size,json=chunkSize,proto3" json:"chunk_size,omitempty"`
-	Checksum      string                 `protobuf:"bytes,4,opt,name=checksum,proto3" json:"checksum,omitempty"`
+	Digest        *v1.Digest             `protobuf:"bytes,3,opt,name=digest,proto3" json:"digest,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -127,18 +127,11 @@ func (x *PutChunkHeader) GetChunkId() string {
 	return ""
 }
 
-func (x *PutChunkHeader) GetChunkSize() int64 {
+func (x *PutChunkHeader) GetDigest() *v1.Digest {
 	if x != nil {
-		return x.ChunkSize
+		return x.Digest
 	}
-	return 0
-}
-
-func (x *PutChunkHeader) GetChecksum() string {
-	if x != nil {
-		return x.Checksum
-	}
-	return ""
+	return nil
 }
 
 type PutChunkResponse struct {
@@ -284,8 +277,7 @@ func (x *GetChunkResponse) GetData() []byte {
 type GetChunkHeader struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
-	ChunkSize     int64                  `protobuf:"varint,2,opt,name=chunk_size,json=chunkSize,proto3" json:"chunk_size,omitempty"`
-	Checksum      string                 `protobuf:"bytes,3,opt,name=checksum,proto3" json:"checksum,omitempty"`
+	Digest        *v1.Digest             `protobuf:"bytes,2,opt,name=digest,proto3" json:"digest,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -327,49 +319,38 @@ func (x *GetChunkHeader) GetChunkId() string {
 	return ""
 }
 
-func (x *GetChunkHeader) GetChunkSize() int64 {
+func (x *GetChunkHeader) GetDigest() *v1.Digest {
 	if x != nil {
-		return x.ChunkSize
+		return x.Digest
 	}
-	return 0
-}
-
-func (x *GetChunkHeader) GetChecksum() string {
-	if x != nil {
-		return x.Checksum
-	}
-	return ""
+	return nil
 }
 
 var File_storage_v1_chunk_proto protoreflect.FileDescriptor
 
 const file_storage_v1_chunk_proto_rawDesc = "" +
 	"\n" +
-	"\x16storage/v1/chunk.proto\x12\bchunk.v1\"W\n" +
+	"\x16storage/v1/chunk.proto\x12\bchunk.v1\x1a\x15common/v1/types.proto\"W\n" +
 	"\x0fPutChunkRequest\x120\n" +
 	"\x06header\x18\x01 \x01(\v2\x18.chunk.v1.PutChunkHeaderR\x06header\x12\x12\n" +
-	"\x04data\x18\x02 \x01(\fR\x04data\"\x7f\n" +
+	"\x04data\x18\x02 \x01(\fR\x04data\"o\n" +
 	"\x0ePutChunkHeader\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x19\n" +
-	"\bchunk_id\x18\x02 \x01(\tR\achunkId\x12\x1d\n" +
-	"\n" +
-	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\x12\x1a\n" +
-	"\bchecksum\x18\x04 \x01(\tR\bchecksum\"\x12\n" +
+	"\bchunk_id\x18\x02 \x01(\tR\achunkId\x12)\n" +
+	"\x06digest\x18\x03 \x01(\v2\x11.common.v1.DigestR\x06digest\"\x12\n" +
 	"\x10PutChunkResponse\"E\n" +
 	"\x0fGetChunkRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x19\n" +
 	"\bchunk_id\x18\x02 \x01(\tR\achunkId\"X\n" +
 	"\x10GetChunkResponse\x120\n" +
 	"\x06header\x18\x01 \x01(\v2\x18.chunk.v1.GetChunkHeaderR\x06header\x12\x12\n" +
-	"\x04data\x18\x02 \x01(\fR\x04data\"f\n" +
+	"\x04data\x18\x02 \x01(\fR\x04data\"V\n" +
 	"\x0eGetChunkHeader\x12\x19\n" +
-	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12\x1d\n" +
-	"\n" +
-	"chunk_size\x18\x02 \x01(\x03R\tchunkSize\x12\x1a\n" +
-	"\bchecksum\x18\x03 \x01(\tR\bchecksum2\x98\x01\n" +
+	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12)\n" +
+	"\x06digest\x18\x02 \x01(\v2\x11.common.v1.DigestR\x06digest2\x98\x01\n" +
 	"\fChunkService\x12C\n" +
 	"\bPutChunk\x12\x19.chunk.v1.PutChunkRequest\x1a\x1a.chunk.v1.PutChunkResponse(\x01\x12C\n" +
-	"\bGetChunk\x12\x19.chunk.v1.GetChunkRequest\x1a\x1a.chunk.v1.GetChunkResponse0\x01B\x1eZ\x1cdos/gen/proto/chunk/v1;chunkb\x06proto3"
+	"\bGetChunk\x12\x19.chunk.v1.GetChunkRequest\x1a\x1a.chunk.v1.GetChunkResponse0\x01B\"Z dos/gen/proto/storage/v1;storageb\x06proto3"
 
 var (
 	file_storage_v1_chunk_proto_rawDescOnce sync.Once
@@ -391,19 +372,22 @@ var file_storage_v1_chunk_proto_goTypes = []any{
 	(*GetChunkRequest)(nil),  // 3: chunk.v1.GetChunkRequest
 	(*GetChunkResponse)(nil), // 4: chunk.v1.GetChunkResponse
 	(*GetChunkHeader)(nil),   // 5: chunk.v1.GetChunkHeader
+	(*v1.Digest)(nil),        // 6: common.v1.Digest
 }
 var file_storage_v1_chunk_proto_depIdxs = []int32{
 	1, // 0: chunk.v1.PutChunkRequest.header:type_name -> chunk.v1.PutChunkHeader
-	5, // 1: chunk.v1.GetChunkResponse.header:type_name -> chunk.v1.GetChunkHeader
-	0, // 2: chunk.v1.ChunkService.PutChunk:input_type -> chunk.v1.PutChunkRequest
-	3, // 3: chunk.v1.ChunkService.GetChunk:input_type -> chunk.v1.GetChunkRequest
-	2, // 4: chunk.v1.ChunkService.PutChunk:output_type -> chunk.v1.PutChunkResponse
-	4, // 5: chunk.v1.ChunkService.GetChunk:output_type -> chunk.v1.GetChunkResponse
-	4, // [4:6] is the sub-list for method output_type
-	2, // [2:4] is the sub-list for method input_type
-	2, // [2:2] is the sub-list for extension type_name
-	2, // [2:2] is the sub-list for extension extendee
-	0, // [0:2] is the sub-list for field type_name
+	6, // 1: chunk.v1.PutChunkHeader.digest:type_name -> common.v1.Digest
+	5, // 2: chunk.v1.GetChunkResponse.header:type_name -> chunk.v1.GetChunkHeader
+	6, // 3: chunk.v1.GetChunkHeader.digest:type_name -> common.v1.Digest
+	0, // 4: chunk.v1.ChunkService.PutChunk:input_type -> chunk.v1.PutChunkRequest
+	3, // 5: chunk.v1.ChunkService.GetChunk:input_type -> chunk.v1.GetChunkRequest
+	2, // 6: chunk.v1.ChunkService.PutChunk:output_type -> chunk.v1.PutChunkResponse
+	4, // 7: chunk.v1.ChunkService.GetChunk:output_type -> chunk.v1.GetChunkResponse
+	6, // [6:8] is the sub-list for method output_type
+	4, // [4:6] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_storage_v1_chunk_proto_init() }

@@ -43,3 +43,8 @@ type ChunkMeta struct {
 	ChunkDesc
 	ModifiedAt time.Time
 }
+
+type ChunkStorageReject struct {
+	ChunkID ChunkID
+	Reason	string
+}

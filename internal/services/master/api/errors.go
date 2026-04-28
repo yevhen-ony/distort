@@ -1,10 +1,13 @@
 package api
 
 import (
+	"errors"
 	"log/slog"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+
+	m "dos/internal/services/master"
 )
 
 var (
@@ -21,6 +24,13 @@ func toStatus(err error) error {
 		return err
 	}
 
-	return status.Error(codes.Internal, err.Error())
+	switch {
+	case errors.Is(err, m.ErrNodeNotFound):
+		return status.Error(codes.NotFound, err.Error())
+	default:
+		return status.Error(codes.Internal, err.Error())
+	}
+	
+
 }
 

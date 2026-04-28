@@ -24,7 +24,8 @@ const (
 
 type HeartbeatRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	NodeRef       *v1.NodeRef            `protobuf:"bytes,1,opt,name=node_ref,json=nodeRef,proto3" json:"node_ref,omitempty"`
+	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
+	Stats         *v1.NodeStats          `protobuf:"bytes,2,opt,name=stats,proto3" json:"stats,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -59,9 +60,16 @@ func (*HeartbeatRequest) Descriptor() ([]byte, []int) {
 	return file_master_v1_storage_proto_rawDescGZIP(), []int{0}
 }
 
-func (x *HeartbeatRequest) GetNodeRef() *v1.NodeRef {
+func (x *HeartbeatRequest) GetNodeId() string {
 	if x != nil {
-		return x.NodeRef
+		return x.NodeId
+	}
+	return ""
+}
+
+func (x *HeartbeatRequest) GetStats() *v1.NodeStats {
+	if x != nil {
+		return x.Stats
 	}
 	return nil
 }
@@ -105,7 +113,7 @@ func (*HeartbeatResponse) Descriptor() ([]byte, []int) {
 type ReportStorageRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	Chunks        []*ChunkReport         `protobuf:"bytes,2,rep,name=chunks,proto3" json:"chunks,omitempty"`
+	ChunkReports  []*ChunkDesc           `protobuf:"bytes,2,rep,name=chunk_reports,json=chunkReports,proto3" json:"chunk_reports,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -147,19 +155,18 @@ func (x *ReportStorageRequest) GetNodeId() string {
 	return ""
 }
 
-func (x *ReportStorageRequest) GetChunks() []*ChunkReport {
+func (x *ReportStorageRequest) GetChunkReports() []*ChunkDesc {
 	if x != nil {
-		return x.Chunks
+		return x.ChunkReports
 	}
 	return nil
 }
 
 type ReportStorageResponse struct {
-	state            protoimpl.MessageState `protogen:"open.v1"`
-	AcceptedChunkIds []string               `protobuf:"bytes,1,rep,name=accepted_chunk_ids,json=acceptedChunkIds,proto3" json:"accepted_chunk_ids,omitempty"`
-	UnknownChunkIds  []string               `protobuf:"bytes,2,rep,name=unknown_chunk_ids,json=unknownChunkIds,proto3" json:"unknown_chunk_ids,omitempty"`
-	unknownFields    protoimpl.UnknownFields
-	sizeCache        protoimpl.SizeCache
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Rejects       []*StorageReject       `protobuf:"bytes,1,rep,name=rejects,proto3" json:"rejects,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
 }
 
 func (x *ReportStorageResponse) Reset() {
@@ -192,42 +199,35 @@ func (*ReportStorageResponse) Descriptor() ([]byte, []int) {
 	return file_master_v1_storage_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ReportStorageResponse) GetAcceptedChunkIds() []string {
+func (x *ReportStorageResponse) GetRejects() []*StorageReject {
 	if x != nil {
-		return x.AcceptedChunkIds
+		return x.Rejects
 	}
 	return nil
 }
 
-func (x *ReportStorageResponse) GetUnknownChunkIds() []string {
-	if x != nil {
-		return x.UnknownChunkIds
-	}
-	return nil
-}
-
-type ChunkReport struct {
+type StorageReject struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
-	ChunkDigest   *v1.ChunkDigest        `protobuf:"bytes,2,opt,name=chunk_digest,json=chunkDigest,proto3" json:"chunk_digest,omitempty"`
+	Reason        string                 `protobuf:"bytes,2,opt,name=reason,proto3" json:"reason,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
-func (x *ChunkReport) Reset() {
-	*x = ChunkReport{}
+func (x *StorageReject) Reset() {
+	*x = StorageReject{}
 	mi := &file_master_v1_storage_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
 
-func (x *ChunkReport) String() string {
+func (x *StorageReject) String() string {
 	return protoimpl.X.MessageStringOf(x)
 }
 
-func (*ChunkReport) ProtoMessage() {}
+func (*StorageReject) ProtoMessage() {}
 
-func (x *ChunkReport) ProtoReflect() protoreflect.Message {
+func (x *StorageReject) ProtoReflect() protoreflect.Message {
 	mi := &file_master_v1_storage_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
@@ -239,21 +239,73 @@ func (x *ChunkReport) ProtoReflect() protoreflect.Message {
 	return mi.MessageOf(x)
 }
 
-// Deprecated: Use ChunkReport.ProtoReflect.Descriptor instead.
-func (*ChunkReport) Descriptor() ([]byte, []int) {
+// Deprecated: Use StorageReject.ProtoReflect.Descriptor instead.
+func (*StorageReject) Descriptor() ([]byte, []int) {
 	return file_master_v1_storage_proto_rawDescGZIP(), []int{4}
 }
 
-func (x *ChunkReport) GetChunkId() string {
+func (x *StorageReject) GetChunkId() string {
 	if x != nil {
 		return x.ChunkId
 	}
 	return ""
 }
 
-func (x *ChunkReport) GetChunkDigest() *v1.ChunkDigest {
+func (x *StorageReject) GetReason() string {
 	if x != nil {
-		return x.ChunkDigest
+		return x.Reason
+	}
+	return ""
+}
+
+type ChunkDesc struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
+	Digest        *v1.Digest             `protobuf:"bytes,2,opt,name=digest,proto3" json:"digest,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChunkDesc) Reset() {
+	*x = ChunkDesc{}
+	mi := &file_master_v1_storage_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChunkDesc) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChunkDesc) ProtoMessage() {}
+
+func (x *ChunkDesc) ProtoReflect() protoreflect.Message {
+	mi := &file_master_v1_storage_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChunkDesc.ProtoReflect.Descriptor instead.
+func (*ChunkDesc) Descriptor() ([]byte, []int) {
+	return file_master_v1_storage_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ChunkDesc) GetChunkId() string {
+	if x != nil {
+		return x.ChunkId
+	}
+	return ""
+}
+
+func (x *ChunkDesc) GetDigest() *v1.Digest {
+	if x != nil {
+		return x.Digest
 	}
 	return nil
 }
@@ -261,16 +313,13 @@ func (x *ChunkReport) GetChunkDigest() *v1.ChunkDigest {
 type RegisterStorageNodeRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Addr          string                 `protobuf:"bytes,1,opt,name=addr,proto3" json:"addr,omitempty"`
-	FreeBytes     int64                  `protobuf:"varint,2,opt,name=free_bytes,json=freeBytes,proto3" json:"free_bytes,omitempty"`
-	UsedBytes     int64                  `protobuf:"varint,3,opt,name=used_bytes,json=usedBytes,proto3" json:"used_bytes,omitempty"`
-	ChunkCount    int32                  `protobuf:"varint,4,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
 
 func (x *RegisterStorageNodeRequest) Reset() {
 	*x = RegisterStorageNodeRequest{}
-	mi := &file_master_v1_storage_proto_msgTypes[5]
+	mi := &file_master_v1_storage_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -282,7 +331,7 @@ func (x *RegisterStorageNodeRequest) String() string {
 func (*RegisterStorageNodeRequest) ProtoMessage() {}
 
 func (x *RegisterStorageNodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_storage_proto_msgTypes[5]
+	mi := &file_master_v1_storage_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -295,7 +344,7 @@ func (x *RegisterStorageNodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterStorageNodeRequest.ProtoReflect.Descriptor instead.
 func (*RegisterStorageNodeRequest) Descriptor() ([]byte, []int) {
-	return file_master_v1_storage_proto_rawDescGZIP(), []int{5}
+	return file_master_v1_storage_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *RegisterStorageNodeRequest) GetAddr() string {
@@ -303,27 +352,6 @@ func (x *RegisterStorageNodeRequest) GetAddr() string {
 		return x.Addr
 	}
 	return ""
-}
-
-func (x *RegisterStorageNodeRequest) GetFreeBytes() int64 {
-	if x != nil {
-		return x.FreeBytes
-	}
-	return 0
-}
-
-func (x *RegisterStorageNodeRequest) GetUsedBytes() int64 {
-	if x != nil {
-		return x.UsedBytes
-	}
-	return 0
-}
-
-func (x *RegisterStorageNodeRequest) GetChunkCount() int32 {
-	if x != nil {
-		return x.ChunkCount
-	}
-	return 0
 }
 
 type RegisterStorageNodeResponse struct {
@@ -335,7 +363,7 @@ type RegisterStorageNodeResponse struct {
 
 func (x *RegisterStorageNodeResponse) Reset() {
 	*x = RegisterStorageNodeResponse{}
-	mi := &file_master_v1_storage_proto_msgTypes[6]
+	mi := &file_master_v1_storage_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -347,7 +375,7 @@ func (x *RegisterStorageNodeResponse) String() string {
 func (*RegisterStorageNodeResponse) ProtoMessage() {}
 
 func (x *RegisterStorageNodeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_storage_proto_msgTypes[6]
+	mi := &file_master_v1_storage_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -360,7 +388,7 @@ func (x *RegisterStorageNodeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterStorageNodeResponse.ProtoReflect.Descriptor instead.
 func (*RegisterStorageNodeResponse) Descriptor() ([]byte, []int) {
-	return file_master_v1_storage_proto_rawDescGZIP(), []int{6}
+	return file_master_v1_storage_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *RegisterStorageNodeResponse) GetNodeId() string {
@@ -374,27 +402,24 @@ var File_master_v1_storage_proto protoreflect.FileDescriptor
 
 const file_master_v1_storage_proto_rawDesc = "" +
 	"\n" +
-	"\x17master/v1/storage.proto\x12\tmaster.v1\x1a\x15common/v1/types.proto\"A\n" +
-	"\x10HeartbeatRequest\x12-\n" +
-	"\bnode_ref\x18\x01 \x01(\v2\x12.common.v1.NodeRefR\anodeRef\"\x13\n" +
-	"\x11HeartbeatResponse\"_\n" +
+	"\x17master/v1/storage.proto\x12\tmaster.v1\x1a\x15common/v1/types.proto\"W\n" +
+	"\x10HeartbeatRequest\x12\x17\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12*\n" +
+	"\x05stats\x18\x02 \x01(\v2\x14.common.v1.NodeStatsR\x05stats\"\x13\n" +
+	"\x11HeartbeatResponse\"j\n" +
 	"\x14ReportStorageRequest\x12\x17\n" +
-	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12.\n" +
-	"\x06chunks\x18\x02 \x03(\v2\x16.master.v1.ChunkReportR\x06chunks\"q\n" +
-	"\x15ReportStorageResponse\x12,\n" +
-	"\x12accepted_chunk_ids\x18\x01 \x03(\tR\x10acceptedChunkIds\x12*\n" +
-	"\x11unknown_chunk_ids\x18\x02 \x03(\tR\x0funknownChunkIds\"c\n" +
-	"\vChunkReport\x12\x19\n" +
-	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x129\n" +
-	"\fchunk_digest\x18\x02 \x01(\v2\x16.common.v1.ChunkDigestR\vchunkDigest\"\x8f\x01\n" +
+	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x129\n" +
+	"\rchunk_reports\x18\x02 \x03(\v2\x14.master.v1.ChunkDescR\fchunkReports\"K\n" +
+	"\x15ReportStorageResponse\x122\n" +
+	"\arejects\x18\x01 \x03(\v2\x18.master.v1.StorageRejectR\arejects\"B\n" +
+	"\rStorageReject\x12\x19\n" +
+	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12\x16\n" +
+	"\x06reason\x18\x02 \x01(\tR\x06reason\"Q\n" +
+	"\tChunkDesc\x12\x19\n" +
+	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12)\n" +
+	"\x06digest\x18\x02 \x01(\v2\x11.common.v1.DigestR\x06digest\"0\n" +
 	"\x1aRegisterStorageNodeRequest\x12\x12\n" +
-	"\x04addr\x18\x01 \x01(\tR\x04addr\x12\x1d\n" +
-	"\n" +
-	"free_bytes\x18\x02 \x01(\x03R\tfreeBytes\x12\x1d\n" +
-	"\n" +
-	"used_bytes\x18\x03 \x01(\x03R\tusedBytes\x12\x1f\n" +
-	"\vchunk_count\x18\x04 \x01(\x05R\n" +
-	"chunkCount\"6\n" +
+	"\x04addr\x18\x01 \x01(\tR\x04addr\"6\n" +
 	"\x1bRegisterStorageNodeResponse\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId2\x98\x02\n" +
 	"\x14MasterStorageService\x12d\n" +
@@ -414,33 +439,35 @@ func file_master_v1_storage_proto_rawDescGZIP() []byte {
 	return file_master_v1_storage_proto_rawDescData
 }
 
-var file_master_v1_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
+var file_master_v1_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_master_v1_storage_proto_goTypes = []any{
 	(*HeartbeatRequest)(nil),            // 0: master.v1.HeartbeatRequest
 	(*HeartbeatResponse)(nil),           // 1: master.v1.HeartbeatResponse
 	(*ReportStorageRequest)(nil),        // 2: master.v1.ReportStorageRequest
 	(*ReportStorageResponse)(nil),       // 3: master.v1.ReportStorageResponse
-	(*ChunkReport)(nil),                 // 4: master.v1.ChunkReport
-	(*RegisterStorageNodeRequest)(nil),  // 5: master.v1.RegisterStorageNodeRequest
-	(*RegisterStorageNodeResponse)(nil), // 6: master.v1.RegisterStorageNodeResponse
-	(*v1.NodeRef)(nil),                  // 7: common.v1.NodeRef
-	(*v1.ChunkDigest)(nil),              // 8: common.v1.ChunkDigest
+	(*StorageReject)(nil),               // 4: master.v1.StorageReject
+	(*ChunkDesc)(nil),                   // 5: master.v1.ChunkDesc
+	(*RegisterStorageNodeRequest)(nil),  // 6: master.v1.RegisterStorageNodeRequest
+	(*RegisterStorageNodeResponse)(nil), // 7: master.v1.RegisterStorageNodeResponse
+	(*v1.NodeStats)(nil),                // 8: common.v1.NodeStats
+	(*v1.Digest)(nil),                   // 9: common.v1.Digest
 }
 var file_master_v1_storage_proto_depIdxs = []int32{
-	7, // 0: master.v1.HeartbeatRequest.node_ref:type_name -> common.v1.NodeRef
-	4, // 1: master.v1.ReportStorageRequest.chunks:type_name -> master.v1.ChunkReport
-	8, // 2: master.v1.ChunkReport.chunk_digest:type_name -> common.v1.ChunkDigest
-	5, // 3: master.v1.MasterStorageService.RegisterStorageNode:input_type -> master.v1.RegisterStorageNodeRequest
-	0, // 4: master.v1.MasterStorageService.Heartbeat:input_type -> master.v1.HeartbeatRequest
-	2, // 5: master.v1.MasterStorageService.ReportStorage:input_type -> master.v1.ReportStorageRequest
-	6, // 6: master.v1.MasterStorageService.RegisterStorageNode:output_type -> master.v1.RegisterStorageNodeResponse
-	1, // 7: master.v1.MasterStorageService.Heartbeat:output_type -> master.v1.HeartbeatResponse
-	3, // 8: master.v1.MasterStorageService.ReportStorage:output_type -> master.v1.ReportStorageResponse
-	6, // [6:9] is the sub-list for method output_type
-	3, // [3:6] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	8, // 0: master.v1.HeartbeatRequest.stats:type_name -> common.v1.NodeStats
+	5, // 1: master.v1.ReportStorageRequest.chunk_reports:type_name -> master.v1.ChunkDesc
+	4, // 2: master.v1.ReportStorageResponse.rejects:type_name -> master.v1.StorageReject
+	9, // 3: master.v1.ChunkDesc.digest:type_name -> common.v1.Digest
+	6, // 4: master.v1.MasterStorageService.RegisterStorageNode:input_type -> master.v1.RegisterStorageNodeRequest
+	0, // 5: master.v1.MasterStorageService.Heartbeat:input_type -> master.v1.HeartbeatRequest
+	2, // 6: master.v1.MasterStorageService.ReportStorage:input_type -> master.v1.ReportStorageRequest
+	7, // 7: master.v1.MasterStorageService.RegisterStorageNode:output_type -> master.v1.RegisterStorageNodeResponse
+	1, // 8: master.v1.MasterStorageService.Heartbeat:output_type -> master.v1.HeartbeatResponse
+	3, // 9: master.v1.MasterStorageService.ReportStorage:output_type -> master.v1.ReportStorageResponse
+	7, // [7:10] is the sub-list for method output_type
+	4, // [4:7] is the sub-list for method input_type
+	4, // [4:4] is the sub-list for extension type_name
+	4, // [4:4] is the sub-list for extension extendee
+	0, // [0:4] is the sub-list for field type_name
 }
 
 func init() { file_master_v1_storage_proto_init() }
@@ -454,7 +481,7 @@ func file_master_v1_storage_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_master_v1_storage_proto_rawDesc), len(file_master_v1_storage_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   7,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

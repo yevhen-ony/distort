@@ -2,7 +2,9 @@ syntax = "proto3";
 
 package chunk.v1;
 
-option go_package = "dos/gen/proto/chunk/v1;chunk";
+import "common/v1/types.proto";
+
+option go_package = "dos/gen/proto/storage/v1;storage";
 
 service ChunkService {
   rpc PutChunk(stream PutChunkRequest) returns (PutChunkResponse);
@@ -17,8 +19,7 @@ message PutChunkRequest {
 message PutChunkHeader {
   string node_id = 1;
   string chunk_id = 2;
-  int64 chunk_size = 3;
-  string checksum = 4;
+  common.v1.Digest digest = 3;
 }
 
 message PutChunkResponse {}
@@ -35,6 +36,5 @@ message GetChunkResponse {
 
 message GetChunkHeader {
   string chunk_id = 1;
-  int64 chunk_size = 2;
-  string checksum = 3;
+  common.v1.Digest digest = 2;
 }

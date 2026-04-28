@@ -62,7 +62,7 @@ func (s *ClientServer) AllocateChunk(
 
 	rsp = &pb.AllocateChunkResponse{
 		ChunkId: string(chunks.ID),
-		Nodes:   convert.NodeRefToPB(chunks.Nodes),
+		Nodes:   convert.NodeRefToPB(chunks.Nodes...),
 	}
 
 	return rsp, nil
@@ -87,7 +87,7 @@ func (s *ClientServer) GetObjectAccess(
 	rsp = &pb.GetObjectAccessResponse{
 		ObjectId:  string(object.ObjectID),
 		TotalSize: object.TotalSize,
-		Chunks:    convert.ChunkPlacementToPB(object.Chunks),
+		Chunks:    convert.ChunkPlacementToPB(object.Chunks...),
 	}
 	return rsp, nil
 }

@@ -1,4 +1,4 @@
-package transport
+package connect 
 
 import (
 	"errors"
@@ -9,18 +9,18 @@ import (
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-type ConnectionPool struct {
+type ConnCache struct {
 	mu    sync.Mutex
 	conns map[string]*grpc.ClientConn
 }
 
-func NewConnectionPool() *ConnectionPool {
-	return &ConnectionPool{
+func NewConnCache() *ConnCache {
+	return &ConnCache{
 		conns: map[string]*grpc.ClientConn{},
 	}
 }
 
-func (cp *ConnectionPool) Get(addr string) (*grpc.ClientConn, error) {
+func (cp *ConnCache) Get(addr string) (*grpc.ClientConn, error) {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 	
@@ -36,7 +36,7 @@ func (cp *ConnectionPool) Get(addr string) (*grpc.ClientConn, error) {
 	return conn, nil
 }
 
-func (cp *ConnectionPool) Close() error {
+func (cp *ConnCache) Close() error {
 	cp.mu.Lock()
 	defer cp.mu.Unlock()
 

@@ -22,15 +22,15 @@ func toStatus(err error) error {
 	}
 
 	switch {
-	case errors.Is(err, s.ErrDigestInvalid):
+	case errors.Is(err, s.ErrInvalidDigest):
 		return status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, s.ErrChunkNotFound):
 		return status.Error(codes.NotFound,  err.Error())
 	case errors.Is(err, s.ErrChunkConflict):
 		return status.Error(codes.AlreadyExists, err.Error())
-	case errors.Is(err, s.ErrHeaderInvalid):
+	case errors.Is(err, s.ErrInvalidHeader):
 		return status.Error(codes.InvalidArgument, err.Error())
-	case errors.Is(err, s.ErrDataInvalid):
+	case errors.Is(err, s.ErrInvalidData):
 		return status.Error(codes.InvalidArgument, err.Error())
 	default:
 		return status.Error(codes.Internal, "internal error")

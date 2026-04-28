@@ -13,33 +13,37 @@ service MasterStorageService {
 }
 
 message HeartbeatRequest {
-  common.v1.NodeRef node_ref = 1;
+  string node_id = 1;
+  common.v1.NodeStats stats = 2;
 }
 
-message HeartbeatResponse {}
+message HeartbeatResponse {
+}
 
 message ReportStorageRequest {
   string node_id = 1;
-  repeated ChunkReport chunk_reports = 2;
+  repeated ChunkDesc chunk_reports = 2;
 }
 
 message ReportStorageResponse {
-  repeated string accepted_chunk_ids = 1;
-  repeated string unknown_chunk_ids = 2;
+  repeated StorageReject rejects = 1;
 }
 
-message ChunkReport {
+message StorageReject {
   string chunk_id = 1;
-  common.v1.ChunkDigest chunk_digest = 2;
+  string reason = 2;
+}
+
+message ChunkDesc {
+  string chunk_id = 1;
+  common.v1.Digest digest = 2;
 }
 
 message RegisterStorageNodeRequest {
   string addr = 1;
-  int64 free_bytes = 2;
-  int64 used_bytes = 3;
-  int32 chunk_count = 4;
 }
 
 message RegisterStorageNodeResponse {
   string node_id = 1;
 }
+

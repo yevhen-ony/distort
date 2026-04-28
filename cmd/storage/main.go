@@ -9,10 +9,12 @@ import (
 	"os"
 	"os/signal"
 
-	pb "dos/gen/proto/chunk/v1"
+	pb "dos/gen/proto/storage/v1"
+	"dos/internal/common/connect"
 	"dos/internal/services/storage/api"
 	"dos/internal/services/storage/core"
 	"dos/internal/services/storage/store"
+	"dos/internal/services/storage/transport"
 
 	"google.golang.org/grpc"
 )
@@ -21,24 +23,32 @@ func main() {
 	configPath := flag.String("config", "config.yaml", "path to config file")
 	flag.Parse()
 
-	cfg, err := loadConfig(*configPath)
+	config, err := loadConfig(*configPath)
 	if err != nil {
 		panic(fmt.Errorf("load config: %w", err))
 	}
 
-	stg, err := store.New(&cfg.Store)
+	storage, err := store.New(&config.Store)
 	if err != nil {
 		panic(fmt.Errorf("construct storage: %w", err))
 	}
 
-	app, err := core.New(stg)
+	conn := connect.NewConnCache()
+	defer conn.Close()
+
+	master, err := transport.NewMasterTransport(conn, &config.Master)
+	if err != nil {
+		panic(fmt.Errorf("construct master transport: %w", err))
+	}
+
+	app, err := core.New(storage, master, config.Service)
 	if err != nil {
 		panic(fmt.Errorf("construct service: %w", err))
 	}
 
-	srv := api.New(app, &cfg.API)
+	srv := api.New(app, &config.API)
 
-	if err := runGRPCServer(srv, &cfg.Listen); err != nil {
+	if err := runGRPCServer(srv, &config.Listen); err != nil {
 		panic(err)
 	}
 }

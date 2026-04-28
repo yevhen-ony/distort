@@ -2,7 +2,9 @@ package main
 
 import (
 	"dos/internal/services/storage/api"
+	"dos/internal/services/storage/core"
 	"dos/internal/services/storage/store"
+	"dos/internal/services/storage/transport"
 	"fmt"
 	"strings"
 
@@ -13,9 +15,11 @@ import (
 )
 
 type Config struct {
-	API    api.ServerConfig         `yaml:"api"`
-	Store  store.ChunkStorageConfig `yaml:"store"`
-	Listen ListenerConfig           `yaml:"listen"`
+	API     api.ServerConfig                `yaml:"api"`
+	Store   store.ChunkStorageConfig        `yaml:"store"`
+	Listen  ListenerConfig                  `yaml:"listen"`
+	Master  transport.MasterTransportConfig `yaml:"master"`
+	Service core.StorageServiceConfig       `yanl:"service"`
 }
 
 type ListenerConfig struct {

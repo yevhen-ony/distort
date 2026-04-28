@@ -9,12 +9,18 @@ message NodeRef {
   string addr = 2;
 }
 
+message NodeStats {
+  int64 free_bytes = 2;
+  int64 used_bytes = 3;
+  int32 chunk_count = 4;
+}
+
 message ChunkPlacement {
   string chunk_id = 1;
   repeated NodeRef nodes = 2;
 }
 
-message ChunkDigest {
+message Digest {
   string Checksum = 1;
   int64 Size = 2;
 }

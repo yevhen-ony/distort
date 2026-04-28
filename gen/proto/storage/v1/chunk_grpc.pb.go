@@ -4,7 +4,7 @@
 // - protoc             v6.33.6
 // source: storage/v1/chunk.proto
 
-package chunk
+package storage
 
 import (
 	context "context"

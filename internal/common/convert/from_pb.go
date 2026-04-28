@@ -15,6 +15,7 @@ type ChunkPlacementLike interface {
 }
 
 func NodeRefFromPB(pbNode *pb.NodeRef) *t.NodeRef {
+
 	return &t.NodeRef{
 		ID: t.NodeID(pbNode.GetNodeId()),
 		Addr: pbNode.GetAddr(),
@@ -41,6 +42,7 @@ type ObjectAccessLike interface {
 }
 
 func ObjectAccessFromPB(pbObj ObjectAccessLike) *t.ObjectAccess {
+
 	pbChunks := pbObj.GetChunks()
 	chunks := make([]t.ChunkPlacement, 0, len(pbChunks))
 	for _, pbChunk := range pbChunks {
@@ -60,6 +62,7 @@ type NodeStatsLike interface {
 }
 
 func NodeStatsFromPB(pbObj NodeStatsLike) *t.NodeStats {
+
 	return &t.NodeStats{
 		FreeBytes: pbObj.GetFreeBytes(),
 		UsedBytes: pbObj.GetUsedBytes(),
@@ -69,24 +72,42 @@ func NodeStatsFromPB(pbObj NodeStatsLike) *t.NodeStats {
 
 type DigestLike interface {
 	GetChecksum() string
-	GetChunkSize() int64
+	GetSize() int64
 }
 
 func DigestFromPB(pbObj DigestLike) digest.Digest {
+
 	return digest.Digest{
 		Checksum: digest.Checksum(pbObj.GetChecksum()),
-		Size: pbObj.GetChunkSize(),
+		Size: pbObj.GetSize(),
 	}
 }
 
 type ChunkDescLike interface {
-	DigestLike
+	GetDigest() *pb.Digest
 	GetChunkId() string
 }
 
 func ChunkDescFromPB(pbObj ChunkDescLike) t.ChunkDesc {
+
 	return t.ChunkDesc{
 		ID: t.ChunkID(pbObj.GetChunkId()),
-		Digest: DigestFromPB(pbObj),
+		Digest: DigestFromPB(pbObj.GetDigest()),
 	}
 }
+
+type ChunkStorageRejectLike interface {
+	GetChunkId() string
+	GetReason() string
+}
+
+func ChunkStorageRejectFromPB(pbObj ChunkStorageRejectLike) t.ChunkStorageReject{
+
+	return t.ChunkStorageReject{
+		ChunkID: t.ChunkID(pbObj.GetChunkId()),
+		Reason: pbObj.GetReason(),
+	}
+}
+
+
+
