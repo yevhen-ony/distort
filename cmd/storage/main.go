@@ -16,6 +16,7 @@ import (
 	"dos/internal/services/storage/core"
 	"dos/internal/services/storage/store"
 	"dos/internal/services/storage/transport"
+	"dos/internal/services/storage/worker"
 
 	"google.golang.org/grpc"
 )
@@ -31,7 +32,9 @@ func main() {
 	}
 	
 	logger.Init(&cfg.Logger)
-
+	
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+    defer stop()
 
 	storage, err := store.New(&cfg.Store)
 	if err != nil {
@@ -40,6 +43,7 @@ func main() {
 
 	conn := connect.NewConnCache()
 	defer conn.Close()
+	
 
 	master, err := transport.NewMasterTransport(conn, &cfg.Master)
 	if err != nil {
@@ -50,11 +54,10 @@ func main() {
 	if err != nil {
 		panic(fmt.Errorf("construct service: %w", err))
 	}
-
+	heartbeat := worker.NewHeartbeatWorker(&cfg.Heartbeat, app)
+	heartbeat.Run(ctx)
+	
 	srv := api.New(app, &cfg.API)
-    
-	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-    defer stop()
 
 	err = listener.RunGRPCServer(ctx, &cfg.Listen, func(s *grpc.Server) {
 		spb.RegisterChunkServiceServer(s, srv)

@@ -135,7 +135,7 @@ func (svc *Service) GetChunk(chunkID t.ChunkID) (*s.Chunk, error) {
 	return chunk, nil
 }
 
-func (svc *Service) Heartbeat(ctx context.Context) {
+func (svc *Service) Heartbeat(ctx context.Context) error {
 	svc.mu.RLock()
 	stats := t.NodeStats{
 		FreeBytes: svc.config.MaxStorageBytes - svc.totalBytes,	
@@ -146,15 +146,16 @@ func (svc *Service) Heartbeat(ctx context.Context) {
 
 	res, err := svc.master.Heartbeat(ctx, svc.nodeID, stats)
 	if err != nil {
-		slog.Error("heartbeat failed", "error", err)
+		return err
 	}
 
 	if res.NodeUnknown {
 		slog.Warn("request new node id")
 		if err := svc.Register(ctx); err != nil {
-			slog.Error(err.Error())
+			return err
 		}
 	}
+	return nil
 }
 
 func (svc *Service) Register(ctx context.Context) error {
