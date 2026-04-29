@@ -13,7 +13,7 @@ import (
 )
 
 func TestInMemChunkRepo_Create(test *testing.T) {
-	r := MakeInMemChunkRepo()
+	r := NewInMemChunkRepo()
 	ctx := context.Background()
 
 	test.Run("Success", func(test *testing.T) {
@@ -25,7 +25,7 @@ func TestInMemChunkRepo_Create(test *testing.T) {
 }
 
 func TestInMemChunkRepo_Get(test *testing.T) {
-	r := MakeInMemChunkRepo()
+	r := NewInMemChunkRepo()
 	ctx := context.Background()
 	id := r.NewChunkID()
 	err := r.Create(ctx, id)
@@ -53,7 +53,7 @@ func TestInMemChunkRepo_Get(test *testing.T) {
 }
 
 func TestInMemChunkRepo_SetDigest(test *testing.T) {
-	r := MakeInMemChunkRepo()
+	r := NewInMemChunkRepo()
 	ctx := context.Background()
 
 	id := r.NewChunkID()

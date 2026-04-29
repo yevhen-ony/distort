@@ -2,15 +2,16 @@ package api
 
 import (
 	"context"
-	pb "dos/gen/proto/master/v1"
+	mpb "dos/gen/proto/master/v1"
 	"dos/internal/common/convert"
 	t "dos/internal/common/types"
 	m "dos/internal/services/master"
 	"fmt"
+	"log/slog"
 )
 
 type StorageServer struct {
-	pb.UnimplementedMasterStorageServiceServer
+	mpb.UnimplementedMasterStorageServiceServer
 	service m.Service
 }
 
@@ -20,11 +21,19 @@ func NewStorageServer(service m.Service) *StorageServer {
 
 func (s *StorageServer) RegisterStorageNode(
 	ctx context.Context,
-	req *pb.RegisterStorageNodeRequest,
-) (rsp *pb.RegisterStorageNodeResponse, err error) {
-	
-	defer func() { err = toStatus(err) }()
-	
+	req *mpb.RegisterStorageNodeRequest,
+) (rsp *mpb.RegisterStorageNodeResponse, err error) {
+
+	defer func() {
+		if err != nil {
+			slog.ErrorContext(ctx, "register storage node failed",
+				"addr", req.GetAddr(), "error", err,
+			)
+			err = toStatus(err)
+		}
+	}()
+	slog.DebugContext(ctx, "register storage node requested", "addr", req.GetAddr())
+
 	if err = validateRegisterStorageNodeRequest(req); err != nil {
 		return nil, err
 	}
@@ -34,17 +43,25 @@ func (s *StorageServer) RegisterStorageNode(
 	if err != nil {
 		return nil, fmt.Errorf("reg node: %w", err)
 	}
-	
-	rsp.NodeId = string(nodeRef.ID)
-	return rsp, nil 
+
+	rsp = &mpb.RegisterStorageNodeResponse{NodeId: string(nodeRef.ID)}
+	return rsp, nil
 }
 
 func (s *StorageServer) Heartbeat(
 	ctx context.Context,
-	req *pb.HeartbeatRequest,
-) (rsp *pb.HeartbeatResponse, err error) {
-	
-	defer func() { err = toStatus(err) }()
+	req *mpb.HeartbeatRequest,
+) (rsp *mpb.HeartbeatResponse, err error) {
+
+	defer func() {
+		if err != nil {
+			slog.ErrorContext(ctx, "heartbeat failed",
+				"node_id", req.GetNodeId(), "error", err,
+			)
+			err = toStatus(err)
+		}
+	}()
+	slog.DebugContext(ctx, "heartbeat requested", "node_id", req.GetNodeId())
 
 	if err = validateHeartbeatRequest(req); err != nil {
 		return nil, err
@@ -54,21 +71,29 @@ func (s *StorageServer) Heartbeat(
 	stats := convert.NodeStatsFromPB(req.GetStats())
 
 	if err = s.service.Heartbeat(ctx, nodeID, *stats); err != nil {
-		return nil, fmt.Errorf("heartbeat: %w", err)
+		return nil, err
 	}
 
-	rsp = &pb.HeartbeatResponse{}
-	return rsp, nil 
+	rsp = &mpb.HeartbeatResponse{}
+	return rsp, nil
 
 }
 
 func (s *StorageServer) ReportStorage(
 	ctx context.Context,
-	req *pb.ReportStorageRequest,
-) (rsp *pb.ReportStorageResponse, err error) {
+	req *mpb.ReportStorageRequest,
+) (rsp *mpb.ReportStorageResponse, err error) {
 
-	defer func() { err = toStatus(err) }()
-	
+	defer func() {
+		if err != nil {
+			slog.ErrorContext(ctx, "report storage failed",
+				"node_id", req.GetNodeId(), "error", err,
+			)
+			err = toStatus(err)
+		}
+	}()
+	slog.DebugContext(ctx, "report storage requested", "node_id", req.GetNodeId())
+
 	if err = validateReportStorageRequest(req); err != nil {
 		return nil, err
 	}
@@ -82,18 +107,16 @@ func (s *StorageServer) ReportStorage(
 
 	rejects, err := s.service.ReportChunkStorage(ctx, nodeID, desc)
 	if err != nil {
-		return nil, fmt.Errorf("node %s: report chunk storge: %w", nodeID, err)
+		return nil, err
 	}
-	
-	pbRejects := make([]*pb.StorageReject, 0, len(rejects))
+
+	pbRejects := make([]*mpb.StorageReject, 0, len(rejects))
 	for _, rej := range rejects {
-		pbRejects = append(pbRejects, &pb.StorageReject{
+		pbRejects = append(pbRejects, &mpb.StorageReject{
 			ChunkId: string(rej.ChunkID),
-			Reason: rej.Reason,
+			Reason:  rej.Reason,
 		})
 	}
 	rsp.Rejects = pbRejects
 	return rsp, nil
 }
-
-

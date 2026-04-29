@@ -25,8 +25,15 @@ func (s *ClientServer) CreateObject(
 	ctx context.Context, req *pb.CreateObjectRequest,
 ) (rsp *pb.CreateObjectResponse, err error) {
 
-	defer func() { err = toStatus(err) }()
-	slog.Info("create object requested", "object_id", req.GetObjectId())
+	defer func() {
+		if err != nil {
+			slog.ErrorContext(ctx, "create object failed",
+				"object_id", req.GetObjectId(), "error", err,
+			)
+			err = toStatus(err) 
+		}
+	}()
+	slog.DebugContext(ctx, "create object requested", "object_id", req.GetObjectId())
 
 	if err = validateCreateObjectRequest(req); err != nil {
 		return nil, err
@@ -43,7 +50,17 @@ func (s *ClientServer) AllocateChunk(
 	ctx context.Context, req *pb.AllocateChunkRequest,
 ) (rsp *pb.AllocateChunkResponse, err error) {
 
-	defer func() { err = toStatus(err) }()
+	defer func() {
+		if err != nil {
+			slog.ErrorContext(ctx, "allocate chunk failed",
+				"object_id", req.GetObjectId(),
+				"chunk_key", req.GetChunkKey(),
+				"chunk_size", req.GetChunkSize(),
+				"error", err,
+			)
+			err = toStatus(err)
+		}
+	}()
 	slog.Info("allocate chunk requested", "object_id", req.GetObjectId())
 
 	if err = validateAllocateChunkRequest(req); err != nil {
@@ -57,7 +74,7 @@ func (s *ClientServer) AllocateChunk(
 	}
 	chunks, err := s.service.AllocateChunk(ctx, cmd)
 	if err != nil {
-		return nil, fmt.Errorf("allocate chunk for object %s: %w", req.GetObjectId(), err)
+		return nil, err 
 	}
 
 	rsp = &pb.AllocateChunkResponse{
@@ -72,8 +89,15 @@ func (s *ClientServer) GetObjectAccess(
 	ctx context.Context, req *pb.GetObjectAccessRequest,
 ) (rsp *pb.GetObjectAccessResponse, err error) {
 
-	defer func() { err = toStatus(err) }()
-	slog.Info("object access requested", "object_id", req.GetObjectId())
+	defer func() {
+		if err != nil {
+			slog.ErrorContext(ctx, "object access failed",
+				"object_id", req.GetObjectId(), "error", err,
+			)
+			err = toStatus(err)
+		}
+	}()
+	slog.DebugContext(ctx, "object access requested", "object_id", req.GetObjectId())
 
 	if err = validateGetObjectAccessRequest(req); err != nil {
 		return nil, err
@@ -81,7 +105,7 @@ func (s *ClientServer) GetObjectAccess(
 
 	object, err := s.service.GetObjectAccess(ctx, t.ObjectID(req.GetObjectId()))
 	if err != nil {
-		return nil, fmt.Errorf("get object access %s: %w", req.GetObjectId(), err)
+		return nil, err
 	}
 
 	rsp = &pb.GetObjectAccessResponse{

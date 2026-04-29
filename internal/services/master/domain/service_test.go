@@ -16,7 +16,7 @@ func newTestService(t *testing.T) *MasterService {
 	t.Helper()
 
 	return NewMasterService(
-		repo.MakeInMemChunkRepo(),
+		repo.NewInMemChunkRepo(),
 		repo.NewInMemObjectRepo(),
 		repo.NewInMemNodeRegistry(),
 		&MasterServiceConfig{

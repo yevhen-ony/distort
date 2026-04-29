@@ -10,10 +10,6 @@ import (
 	m "dos/internal/services/master"
 )
 
-var (
-)
-
-
 func toStatus(err error) error {
 	if err == nil {
 		return nil

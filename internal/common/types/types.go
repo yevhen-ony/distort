@@ -10,20 +10,19 @@ type ChunkID string
 type ChunkKey string
 type NodeID string
 
-
 type NodeRef struct {
-	ID NodeID
-	Addr   string
+	ID   NodeID
+	Addr string
 }
 
 type ChunkPlacement struct {
-	ID  ChunkID
-	Key ChunkKey
-	Nodes    []NodeRef
+	ID    ChunkID
+	Key   ChunkKey
+	Nodes []NodeRef
 }
 
 type ObjectAccess struct {
-	ID  ObjectID
+	ID        ObjectID
 	TotalSize int64
 	Chunks    []ChunkPlacement
 }
@@ -35,7 +34,7 @@ type NodeStats struct {
 }
 
 type ChunkDesc struct {
-	ID ChunkID
+	ID     ChunkID
 	Digest digest.Digest
 }
 
@@ -46,5 +45,5 @@ type ChunkMeta struct {
 
 type ChunkStorageReject struct {
 	ChunkID ChunkID
-	Reason	string
+	Reason  string
 }

@@ -1,3 +1,7 @@
+logger:
+  level: debug
+  service: storage 
+
 api:
   frame_size: 5 
 
@@ -8,8 +12,8 @@ listen:
   host: "0.0.0.0"
   port: 10001
 
-transport:
-  master_addr: localhost:10010 
+master:
+  master_addr: localhost:10002
 
 service:
   advertise_addr: localhost:10001

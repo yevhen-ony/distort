@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dos/internal/common/config"
 	"os"
 	"testing"
 
@@ -10,7 +11,8 @@ import (
 
 func TestLoadConfig(t *testing.T) {
 	t.Run("yaml", func (t *testing.T) {
-		cfg, err := loadConfig("./config.yml")
+		cfg := Config{}
+		err := config.LoadConfig("./config.yml", &cfg)
 		require.NoError(t, err, "load config")
 
 		assert.Equal(t, 5, cfg.API.FrameSize)
@@ -21,7 +23,8 @@ func TestLoadConfig(t *testing.T) {
 		err := os.Setenv("LISTEN__PORT", "80")
 		require.NoError(t, err, "set env")	
 
-		cfg, err := loadConfig("./config.yml")	
+		cfg := Config{}
+		err = config.LoadConfig("./config.yml", &cfg)
 		require.NoError(t, err, "load config")
 
 		assert.Equal(t, 80, cfg.Listen.Port)

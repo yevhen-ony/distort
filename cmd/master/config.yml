@@ -1,0 +1,11 @@
+logger:
+  level: debug
+  service: master
+
+listen:
+  host: "0.0.0.0"
+  port: 10002
+
+service:
+  replication_count: 1
+  chunk_allocation_margin_bytes: 512 

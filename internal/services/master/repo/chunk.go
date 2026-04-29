@@ -14,7 +14,7 @@ type InMemChunkRepo struct {
 	chunks map[t.ChunkID]*m.Chunk
 }
 
-func MakeInMemChunkRepo() *InMemChunkRepo {
+func NewInMemChunkRepo() *InMemChunkRepo {
 	return &InMemChunkRepo{
 		chunks: map[t.ChunkID]*m.Chunk{},
 	}

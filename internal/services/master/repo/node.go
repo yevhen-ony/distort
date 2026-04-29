@@ -34,7 +34,7 @@ func (r *InMemNodeRegistry) Register(_ context.Context, addr string) (t.NodeRef,
 	if _, ok := r.addrs[addr]; ok {
 		return t.NodeRef{}, m.ErrNodeAddrInUse 
 	}
-
+	
 	nodeRef := t.NodeRef{
 		ID: r.newNodeID(),
 		Addr: addr,

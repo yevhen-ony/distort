@@ -8,6 +8,7 @@ import (
 )
 
 func (s *MasterService) RegisterStorageNode(ctx context.Context, addr string) (t.NodeRef, error) {
+
 	nref, err := s.nodeReg.Register(ctx, addr)
 	if err != nil {
 		return t.NodeRef{}, fmt.Errorf("register node: %w", err)

@@ -4,19 +4,19 @@ import (
 	m "dos/internal/services/master"
 )
 
-type MasterServiceConfig struct{
-	ReplicationCount int
-	ChunkAllocationMarginBytes int64
+type MasterServiceConfig struct {
+	ReplicationCount           int   `yaml:"replication_count"`
+	ChunkAllocationMarginBytes int64 `yaml:"chunk_allocation_mergin_bytes"`
 }
 
 type MasterService struct {
-	chunkRepo m.ChunkRepo
+	chunkRepo  m.ChunkRepo
 	objectRepo m.ObjectRepo
-	nodeReg m.NodeRegistry
+	nodeReg    m.NodeRegistry
 
-	index m.ChunkNodeIndex
+	index           m.ChunkNodeIndex
 	placementPolicy m.PlacementPolicy
-	config *MasterServiceConfig
+	config          *MasterServiceConfig
 }
 
 func NewMasterService(
@@ -26,12 +26,11 @@ func NewMasterService(
 	config *MasterServiceConfig,
 ) *MasterService {
 	return &MasterService{
-		chunkRepo: chunkRepo,
-		objectRepo: objectRepo,
-		nodeReg: nodeReg,
+		chunkRepo:       chunkRepo,
+		objectRepo:      objectRepo,
+		nodeReg:         nodeReg,
 		placementPolicy: &RandomPlacementPolicy{},
-		index: NewInMemChunkNodeIndex(),
-		config: config,
+		index:           NewInMemChunkNodeIndex(),
+		config:          config,
 	}
 }
-

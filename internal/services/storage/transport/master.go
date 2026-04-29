@@ -23,15 +23,15 @@ type MasterTransport struct {
 	config *MasterTransportConfig
 }
 
-func NewMasterTransport(conn *connect.ConnCache, config *MasterTransportConfig) (*MasterTransport, error) {
+func NewMasterTransport(conn *connect.ConnCache, cfg *MasterTransportConfig) (*MasterTransport, error) {
 
-	c, err := conn.Get(config.MasterAddr)	
+	c, err := conn.Get(cfg.MasterAddr)	
 	if err != nil {
-		return nil, fmt.Errorf("get conn %s: %w", config.MasterAddr, err)
+		return nil, fmt.Errorf("get conn %s: %w", cfg.MasterAddr, err)
 	}
 	mt := &MasterTransport{
 		client: mpb.NewMasterStorageServiceClient(c),
-		config: config,
+		config: cfg,
 	}
 	return mt, nil 
 }

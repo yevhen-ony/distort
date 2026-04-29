@@ -17,6 +17,7 @@ type FSChunkStorage struct {
 }
 
 func New(config *ChunkStorageConfig) (*FSChunkStorage, error) {
+
 	commitDir, err := config.GetCommitDir()
 	if err != nil {
 		return nil, fmt.Errorf("get commit dir: %w", err)
@@ -35,6 +36,7 @@ func New(config *ChunkStorageConfig) (*FSChunkStorage, error) {
 }
 
 func (stg *FSChunkStorage) Get(chunkID t.ChunkID) (io.ReadCloser, error) {
+
 	chunkPath := filepath.Join(stg.commitDir, string(chunkID))
 	f, err := os.OpenFile(chunkPath, os.O_RDONLY, 0)
 	if err != nil {
@@ -44,6 +46,7 @@ func (stg *FSChunkStorage) Get(chunkID t.ChunkID) (io.ReadCloser, error) {
 }
 
 func (stg *FSChunkStorage) GetMeta(chunkID t.ChunkID) (*t.ChunkMeta, error) {
+
 	chunkPath := filepath.Join(stg.commitDir, string(chunkID))
 	
 	fd, err := os.Open(chunkPath)
@@ -89,6 +92,7 @@ func (stg *FSChunkStorage) GetAllIDs() ([]t.ChunkID, error) {
 }
 
 func (stg *FSChunkStorage) NewWriter() (s.ChunkWriter, error) {
+
 	fd, err := os.CreateTemp(stg.tempDir, "chunk-*")
 	if err != nil {
 		return nil, fmt.Errorf("create temp: %w", err)
@@ -101,4 +105,3 @@ func (stg *FSChunkStorage) NewWriter() (s.ChunkWriter, error) {
 	}
 	return w, nil
 }
-
