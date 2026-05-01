@@ -52,10 +52,10 @@ type AllocateChunkQuery struct {
 
 func (mt *MasterTransport) AllocateChunk(
 	ctx context.Context, query *AllocateChunkQuery,
-) (t.ChunkPlacement, error)  {
+) (t.ChunkLocation, error)  {
 	conn, err := mt.conn.Get(mt.config.Addr)
 	if err != nil {
-		return t.ChunkPlacement{}, fmt.Errorf("get conn: %w", err) 
+		return t.ChunkLocation{}, fmt.Errorf("get conn: %w", err) 
 	}
 	client := pb.NewMasterClientServiceClient(conn)
 
@@ -66,7 +66,7 @@ func (mt *MasterTransport) AllocateChunk(
 	}
 	rsp, err := client.AllocateChunk(ctx, req)
 	if err != nil {
-		return t.ChunkPlacement{}, fmt.Errorf("allocate chunk: %w", err) 
+		return t.ChunkLocation{}, fmt.Errorf("allocate chunk: %w", err) 
 	}
 	chunks := *convert.ChunkPlacementFromPB(rsp)
 	return chunks, nil

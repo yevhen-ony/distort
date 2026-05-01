@@ -59,7 +59,7 @@ func TestFSChunkWriter_Commit(test *testing.T) {
 		_, err := w.Write(want)
 		require.NoError(test, err, "write to temp")
 
-		_, err = w.Commit(chunkID)
+		err = w.Commit(chunkID)
 		require.NoError(test, err, "commit")
 
 		commitPath := filepath.Join(w.commitDir, string(chunkID))
@@ -82,7 +82,7 @@ func TestFSChunkWriter_Commit(test *testing.T) {
 		_, err = w.Write([]byte("hello, world"))
 		assert.NoError(test, err, "write to temp")
 
-		_,  err = w.Commit(chunkID)
+		err = w.Commit(chunkID)
 		assert.Error(test, err, "try commit with commited id")
 
 		got, err := os.ReadFile(commitPath)

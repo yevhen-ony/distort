@@ -6,6 +6,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"log/slog"
 
 	pb "dos/gen/proto/common/v1"
 	spb "dos/gen/proto/storage/v1"
@@ -31,11 +32,20 @@ func NewChunkTransport(conn *connect.ConnCache, config *StorageTransportConfig) 
 	return &StorageTransport{conn: conn, config: config}, nil
 }
 
-func (ct *StorageTransport) SendChunk(ctx context.Context, node t.NodeRef, chunk *c.Chunk) error {
-	if err := SendChunkValidate(node, chunk); err != nil {
-		return err
+func (ct *StorageTransport) PushChunk(ctx context.Context, nodes []t.NodeRef, chunk *c.Chunk) error {
+	var errs []error
+	for _, node := range nodes {
+		err := ct.pushChunkToNode(ctx, node, chunk) 
+		if err == nil {
+			return nil	
+		}
+		slog.WarnContext(ctx, "send chunk failed", "addr", node.Addr, "chunk", chunk.Meta.ID, "error", err)
+		errs = append(errs, fmt.Errorf("send chunk %s to %s failed: %w", chunk.Meta.ID, node.Addr, err))
 	}
+	return fmt.Errorf("all candidate nodes failed: %w", errors.Join(errs...))	
+}
 
+func (ct *StorageTransport) pushChunkToNode(ctx context.Context, node t.NodeRef, chunk *c.Chunk) error {
 	conn, err := ct.conn.Get(node.Addr)
 	if err != nil {
 		return fmt.Errorf("get conn: %w", err) 
@@ -49,10 +59,10 @@ func (ct *StorageTransport) SendChunk(ctx context.Context, node t.NodeRef, chunk
 	}
 	header := &spb.PutChunkHeader{
 		NodeId: string(node.ID),
-		ChunkId: string(chunk.ID),
+		ChunkId: string(chunk.Meta.ID),
 		Digest: &pb.Digest{
-			Size: int64(chunk.Digest.Size),
-			Checksum: string(chunk.Digest.Checksum),
+			Size: int64(chunk.Meta.Digest.Size),
+			Checksum: string(chunk.Meta.Digest.Checksum),
 		},
 	}
 
@@ -72,7 +82,26 @@ func (ct *StorageTransport) SendChunk(ctx context.Context, node t.NodeRef, chunk
 	return nil
 }
 
-func (ct *StorageTransport) ReceiveChunk(ctx context.Context, node t.NodeRef, chunkID t.ChunkID) (c.Chunk, error) {
+func (ct *StorageTransport) PullChunk(
+	ctx context.Context, nodes []t.NodeRef, chunkID t.ChunkID,
+) (c.Chunk, error) {
+
+	var errs []error
+	for _, node := range nodes {
+		chunk, err := ct.pullChunkFromNode(ctx, node, chunkID)
+		if err == nil {
+			return chunk, nil
+		}
+		slog.WarnContext(ctx, "pull chunk failed", "addr", node.Addr, "chunk", chunkID, "error", err)
+		errs = append(errs, fmt.Errorf("send chunk %s to %s: %w", chunkID, node.Addr, err))
+	}
+	return c.Chunk{} , fmt.Errorf("all candidate nodes failed: %w", errors.Join(errs...))
+}
+
+func (ct *StorageTransport) pullChunkFromNode(
+	ctx context.Context, node t.NodeRef, chunkID t.ChunkID,
+) (c.Chunk, error) {
+
 	if err := ReceiveChunkValidate(node, chunkID); err != nil {
 		return c.Chunk{}, err
 	}
@@ -110,18 +139,18 @@ func (ct *StorageTransport) ReceiveChunk(ctx context.Context, node t.NodeRef, ch
 		return c.Chunk{}, fmt.Errorf("recv data: %w", err)
 	}
 
-	chunkDesc := t.ChunkDesc{
+	meta := t.ChunkMeta{
 		ID: chunkID,
 		Digest: digest,
 	}
 
-	err = matchChunkDesc(convert.ChunkDescFromPB(header), chunkDesc)
+	err = matchChunkMeta(convert.ChunkDescFromPB(header), meta)
 	if err != nil {
 		return c.Chunk{}, err 
 	}
 
 	chunk :=  c.Chunk{
-		ChunkDesc: chunkDesc,
+		Meta: meta,
 		Data: data,
 	}
 	return chunk, nil 
@@ -167,12 +196,13 @@ func (ct *StorageTransport) recvData(stream spb.ChunkService_GetChunkClient) ([]
 	return buf.Bytes(), dg.Digest(), nil
 }
 
-func matchChunkDesc(want, got t.ChunkDesc) error {
-	if !want.Digest.Equal(got.Digest) {
-		return fmt.Errorf("digest mismatch: %w", ErrChunkDescMismatch)
+func matchChunkMeta(want, got t.ChunkMeta) error {
+	if err := got.Digest.Match(want.Digest); err != nil {
+		return err
 	}
+
 	if want.ID != got.ID {
-		return fmt.Errorf("id mismatch: %w", ErrChunkDescMismatch)
+		return fmt.Errorf("id mismatch: %w", ErrChunkMetaMismatch)
 	}
 	return nil
 }

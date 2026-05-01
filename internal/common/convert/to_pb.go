@@ -19,13 +19,13 @@ func NodeRefToPB(mNode ...t.NodeRef) []*cpb.NodeRef {
 	return pbNodes
 }
 
-func ChunkPlacementToPB(mChunk ...t.ChunkPlacement) []*mpb.ChunkPlacement {
+func ChunkPlacementToPB(mChunk ...t.ChunkLocation) []*mpb.ChunkPlacement {
 
 	pbChunks := make([]*mpb.ChunkPlacement, 0, len(mChunk))
 	for _, mc := range mChunk{
 		pbChunks = append(pbChunks, &mpb.ChunkPlacement{
-			ChunkId: string(mc.ID),
-			ChunkKey: string(mc.Key),
+			ChunkId: string(mc.ChunkID),
+			ChunkKey: string(mc.ChunkKey),
 			Nodes: NodeRefToPB(mc.Nodes...),
 		})
 	}
@@ -57,7 +57,7 @@ func NodeStatsToPB(s ...t.NodeStats) []*cpb.NodeStats {
 	return pbStats
 }
 
-func ChunkDescToPB(d ...t.ChunkDesc) []*mpb.ChunkDesc {
+func ChunkDescToPB(d ...t.ChunkMeta) []*mpb.ChunkDesc {
 
 	pbDesc := make([]*mpb.ChunkDesc, 0, len(d))
 	for _, desc := range d {

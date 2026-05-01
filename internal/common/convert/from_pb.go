@@ -22,15 +22,15 @@ func NodeRefFromPB(pbNode *pb.NodeRef) *t.NodeRef {
 	}
 }
 
-func ChunkPlacementFromPB(pbObj ChunkPlacementLike) *t.ChunkPlacement {
+func ChunkPlacementFromPB(pbObj ChunkPlacementLike) *t.ChunkLocation {
 	pbNodes := pbObj.GetNodes()
 	nodes := make([]t.NodeRef, 0, len(pbNodes))
 	for _, pbNode := range pbNodes {
 		nodes = append(nodes, *NodeRefFromPB(pbNode))
 	}
-	return &t.ChunkPlacement{
-		ID: t.ChunkID(pbObj.GetChunkId()),
-		Key: t.ChunkKey(pbObj.GetChunkKey()),
+	return &t.ChunkLocation{
+		ChunkID: t.ChunkID(pbObj.GetChunkId()),
+		ChunkKey: t.ChunkKey(pbObj.GetChunkKey()),
 		Nodes: nodes,
 	}
 }
@@ -44,7 +44,7 @@ type ObjectAccessLike interface {
 func ObjectAccessFromPB(pbObj ObjectAccessLike) *t.ObjectAccess {
 
 	pbChunks := pbObj.GetChunks()
-	chunks := make([]t.ChunkPlacement, 0, len(pbChunks))
+	chunks := make([]t.ChunkLocation, 0, len(pbChunks))
 	for _, pbChunk := range pbChunks {
 		chunks = append(chunks, *ChunkPlacementFromPB(pbChunk))
 	}
@@ -88,9 +88,9 @@ type ChunkDescLike interface {
 	GetChunkId() string
 }
 
-func ChunkDescFromPB(pbObj ChunkDescLike) t.ChunkDesc {
+func ChunkDescFromPB(pbObj ChunkDescLike) t.ChunkMeta {
 
-	return t.ChunkDesc{
+	return t.ChunkMeta{
 		ID: t.ChunkID(pbObj.GetChunkId()),
 		Digest: DigestFromPB(pbObj.GetDigest()),
 	}

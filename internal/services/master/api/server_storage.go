@@ -99,7 +99,7 @@ func (s *StorageServer) ReportStorage(
 	}
 
 	nodeID := t.NodeID(req.GetNodeId())
-	desc := make([]t.ChunkDesc, 0, len(req.GetChunkReports()))
+	desc := make([]t.ChunkMeta, 0, len(req.GetChunkReports()))
 	for _, report := range req.GetChunkReports() {
 		d := convert.ChunkDescFromPB(report)
 		desc = append(desc, d)

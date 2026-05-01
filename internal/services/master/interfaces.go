@@ -9,11 +9,11 @@ import (
 
 type Service interface {
 	CreateObject(context.Context, t.ObjectID) error
-	AllocateChunk(context.Context, *AllocateChunkCommand) (t.ChunkPlacement, error)
+	AllocateChunk(context.Context, *AllocateChunkCommand) (t.ChunkLocation, error)
 	GetObjectAccess(context.Context, t.ObjectID) (ObjectAccess, error)
 
 	RegisterStorageNode(context.Context, string) (t.NodeRef, error)
-	ReportChunkStorage(context.Context, t.NodeID, []t.ChunkDesc) ([]t.ChunkStorageReject, error)
+	ReportChunkStorage(context.Context, t.NodeID, []t.ChunkMeta) ([]t.ChunkStorageReject, error)
 	Heartbeat(context.Context, t.NodeID, t.NodeStats) error
 }
 

@@ -79,10 +79,10 @@ func (srv *Server) GetChunk(req *spb.GetChunkRequest, stream spb.ChunkService_Ge
 
 	rsp := &spb.GetChunkResponse{
 		Header: &spb.GetChunkHeader{
-			ChunkId:   string(chunk.ID),
+			ChunkId:   string(chunk.Meta.ID),
 			Digest: &cpb.Digest{
-				Checksum: string(chunk.Digest.Checksum),
-				Size: chunk.Digest.Size,
+				Checksum: string(chunk.Meta.Digest.Checksum),
+				Size: chunk.Meta.Digest.Size,
 			},
 		},
 	}

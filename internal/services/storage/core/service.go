@@ -60,7 +60,7 @@ func New(store s.ChunkStorage, master s.MasterTransport, config StorageServiceCo
 			slog.Error("read chunk", "id", id, "error", err)
 			continue
 		}
-		catalog[id] = *meta
+		catalog[id] = meta
 		totalBytes += meta.Digest.Size
 	}
 
@@ -77,7 +77,7 @@ func New(store s.ChunkStorage, master s.MasterTransport, config StorageServiceCo
 	return service, nil
 }
 
-func (svc *Service) StartUploadSession(desc *t.ChunkDesc) (s.ChunkWriter, error) {
+func (svc *Service) StartUploadSession(desc *t.ChunkMeta) (s.ChunkWriter, error) {
 	svc.mu.RLock()
 	_, ok := svc.catalog[desc.ID]
 	svc.mu.RUnlock()
@@ -92,26 +92,22 @@ func (svc *Service) StartUploadSession(desc *t.ChunkDesc) (s.ChunkWriter, error)
 	return w, nil
 }
 
-func (svc *Service) CommitUploadSession(w s.ChunkWriter, desc *t.ChunkDesc) error {
-	if !desc.Digest.Equal(w.Digest()) {
-		return fmt.Errorf("session validation: digest missmatch") 
+func (svc *Service) CommitUploadSession(w s.ChunkWriter, meta *t.ChunkMeta) error {
+	if err := meta.Digest.Match(w.Digest()); err != nil {
+		return err
 	}
 
 	svc.mu.Lock()	
 	defer svc.mu.Unlock()
 
-	if _, ok := svc.catalog[desc.ID]; ok {
+	if _, ok := svc.catalog[meta.ID]; ok {
 		return s.ErrChunkConflict
 	}
 
-	ts, err := w.Commit(desc.ID)
-	if err != nil {
+	
+	if err := w.Commit(meta.ID); err != nil {
 		return fmt.Errorf("session commit: %w", err)
 	} 
-	meta := &t.ChunkMeta{
-		ChunkDesc: *desc,
-		ModifiedAt: ts, 
-	}
 	svc.catalog[meta.ID] = *meta
 	return nil
 }
@@ -129,7 +125,7 @@ func (svc *Service) GetChunk(chunkID t.ChunkID) (*s.Chunk, error) {
 		return nil, fmt.Errorf("get from store: %w", err)
 	}
 	chunk := &s.Chunk{
-		ChunkMeta: meta,
+		Meta: meta,
 		Data: reader,
 	}
 	return chunk, nil

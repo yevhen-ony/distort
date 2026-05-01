@@ -17,7 +17,7 @@ func (s *MasterService) RegisterStorageNode(ctx context.Context, addr string) (t
 }
 
 func (s *MasterService) ReportChunkStorage(
-	ctx context.Context, nodeID t.NodeID, chunks []t.ChunkDesc,
+	ctx context.Context, nodeID t.NodeID, chunks []t.ChunkMeta,
 ) ([]t.ChunkStorageReject, error) {
 
 	if _, err := s.nodeReg.Get(ctx, nodeID); err != nil {

@@ -35,7 +35,7 @@ func validateChunk(chunk *c.Chunk) error {
 	if len(chunk.Data) == 0 {
 		return fmt.Errorf("empty chunk data: %w", ErrInputInvalid)
 	}
-	return validateChunkID(chunk.ID)
+	return validateChunkID(chunk.Meta.ID)
 }
 
 func validateChunkID(chunkID t.ChunkID) error {

@@ -1,9 +1,15 @@
 package digest
+
 import (
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
+	"fmt"
 	"hash"
+)
 
+var (
+	ErrDigestMismatch = errors.New("digest mismatch")
 )
 
 type Checksum string
@@ -13,9 +19,20 @@ type Digest struct {
 	Size int64 
 }
 
-func (d Digest) Equal(o Digest) bool {
-	return d.Size == o.Size &&
-		d.Checksum == o.Checksum
+func (d *Digest) Match(other Digest) error {
+	if d.Size != other.Size {
+		return fmt.Errorf(
+			"size: got %d, want %d: %w",
+			d.Size, other.Size, ErrDigestMismatch,
+		)
+	}
+	if d.Checksum != other.Checksum {
+		return fmt.Errorf(
+			"checksum: got %s, want %s: %w",
+			d.Checksum, other.Checksum, ErrDigestMismatch,
+		)
+	}
+	return nil
 }
 
 func (d *Digest) Clone() *Digest {
@@ -56,3 +73,4 @@ func (d *Digester) Checksum() Checksum {
 	enc := hex.EncodeToString(sum)
 	return Checksum(enc)
 }	
+

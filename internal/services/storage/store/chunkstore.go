@@ -45,31 +45,24 @@ func (stg *FSChunkStorage) Get(chunkID t.ChunkID) (io.ReadCloser, error) {
 	return f, nil 
 }
 
-func (stg *FSChunkStorage) GetMeta(chunkID t.ChunkID) (*t.ChunkMeta, error) {
+func (stg *FSChunkStorage) GetMeta(chunkID t.ChunkID) (t.ChunkMeta, error) {
 
 	chunkPath := filepath.Join(stg.commitDir, string(chunkID))
 	
 	fd, err := os.Open(chunkPath)
 	if err != nil {
-		return nil, fmt.Errorf("open chunk: %w", err)
+		return t.ChunkMeta{}, fmt.Errorf("open chunk: %w", err)
 	}
 	defer fd.Close()
 	
 	dg := digest.New()
 	if _, err := io.Copy(dg, fd); err != nil {
-		return nil, fmt.Errorf("read chunk: %w", err)
+		return t.ChunkMeta{}, fmt.Errorf("read chunk: %w", err)
 	}
 
-	fi, err := os.Stat(chunkPath)
-	if err != nil {
-		return nil, fmt.Errorf("stat chunk: %w", err)
-	}
-	meta := &t.ChunkMeta{
-		ChunkDesc: t.ChunkDesc{
-			ID: chunkID,
-			Digest: dg.Digest(),
-		},
-		ModifiedAt: fi.ModTime(),
+	meta := t.ChunkMeta{
+		ID: chunkID,
+		Digest: dg.Digest(),
 	}
 	
 	return meta, nil

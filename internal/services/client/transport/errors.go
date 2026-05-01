@@ -8,5 +8,5 @@ var (
 	ErrHeaderInvalid = errors.New("invalid header")
 	ErrDataInvalid = errors.New("invalid data")
 
-	ErrChunkDescMismatch = errors.New("chunk description mismatch")
+	ErrChunkMetaMismatch = errors.New("chunk description mismatch")
 )

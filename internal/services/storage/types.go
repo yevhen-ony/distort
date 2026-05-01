@@ -9,7 +9,7 @@ import (
 type ChunkCatalog map[t.ChunkID]t.ChunkMeta
 
 type Chunk struct {
-	t.ChunkMeta
+	Meta t.ChunkMeta
 	Data io.ReadCloser
 }
 

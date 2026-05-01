@@ -40,7 +40,7 @@ func TestService_CommitUploadSession(test *testing.T) {
 	dg := digest.New()
 	dg.Write(payload)
 
-	desc := &t.ChunkDesc{
+	desc := &t.ChunkMeta{
 		ID: "chunk-1",
 		Digest: dg.Digest(),
 	}
@@ -78,7 +78,7 @@ func TestService_CommitUploadSession(test *testing.T) {
 		dg := digest.New()
 		dg.Write(payload)
 
-		desc := &t.ChunkDesc{
+		desc := &t.ChunkMeta{
 			ID: "chunk-2",
 			Digest: dg.Digest(),
 		}

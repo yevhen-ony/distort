@@ -2,7 +2,6 @@ package types
 
 import (
 	"dos/internal/common/digest"
-	"time"
 )
 
 type ObjectID string
@@ -15,16 +14,16 @@ type NodeRef struct {
 	Addr string
 }
 
-type ChunkPlacement struct {
-	ID    ChunkID
-	Key   ChunkKey
+type ChunkLocation struct {
+	ChunkID    ChunkID
+	ChunkKey   ChunkKey
 	Nodes []NodeRef
 }
 
 type ObjectAccess struct {
 	ID        ObjectID
 	TotalSize int64
-	Chunks    []ChunkPlacement
+	Chunks    []ChunkLocation
 }
 
 type NodeStats struct {
@@ -33,14 +32,9 @@ type NodeStats struct {
 	ChunkCount int
 }
 
-type ChunkDesc struct {
+type ChunkMeta struct {
 	ID     ChunkID
 	Digest digest.Digest
-}
-
-type ChunkMeta struct {
-	ChunkDesc
-	ModifiedAt time.Time
 }
 
 type ChunkStorageReject struct {

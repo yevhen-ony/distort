@@ -14,38 +14,38 @@ func (s *MasterService) CreateObject(ctx context.Context, oid t.ObjectID) error 
 func (s *MasterService) AllocateChunk(
 	ctx context.Context,
 	cmd *m.AllocateChunkCommand,
-) (t.ChunkPlacement, error) {
+) (t.ChunkLocation, error) {
 
 	_, err := s.objectRepo.Get(ctx, cmd.ObjectID)
 	if err != nil {
-		return t.ChunkPlacement{}, fmt.Errorf("ensure object exists: %w", err)
+		return t.ChunkLocation{}, fmt.Errorf("ensure object exists: %w", err)
 	}
 	
 	candidateNodes, err := s.GetCandidateNodes(ctx, m.CandidateNodesQuery{
 		MinFreeBytes: cmd.ChunkSize + s.config.ChunkAllocationMarginBytes,
 	})
 	if err != nil {
-		return t.ChunkPlacement{}, fmt.Errorf("get candidate nodes: %w", err)
+		return t.ChunkLocation{}, fmt.Errorf("get candidate nodes: %w", err)
 	}
 	
 	nodes := s.placementPolicy.Select(candidateNodes, s.config.ReplicationCount)
 	if len(nodes) == 0 {
-		return t.ChunkPlacement{}, m.ErrNoCandidateNodes
+		return t.ChunkLocation{}, m.ErrNoCandidateNodes
 	}
 
 	chunkID := s.chunkRepo.NewChunkID()
 	err = s.objectRepo.AddChunk(ctx, cmd.ObjectID, cmd.ChunkKey, chunkID)
 	if err != nil {
-		return t.ChunkPlacement{}, fmt.Errorf("add chunk to object: %w", err)
+		return t.ChunkLocation{}, fmt.Errorf("add chunk to object: %w", err)
 	}
 
 	if err := s.chunkRepo.Create(ctx, chunkID); err  != nil {
-		return t.ChunkPlacement{}, fmt.Errorf("create chunk: %w", err)
+		return t.ChunkLocation{}, fmt.Errorf("create chunk: %w", err)
 	}
 	
-	res := t.ChunkPlacement{
-		ID: chunkID,
-		Key: cmd.ChunkKey, 
+	res := t.ChunkLocation{
+		ChunkID: chunkID,
+		ChunkKey: cmd.ChunkKey, 
 		Nodes: toNodeRef(nodes...),
 	}
 	return res, nil
@@ -65,7 +65,7 @@ func (s *MasterService) GetObjectAccess(ctx context.Context, oid t.ObjectID) (m.
 			return m.ObjectAccess{}, fmt.Errorf("access chunk %s: %w", chunkID, err)
 		}
 		
-		chunkPlacement := t.ChunkPlacement{ID: chunkID, Key: key}
+		chunkPlacement := t.ChunkLocation{ChunkID: chunkID, ChunkKey: key}
 		nodeIDs := s.index.GetChunkNodes(ctx, chunkID)
 		nodes := s.nodeReg.GetMany(ctx, nodeIDs...)
 		chunkPlacement.Nodes = toNodeRef(nodes...)

@@ -52,8 +52,8 @@ func (r *InMemChunkRepo) SetDigest(_ context.Context, id t.ChunkID, digest diges
 		chunk.Digest = digest.Clone() 
 		return nil
 	}
-	if !chunk.Digest.Equal(digest) {
-		return m.ErrChunkDigestConflict
+	if err := chunk.Digest.Match(digest); err != nil {
+		return err 
 	}
 	return nil
 }

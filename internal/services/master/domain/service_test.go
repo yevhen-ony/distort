@@ -55,7 +55,7 @@ func TestMasterService_AllocateChunk_HappyPath(test *testing.T) {
 	})
 	require.NoError(test, err)
 
-	assert.NotEmpty(test, placement.ID)
+	assert.NotEmpty(test, placement.ChunkID)
 	require.Len(test, placement.Nodes, 1)
 	assert.NotEmpty(test, placement.Nodes[0].ID)
 	assert.NotEmpty(test, placement.Nodes[0].Addr)

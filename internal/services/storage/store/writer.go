@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"time"
 
 	"dos/internal/common/digest"
 	t "dos/internal/common/types"
@@ -37,34 +36,29 @@ func (w *FSChunkWriter) Close() error {
 	return errors.Join(errs...)
 }
 
-func (w *FSChunkWriter) Commit(chunkID t.ChunkID) (time.Time, error) {
+func (w *FSChunkWriter) Commit(chunkID t.ChunkID) error {
 	if w.closed {
-		return time.Time{}, errors.New("cannot commit closed writer")
+		return errors.New("cannot commit closed writer")
 	}
 
 	if err := w.fd.Sync(); err != nil {
-		return time.Time{}, fmt.Errorf("sync: %w", err)
+		return fmt.Errorf("sync: %w", err)
 	}
 	
 	if err := w.fd.Close(); err != nil {
-		return time.Time{}, fmt.Errorf("close: %w", err)
+		return fmt.Errorf("close: %w", err)
 	}	
 	
 	commitPath := filepath.Join(w.commitDir, string(chunkID))
 	
 	if err := os.Link(w.fd.Name(), commitPath); err != nil {
-		return time.Time{}, fmt.Errorf("create link: %w", err)
+		return fmt.Errorf("create link: %w", err)
 	}
 	
 	if err := w.sync(w.commitDir); err != nil {
-		return time.Time{}, fmt.Errorf("sync dir: %w", err)
+		return fmt.Errorf("sync dir: %w", err)
 	}
-
-	fi, err := os.Stat(commitPath)
-	if err != nil {
-		return time.Time{}, fmt.Errorf("stat chunk: %w", err)
-	}
-	return fi.ModTime(), nil
+	return nil
 }
 
 func (w *FSChunkWriter) Write(data []byte) (int, error) {

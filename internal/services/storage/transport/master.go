@@ -70,7 +70,7 @@ func (mt *MasterTransport) Heartbeat(
 }
 
 func (mt *MasterTransport) ReportChunkStorage(
-	ctx context.Context, nodeID t.NodeID, desc []t.ChunkDesc,
+	ctx context.Context, nodeID t.NodeID, desc []t.ChunkMeta,
 ) ([]t.ChunkStorageReject, error) {
 
 	req := &mpb.ReportStorageRequest{

@@ -74,7 +74,7 @@ func TestInMemChunkRepo_SetDigest(test *testing.T) {
 			Size: 5,
 			Checksum: "xyz",
 		})
-		require.ErrorIs(test, err, m.ErrChunkDigestConflict)
+		require.ErrorIs(test, err, digest.ErrDigestMismatch)
 	})
 	
 	test.Run("ChunkNotFound", func(test *testing.T) {
