@@ -41,7 +41,6 @@ func (s *Service) Push(ctx context.Context, objectID t.ObjectID, source c.ChunkS
 		}
 
 		chunk := c.NewChunk(loc.ChunkID, data)
-		
 		if err := s.storage.PushChunk(ctx, loc.Nodes, &chunk); err != nil {
 			return err 
 		}
@@ -50,4 +49,31 @@ func (s *Service) Push(ctx context.Context, objectID t.ObjectID, source c.ChunkS
 }
 
 
-// func (* Service) Pull(ctx context.Context, objectID t.ObjectID, sink c.ChunkSink) 
+func (s *Service) Pull(ctx context.Context, objectID t.ObjectID, asm c.ObjectAssembler) error {
+	access, err := s.master.GetObjectAccess(ctx, objectID)
+	if err != nil {
+		return fmt.Errorf("get object access: %w", err)
+	}
+
+	chunkDescs := make([]t.ChunkDesc, len(access.Chunks))
+	for i, cp := range access.Chunks {
+		chunkDescs[i] = cp.ChunkDesc
+	}
+
+	ow, err := asm.NewWriter(access.ObjectDesc, chunkDescs)
+	if err != nil {
+		return fmt.Errorf("new object writer: %w", err)
+	}
+	defer ow.Close()
+
+	for _, cp := range access.Chunks {
+		chunk, err := s.storage.PullChunk(ctx, cp.Nodes, cp.ChunkID)
+		if err != nil {
+			return fmt.Errorf("pull chunk %s: %w", cp.ChunkID, err) 
+		}
+		if err := ow.WriteChunk(chunk.Meta.ID, chunk.Data); err != nil {
+			return fmt.Errorf("write chunk %s: %w", cp.ChunkID, err)
+		}
+	}
+	return nil
+}

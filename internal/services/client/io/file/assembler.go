@@ -1,4 +1,4 @@
-package io
+package file 
 
 import (
 	"errors"
@@ -31,16 +31,17 @@ func NewFileObjectAssembler(baseDir string, compare ChunkKeyComparer) (*FileObje
 	return &FileObjectAssembler{baseDir: baseDir, compare: compare}, nil
 }
 
-func (a *FileObjectAssembler) NewWriter(obj c.ObjectInfo) (c.ObjectWriter, error) {
-	slices.SortFunc(obj.Chunks, func(lhs, rhs c.ChunkInfo) int {
-		return a.compare(lhs.Key, rhs.Key)
+func (a *FileObjectAssembler) NewWriter(obj t.ObjectDesc, chunks []t.ChunkDesc) (c.ObjectWriter, error) {
+
+	slices.SortFunc(chunks, func(lhs, rhs t.ChunkDesc) int {
+		return a.compare(lhs.ChunkKey, rhs.ChunkKey)
 	})
 
-	layout := make(map[t.ChunkID]region, len(obj.Chunks))
+	layout := make(map[t.ChunkID]region, len(chunks))
 	offset := int64(0)
-	for _, chunk := range obj.Chunks {
-		layout[chunk.ID] = region{offset: offset, size: chunk.Size}
-		offset += chunk.Size
+	for _, chunk := range chunks {
+		layout[chunk.ChunkID] = region{offset: offset, size: chunk.ChunkSize}
+		offset += chunk.ChunkSize
 	}
 	if offset != obj.TotalSize {
 		return nil, c.ErrObjectSizeMismatch	
@@ -88,6 +89,10 @@ func (w *FileObjectWriter) WriteChunk(id t.ChunkID, data []byte) error {
 }
 
 func (w *FileObjectWriter) Close() error {
+
+	if err := w.fd.Sync(); err != nil {
+		return err
+	}
 	return w.fd.Close()
 }
 

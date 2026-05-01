@@ -26,12 +26,6 @@ func (o *Object) Clone() *Object {
 	}
 }
 
-type ObjectAccess struct {
-	ObjectID  t.ObjectID
-	TotalSize int64
-	Chunks    []t.ChunkLocation
-}
-
 type Chunk struct {
 	ID     t.ChunkID
 	Digest *digest.Digest

@@ -25,9 +25,7 @@ message AllocateChunkRequest {
 }
 
 message AllocateChunkResponse {
-  string chunk_id = 1;
-  string chunk_key = 2;
-  repeated common.v1.NodeRef nodes = 3;
+  ChunkPlacement chunk = 1;
 }
 
 message GetObjectAccessRequest {

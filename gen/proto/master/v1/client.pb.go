@@ -164,9 +164,7 @@ func (x *AllocateChunkRequest) GetChunkSize() int64 {
 
 type AllocateChunkResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
-	ChunkKey      string                 `protobuf:"bytes,2,opt,name=chunk_key,json=chunkKey,proto3" json:"chunk_key,omitempty"`
-	Nodes         []*v1.NodeRef          `protobuf:"bytes,3,rep,name=nodes,proto3" json:"nodes,omitempty"`
+	Chunk         *ChunkPlacement        `protobuf:"bytes,1,opt,name=chunk,proto3" json:"chunk,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -201,23 +199,9 @@ func (*AllocateChunkResponse) Descriptor() ([]byte, []int) {
 	return file_master_v1_client_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *AllocateChunkResponse) GetChunkId() string {
+func (x *AllocateChunkResponse) GetChunk() *ChunkPlacement {
 	if x != nil {
-		return x.ChunkId
-	}
-	return ""
-}
-
-func (x *AllocateChunkResponse) GetChunkKey() string {
-	if x != nil {
-		return x.ChunkKey
-	}
-	return ""
-}
-
-func (x *AllocateChunkResponse) GetNodes() []*v1.NodeRef {
-	if x != nil {
-		return x.Nodes
+		return x.Chunk
 	}
 	return nil
 }
@@ -406,11 +390,9 @@ const file_master_v1_client_proto_rawDesc = "" +
 	"\tobject_id\x18\x01 \x01(\tR\bobjectId\x12\x1b\n" +
 	"\tchunk_key\x18\x02 \x01(\tR\bchunkKey\x12\x1d\n" +
 	"\n" +
-	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\"y\n" +
-	"\x15AllocateChunkResponse\x12\x19\n" +
-	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12\x1b\n" +
-	"\tchunk_key\x18\x02 \x01(\tR\bchunkKey\x12(\n" +
-	"\x05nodes\x18\x03 \x03(\v2\x12.common.v1.NodeRefR\x05nodes\"5\n" +
+	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\"H\n" +
+	"\x15AllocateChunkResponse\x12/\n" +
+	"\x05chunk\x18\x01 \x01(\v2\x19.master.v1.ChunkPlacementR\x05chunk\"5\n" +
 	"\x16GetObjectAccessRequest\x12\x1b\n" +
 	"\tobject_id\x18\x01 \x01(\tR\bobjectId\"\x88\x01\n" +
 	"\x17GetObjectAccessResponse\x12\x1b\n" +
@@ -453,7 +435,7 @@ var file_master_v1_client_proto_goTypes = []any{
 	(*v1.NodeRef)(nil),              // 7: common.v1.NodeRef
 }
 var file_master_v1_client_proto_depIdxs = []int32{
-	7, // 0: master.v1.AllocateChunkResponse.nodes:type_name -> common.v1.NodeRef
+	6, // 0: master.v1.AllocateChunkResponse.chunk:type_name -> master.v1.ChunkPlacement
 	6, // 1: master.v1.GetObjectAccessResponse.chunks:type_name -> master.v1.ChunkPlacement
 	7, // 2: master.v1.ChunkPlacement.nodes:type_name -> common.v1.NodeRef
 	0, // 3: master.v1.MasterClientService.CreateObject:input_type -> master.v1.CreateObjectRequest

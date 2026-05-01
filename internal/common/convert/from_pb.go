@@ -11,6 +11,7 @@ import (
 type ChunkPlacementLike interface {
 	GetChunkId() string
 	GetChunkKey() string
+	GetChunkSize() int64
 	GetNodes() []*pb.NodeRef
 }
 
@@ -22,15 +23,18 @@ func NodeRefFromPB(pbNode *pb.NodeRef) *t.NodeRef {
 	}
 }
 
-func ChunkPlacementFromPB(pbObj ChunkPlacementLike) *t.ChunkLocation {
+func ChunkPlacementFromPB(pbObj ChunkPlacementLike) *t.ChunkPlacement {
 	pbNodes := pbObj.GetNodes()
 	nodes := make([]t.NodeRef, 0, len(pbNodes))
 	for _, pbNode := range pbNodes {
 		nodes = append(nodes, *NodeRefFromPB(pbNode))
 	}
-	return &t.ChunkLocation{
-		ChunkID: t.ChunkID(pbObj.GetChunkId()),
-		ChunkKey: t.ChunkKey(pbObj.GetChunkKey()),
+	return &t.ChunkPlacement{
+		ChunkDesc: t.ChunkDesc{
+			ChunkID: t.ChunkID(pbObj.GetChunkId()),
+			ChunkKey: t.ChunkKey(pbObj.GetChunkKey()),
+			ChunkSize: pbObj.GetChunkSize(),
+		},
 		Nodes: nodes,
 	}
 }
@@ -44,13 +48,15 @@ type ObjectAccessLike interface {
 func ObjectAccessFromPB(pbObj ObjectAccessLike) *t.ObjectAccess {
 
 	pbChunks := pbObj.GetChunks()
-	chunks := make([]t.ChunkLocation, 0, len(pbChunks))
+	chunks := make([]t.ChunkPlacement, 0, len(pbChunks))
 	for _, pbChunk := range pbChunks {
 		chunks = append(chunks, *ChunkPlacementFromPB(pbChunk))
 	}
 	return &t.ObjectAccess{
-		ID: t.ObjectID(pbObj.GetObjectId()),
-		TotalSize: pbObj.GetTotalSize(),
+		ObjectDesc: t.ObjectDesc{
+			ID: t.ObjectID(pbObj.GetObjectId()),
+			TotalSize: pbObj.GetTotalSize(),
+		},
 		Chunks: chunks,
 	}
 }

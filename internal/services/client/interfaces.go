@@ -13,7 +13,7 @@ type AllocateChunkQuery struct {
 
 type MasterTransport interface {
 	CreateObject(context.Context, t.ObjectID) error
-	AllocateChunk(context.Context, *AllocateChunkQuery) (t.ChunkLocation, error)
+	AllocateChunk(context.Context, *AllocateChunkQuery) (t.ChunkPlacement, error)
 	GetObjectAccess(context.Context, t.ObjectID) (t.ObjectAccess, error)
 }
  
@@ -25,17 +25,11 @@ type StorageTransport interface {
 type ObjectInfo struct {
 	ID        t.ObjectID
 	TotalSize int64
-	Chunks    []ChunkInfo
-}
-
-type ChunkInfo struct {
-	ID  t.ChunkID
-	Key t.ChunkKey
-	Size int64
+	Chunks    []t.ChunkDesc
 }
 
 type ObjectAssembler interface {
-	NewWriter(ObjectInfo) (ObjectWriter, error)
+	NewWriter(t.ObjectDesc, []t.ChunkDesc) (ObjectWriter, error)
 }
 
 type ObjectWriter interface {

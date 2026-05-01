@@ -14,16 +14,25 @@ type NodeRef struct {
 	Addr string
 }
 
-type ChunkLocation struct {
-	ChunkID    ChunkID
-	ChunkKey   ChunkKey
-	Nodes []NodeRef
+type ChunkDesc struct {
+	ChunkID  ChunkID
+	ChunkKey ChunkKey
+	ChunkSize int64
+}
+
+type ChunkPlacement struct {
+	ChunkDesc
+	Nodes    []NodeRef
+}
+
+type ObjectDesc struct {
+	ID        ObjectID
+	TotalSize int64
 }
 
 type ObjectAccess struct {
-	ID        ObjectID
-	TotalSize int64
-	Chunks    []ChunkLocation
+	ObjectDesc
+	Chunks    []ChunkPlacement
 }
 
 type NodeStats struct {

@@ -9,8 +9,8 @@ import (
 
 type Service interface {
 	CreateObject(context.Context, t.ObjectID) error
-	AllocateChunk(context.Context, *AllocateChunkCommand) (t.ChunkLocation, error)
-	GetObjectAccess(context.Context, t.ObjectID) (ObjectAccess, error)
+	AllocateChunk(context.Context, *AllocateChunkCommand) (t.ChunkPlacement, error)
+	GetObjectAccess(context.Context, t.ObjectID) (t.ObjectAccess, error)
 
 	RegisterStorageNode(context.Context, string) (t.NodeRef, error)
 	ReportChunkStorage(context.Context, t.NodeID, []t.ChunkMeta) ([]t.ChunkStorageReject, error)
