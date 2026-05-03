@@ -37,12 +37,14 @@ func main() {
 	svc := domain.NewMasterService(chunkRepo, objectRepo, nodeReg, &cfg.Service)
 
 	storageSrv := api.NewStorageServer(svc)
+	clientSrv := api.NewClientServer(svc)
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
     defer stop()
 
 	err = listener.RunGRPCServer(ctx, &cfg.Listen, func(s *grpc.Server) {
 		mpb.RegisterMasterStorageServiceServer(s, storageSrv)
+		mpb.RegisterMasterClientServiceServer(s, clientSrv)
 	})
 
 	if err != nil {

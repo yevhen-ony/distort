@@ -1,8 +1,10 @@
 package config
-import(
+
+import (
 	"fmt"
 	"strings"
 
+	"github.com/go-viper/mapstructure/v2"
 	"github.com/knadh/koanf/parsers/yaml"
 	"github.com/knadh/koanf/providers/env"
 	"github.com/knadh/koanf/providers/file"
@@ -32,7 +34,15 @@ func LoadConfig[TConfig any](path string, config *TConfig) error {
 		return fmt.Errorf("load env: %w", err)
 	}
 
-	conf := koanf.UnmarshalConf{Tag: "yaml"}
+	conf := koanf.UnmarshalConf{
+		Tag: "yaml",
+		DecoderConfig: &mapstructure.DecoderConfig{
+			DecodeHook: mapstructure.ComposeDecodeHookFunc(
+				mapstructure.StringToTimeDurationHookFunc(),
+				mapstructure.TextUnmarshallerHookFunc(),
+			),
+		},
+	}
 	err = k.UnmarshalWithConf("", config, conf)
 	if err != nil {
 		return fmt.Errorf("unmarshal: %w", err)

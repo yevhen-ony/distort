@@ -2,6 +2,7 @@ package domain
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 
@@ -9,11 +10,25 @@ import (
 	c "dos/internal/services/client"
 )
 
+var (
+	ErrMissingMasterTransport = errors.New("missing master transport")
+	ErrMissingStorageTransport = errors.New("missing storage transport")
+)
+
 type Service struct {
 	master c.MasterTransport
 	storage c.StorageTransport
+}
 
-	assembler c.ObjectAssembler
+func New(master c.MasterTransport, storage c.StorageTransport) (*Service, error) {
+	if master == nil {
+		return nil, ErrMissingMasterTransport
+	}
+	if storage == nil {
+		return nil, ErrMissingStorageTransport
+	}
+	svc := &Service{master: master, storage: storage}
+	return svc, nil
 }
 
 func (s *Service) Push(ctx context.Context, objectID t.ObjectID, source c.ChunkSource) error {
@@ -48,8 +63,8 @@ func (s *Service) Push(ctx context.Context, objectID t.ObjectID, source c.ChunkS
 	return nil
 }
 
-
 func (s *Service) Pull(ctx context.Context, objectID t.ObjectID, asm c.ObjectAssembler) error {
+
 	access, err := s.master.GetObjectAccess(ctx, objectID)
 	if err != nil {
 		return fmt.Errorf("get object access: %w", err)

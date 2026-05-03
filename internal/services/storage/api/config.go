@@ -1,5 +1,7 @@
 package api
 
+import "dos/internal/common/config"
+
 type ServerConfig struct {
-	FrameSize int 	`yaml:"frame_size"`
+	FrameSize config.Size 	`yaml:"frame_size"`
 }

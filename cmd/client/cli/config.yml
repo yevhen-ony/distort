@@ -1,0 +1,9 @@
+master:
+  addr: localhost:10002
+
+storage:
+  frame_size: 1MB 
+
+chunker:
+  chunk_size: 5MiB
+  

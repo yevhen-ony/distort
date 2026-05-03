@@ -20,5 +20,5 @@ service:
   max_storage_bytes: 1073741824 
 
 heartbeat:
-  delay: 5s
+  delay: 15s
 

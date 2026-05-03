@@ -10,6 +10,7 @@ import (
 	"dos/internal/common/connect"
 	"dos/internal/common/convert"
 	t "dos/internal/common/types"
+	c "dos/internal/services/client"
 )
 
 type MasterTransport struct {
@@ -38,20 +39,14 @@ func (mt *MasterTransport) CreateObject(ctx context.Context, oid t.ObjectID) err
 
 	_, err = client.CreateObject(ctx, req)
 	if err != nil {
-		return fmt.Errorf("create object: %w", err)
+		return fmt.Errorf("transport: %w", err)
 	}
 
 	return nil
 }
 
-type AllocateChunkQuery struct {
-	ObjectID t.ObjectID
-	ChunkKey t.ChunkKey
-	ChunkSize int64
-}
-
 func (mt *MasterTransport) AllocateChunk(
-	ctx context.Context, query *AllocateChunkQuery,
+	ctx context.Context, query *c.AllocateChunkQuery,
 ) (t.ChunkPlacement, error)  {
 	conn, err := mt.conn.Get(mt.config.Addr)
 	if err != nil {
@@ -66,7 +61,7 @@ func (mt *MasterTransport) AllocateChunk(
 	}
 	rsp, err := client.AllocateChunk(ctx, req)
 	if err != nil {
-		return t.ChunkPlacement{}, fmt.Errorf("allocate chunk: %w", err) 
+		return t.ChunkPlacement{}, fmt.Errorf("transport: %w", err) 
 	}
 	chunks := *convert.ChunkPlacementFromPB(rsp.GetChunk())
 	return chunks, nil
@@ -84,7 +79,7 @@ func (mt *MasterTransport) GetObjectAccess(
 	req := &pb.GetObjectAccessRequest{ObjectId: string(oid)}
 	rsp, err := client.GetObjectAccess(ctx, req)
 	if err != nil {
-		return t.ObjectAccess{}, fmt.Errorf("get object access: %w", err)
+		return t.ObjectAccess{}, fmt.Errorf("transport: %w", err)
 	}
 	objAccess := *convert.ObjectAccessFromPB(rsp)
 	return objAccess, nil  

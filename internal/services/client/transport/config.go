@@ -1,7 +1,9 @@
 package transport
 
+import "dos/internal/common/config"
+
 type StorageTransportConfig struct {
-	FrameSize int `yaml:"frame_size"`
+	FrameSize config.Size `yaml:"frame_size"`
 }
 
 type MasterTransportConfig struct {

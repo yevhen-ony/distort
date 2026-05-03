@@ -22,7 +22,7 @@ type StorageTransport struct {
 	config *StorageTransportConfig
 } 
 
-func NewChunkTransport(conn *connect.ConnCache, config *StorageTransportConfig) (*StorageTransport, error) {
+func NewStorageTransport(conn *connect.ConnCache, config *StorageTransportConfig) (*StorageTransport, error) {
 	if conn == nil {
 		return nil, errors.New("missing connection pool")
 	}
@@ -158,11 +158,7 @@ func (ct *StorageTransport) pullChunkFromNode(
 
 func (ct *StorageTransport) sendData(stream spb.ChunkService_PutChunkClient, data []byte) error {
 	for len(data) > 0 {
-		n := ct.config.FrameSize
-		if len(data) < n {
-			n = len(data)
-		}
-
+		n := min(int64(ct.config.FrameSize), int64(len(data)))
 		err := stream.Send(&spb.PutChunkRequest{Data: data[:n]})
 		if err != nil {
 			return err 
