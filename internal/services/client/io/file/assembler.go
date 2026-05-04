@@ -14,13 +14,13 @@ import (
 type ChunkKeyComparer func(t.ChunkKey, t.ChunkKey) int
 
 type FileObjectAssembler struct {
-	baseDir string
+	destPath string
 	compare ChunkKeyComparer 
 }
 
-func NewFileObjectAssembler(baseDir string, compare ChunkKeyComparer) (*FileObjectAssembler, error) {
-
-	err := os.MkdirAll(baseDir, 0o755)
+func NewFileObjectAssembler(destPath string, compare ChunkKeyComparer) (*FileObjectAssembler, error) {
+	destDir := filepath.Dir(destPath)
+	err := os.MkdirAll(destDir, 0o755)
 	if err != nil {
 		return nil, err
 	}
@@ -28,7 +28,7 @@ func NewFileObjectAssembler(baseDir string, compare ChunkKeyComparer) (*FileObje
 	if compare == nil {
 		return nil, errors.New("missing compare func")
 	}
-	return &FileObjectAssembler{baseDir: baseDir, compare: compare}, nil
+	return &FileObjectAssembler{destPath: destPath, compare: compare}, nil
 }
 
 func (a *FileObjectAssembler) NewWriter(obj t.ObjectDesc, chunks []t.ChunkDesc) (c.ObjectWriter, error) {
@@ -47,9 +47,7 @@ func (a *FileObjectAssembler) NewWriter(obj t.ObjectDesc, chunks []t.ChunkDesc) 
 		return nil, c.ErrObjectSizeMismatch	
 	}
 
-	path := filepath.Join(a.baseDir, string(obj.ID))
-
-	fd, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
+	fd, err := os.OpenFile(a.destPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
 	if err != nil {
 		return nil, err
 	}

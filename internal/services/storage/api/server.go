@@ -3,6 +3,7 @@ package api
 import (
 	"fmt"
 	"io"
+	"log/slog"
 
 	cpb "dos/gen/proto/common/v1"
 	spb "dos/gen/proto/storage/v1"
@@ -27,7 +28,12 @@ func New(service *core.Service, config *ServerConfig) *Server {
 }
 
 func (srv *Server) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) {
-	defer func() { err = toStatus(err) }()
+	defer func() {
+		if err != nil {
+			slog.ErrorContext(stream.Context(), "put chunk failed", "error", err)
+			err = toStatus(err)
+		}
+	}()
 
 	req, err := stream.Recv()
 	if err != nil {
@@ -38,6 +44,8 @@ func (srv *Server) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) 
 	if err := srv.validatePutChunkHeader(header); err != nil {
 		return err
 	}
+
+	slog.DebugContext(stream.Context(), "put chunk request", "chunk_id", header.GetChunkId())
 
 	chunkDesc := convert.ChunkDescFromPB(header) 
 	session, err := srv.service.StartUploadSession(&chunkDesc)
@@ -70,7 +78,14 @@ func (srv *Server) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) 
 }
 
 func (srv *Server) GetChunk(req *spb.GetChunkRequest, stream spb.ChunkService_GetChunkServer) (err error) {
-	defer func() { err = toStatus(err) }()
+	defer func() {
+		if err != nil {
+			slog.ErrorContext(
+				stream.Context(), "get chunk failed", "chunk_id", req.GetChunkId(), "error", err)
+			err = toStatus(err)
+		}
+	}()
+	slog.DebugContext(stream.Context(), "get chunk request", "chunk_id", req.GetChunkId())
 
 	chunk, err := srv.service.GetChunk(t.ChunkID(req.GetChunkId()))
 	if err != nil {

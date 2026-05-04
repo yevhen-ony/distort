@@ -10,7 +10,7 @@ import (
 
 type ChunkWriter interface {
 	io.WriteCloser
-	Digest() digest.Digest
+	Digest() *digest.Digest
 	Commit(t.ChunkID) error
 }
 

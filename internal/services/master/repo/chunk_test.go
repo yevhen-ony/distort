@@ -42,7 +42,7 @@ func TestInMemChunkRepo_Get(test *testing.T) {
 	})
 
 	test.Run("WithDigest", func(test *testing.T) {
-		r.SetDigest(ctx, id, digest.Digest{Size: 1, Checksum: "abc"})
+		r.SetDigest(ctx, id, &digest.Digest{Size: 1, Checksum: "abc"})
 		
 		ch, err := r.Get(ctx, id)
 		require.NoError(test, err)
@@ -60,7 +60,7 @@ func TestInMemChunkRepo_SetDigest(test *testing.T) {
 	err := r.Create(ctx, id)
 	require.NoError(test, err)
 
-	dgt := digest.Digest{Size: 5, Checksum: "abc"}
+	dgt := &digest.Digest{Size: 5, Checksum: "abc"}
 	test.Run("NewDigest", func(test *testing.T) {
 		require.NoError(test, r.SetDigest(ctx, id, dgt))
 	})
@@ -70,7 +70,7 @@ func TestInMemChunkRepo_SetDigest(test *testing.T) {
 	})
 
 	test.Run("ConflictDigest", func(test *testing.T) {
-		err = r.SetDigest(ctx, id, digest.Digest{
+		err = r.SetDigest(ctx, id, &digest.Digest{
 			Size: 5,
 			Checksum: "xyz",
 		})

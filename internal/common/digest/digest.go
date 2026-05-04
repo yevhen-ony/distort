@@ -19,7 +19,10 @@ type Digest struct {
 	Size int64 
 }
 
-func (d *Digest) Match(other Digest) error {
+func (d *Digest) Match(other *Digest) error {
+	if other == nil {
+		return fmt.Errorf("compare with nil: %w", ErrDigestMismatch) 
+	}
 	if d.Size != other.Size {
 		return fmt.Errorf(
 			"size: got %d, want %d: %w",
@@ -36,6 +39,9 @@ func (d *Digest) Match(other Digest) error {
 }
 
 func (d *Digest) Clone() *Digest {
+	if d == nil {
+		return nil
+	}
 	return &Digest{
 		Checksum: d.Checksum,
 		Size: d.Size,
@@ -61,8 +67,8 @@ func (d *Digester) Write(p []byte) (int, error) {
 	return n, err
 }
 
-func (d *Digester) Digest() Digest {
-	return Digest{
+func (d *Digester) Digest() *Digest {
+	return &Digest{
 		Size: d.total,
 		Checksum: d.Checksum(),
 	}

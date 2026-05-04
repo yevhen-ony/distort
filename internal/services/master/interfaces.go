@@ -27,7 +27,7 @@ type ChunkRepo interface {
 	NewChunkID() t.ChunkID
 	Create(context.Context, t.ChunkID) error
 	Get(context.Context, t.ChunkID) (Chunk, error)
-	SetDigest(context.Context, t.ChunkID, digest.Digest) error
+	SetDigest(context.Context, t.ChunkID, *digest.Digest) error
 }
 
 type NodeQuery struct {

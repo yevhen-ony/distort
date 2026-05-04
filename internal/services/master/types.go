@@ -1,7 +1,6 @@
 package master
 
 import (
-	"dos/internal/common/digest"
 	t "dos/internal/common/types"
 	"maps"
 	"time"
@@ -27,8 +26,8 @@ func (o *Object) Clone() *Object {
 }
 
 type Chunk struct {
-	ID     t.ChunkID
-	Digest *digest.Digest
+	t.ChunkMeta
+	ReplicaCount int	
 }
 
 func (c *Chunk) Clone() *Chunk {
@@ -36,11 +35,10 @@ func (c *Chunk) Clone() *Chunk {
 		return nil
 	}
 
-	clone := Chunk{ID: c.ID}
-	if c.Digest != nil {
-		clone.Digest = c.Digest.Clone()
+	return &Chunk{
+		ChunkMeta: *c.ChunkMeta.Clone(),
+		ReplicaCount: c.ReplicaCount,
 	}
-	return &clone
 }
 
 type Node struct {

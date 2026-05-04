@@ -95,10 +95,10 @@ type ChunkDescLike interface {
 }
 
 func ChunkDescFromPB(pbObj ChunkDescLike) t.ChunkMeta {
-
+	digest := DigestFromPB(pbObj.GetDigest())
 	return t.ChunkMeta{
 		ID: t.ChunkID(pbObj.GetChunkId()),
-		Digest: DigestFromPB(pbObj.GetDigest()),
+		Digest: &digest,
 	}
 }
 

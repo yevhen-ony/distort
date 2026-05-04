@@ -76,7 +76,7 @@ func (w *FSChunkWriter) Write(data []byte) (int, error) {
 	return n, nil 
 }
 
-func (w *FSChunkWriter) Digest() digest.Digest {
+func (w *FSChunkWriter) Digest() *digest.Digest {
 	return w.dg.Digest()
 }
 

@@ -33,7 +33,7 @@ func ChunkPlacementToPB(mChunk ...t.ChunkPlacement) []*mpb.ChunkPlacement {
 	return pbChunks 
 }
 
-func DigestToPB(d ...digest.Digest) []*cpb.Digest {
+func DigestToPB(d ...*digest.Digest) []*cpb.Digest {
 
 	pbDigests := make([]*cpb.Digest, 0, len(d))
 	for _, dgt := range d {

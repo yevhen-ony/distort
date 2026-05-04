@@ -168,7 +168,7 @@ func (ct *StorageTransport) sendData(stream spb.ChunkService_PutChunkClient, dat
 	return nil
 }
 
-func (ct *StorageTransport) recvData(stream spb.ChunkService_GetChunkClient) ([]byte, digest.Digest, error) {
+func (ct *StorageTransport) recvData(stream spb.ChunkService_GetChunkClient) ([]byte, *digest.Digest, error) {
 	var buf bytes.Buffer
 	dg := digest.New()
 
@@ -178,12 +178,12 @@ func (ct *StorageTransport) recvData(stream spb.ChunkService_GetChunkClient) ([]
 			break
 		}
 		if err != nil {
-			return nil, digest.Digest{}, err
+			return nil, nil, err
 		}
 
 		data := rsp.GetData()
 		if data == nil {
-			return nil, digest.Digest{}, ErrDataInvalid 
+			return nil, nil, ErrDataInvalid 
 		}
 
 		buf.Write(rsp.Data)

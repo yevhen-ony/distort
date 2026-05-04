@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"log/slog"
 	"os"
 
 	"dos/internal/common/config"
@@ -40,28 +39,21 @@ func NewFileChunker(path string, cfg *FileChunkerConfig) (*FileChunker, error) {
 func (fc *FileChunker) Next() (t.ChunkKey, []byte, error) {
 	chunkKey := t.ChunkKey(fmt.Sprintf("%06d", fc.key))
 	fc.key++
-	slog.Info("in Next 1:", "cfg", fc.cfg)
 
 	buf := make([]byte, fc.cfg.ChunkSize)
 	n, err := io.ReadFull(fc.fd, buf)
-	
-	slog.Info("in Next 2")
 
 	switch {
 	case err == nil:
-		slog.Info("*** error nil")
 		return chunkKey, buf, nil
 
 	case errors.Is(err, io.ErrUnexpectedEOF):
-		slog.Info("*** error unexpected EOF")
 		return chunkKey, buf[:n], nil
 
 	case errors.Is(err, io.EOF):
-		slog.Info("*** error EOF")
 		return "", nil, io.EOF
 
 	default:
-		slog.Info("*** error ERROR")
 		return "", nil, err
 	}
 }

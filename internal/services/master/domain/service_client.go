@@ -65,6 +65,10 @@ func (s *MasterService) GetObjectAccess(ctx context.Context, oid t.ObjectID) (t.
 	placements := []t.ChunkPlacement{}
 	for key, chunkID := range obj.Chunks {
 		chunk, err := s.chunkRepo.Get(ctx, chunkID)
+		if chunk.ReplicaCount == 0 {
+			return t.ObjectAccess{}, fmt.Errorf("replica count = 0: %w", m.ErrChunkNotAvailable) 
+		}
+
 		if err != nil {
 			return t.ObjectAccess{}, fmt.Errorf("access chunk %s: %w", chunkID, err)
 		}

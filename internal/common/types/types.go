@@ -43,7 +43,14 @@ type NodeStats struct {
 
 type ChunkMeta struct {
 	ID     ChunkID
-	Digest digest.Digest
+	Digest *digest.Digest
+}
+
+func (meta *ChunkMeta) Clone() *ChunkMeta {
+	return &ChunkMeta{
+		ID: meta.ID,
+		Digest: meta.Digest.Clone(),
+	}
 }
 
 type ChunkStorageReject struct {

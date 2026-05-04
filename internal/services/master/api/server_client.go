@@ -105,11 +105,12 @@ func (s *ClientServer) GetObjectAccess(
 	if err = validateGetObjectAccessRequest(req); err != nil {
 		return nil, err
 	}
-
 	object, err := s.service.GetObjectAccess(ctx, t.ObjectID(req.GetObjectId()))
 	if err != nil {
 		return nil, err
 	}
+
+	slog.Info("*** 2")
 
 	rsp = &pb.GetObjectAccessResponse{
 		ObjectId:  string(object.ID),

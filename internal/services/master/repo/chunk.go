@@ -4,10 +4,11 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"fmt"
 
 	"dos/internal/common/digest"
-	m "dos/internal/services/master"
 	t "dos/internal/common/types"
+	m "dos/internal/services/master"
 )
 
 type InMemChunkRepo struct { 
@@ -24,7 +25,8 @@ func (r *InMemChunkRepo) Create(_ context.Context, id t.ChunkID) error {
 	if _, ok := r.chunks[id]; ok {
 		return m.ErrChunkExists
 	}
-	r.chunks[id] = &m.Chunk{ ID: id }
+	chunkMeta := t.ChunkMeta{ID: id}
+	r.chunks[id] = &m.Chunk{ChunkMeta: chunkMeta}
 	return nil
 }
 
@@ -43,7 +45,10 @@ func genChunkID() t.ChunkID {
 	return t.ChunkID(hex.EncodeToString(b[:]))
 }
 
-func (r *InMemChunkRepo) SetDigest(_ context.Context, id t.ChunkID, digest digest.Digest) error {
+func (r *InMemChunkRepo) SetDigest(_ context.Context, id t.ChunkID, digest *digest.Digest) error {
+	if digest == nil {
+		return fmt.Errorf("set nil digest")
+	}
 	chunk, ok := r.chunks[id]	
 	if !ok {
 		return m.ErrChunkNotFound 
