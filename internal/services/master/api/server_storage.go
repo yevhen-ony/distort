@@ -99,6 +99,7 @@ func (s *StorageServer) ReportStorage(
 	}
 
 	nodeID := t.NodeID(req.GetNodeId())
+
 	desc := make([]t.ChunkMeta, 0, len(req.GetChunkReports()))
 	for _, report := range req.GetChunkReports() {
 		d := convert.ChunkDescFromPB(report)
@@ -110,13 +111,13 @@ func (s *StorageServer) ReportStorage(
 		return nil, err
 	}
 
-	pbRejects := make([]*mpb.StorageReject, 0, len(rejects))
-	for _, rej := range rejects {
-		pbRejects = append(pbRejects, &mpb.StorageReject{
+	pbRejects := make([]*mpb.StorageReject, len(rejects))
+	for i, rej := range rejects {
+		pbRejects[i] = &mpb.StorageReject{
 			ChunkId: string(rej.ChunkID),
 			Reason:  rej.Reason,
-		})
+		}
 	}
-	rsp.Rejects = pbRejects
+	rsp = &mpb.ReportStorageResponse{Rejects: pbRejects}
 	return rsp, nil
 }

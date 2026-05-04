@@ -18,7 +18,6 @@ master:
 service:
   advertise_addr: localhost:10001
   max_storage_bytes: 1073741824 
-
-heartbeat:
-  delay: 15s
+  heartbeat_delay: 5s
+  report_delay: 5s
 

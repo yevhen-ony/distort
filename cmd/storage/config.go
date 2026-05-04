@@ -7,7 +7,6 @@ import (
 	"dos/internal/services/storage/core"
 	"dos/internal/services/storage/store"
 	"dos/internal/services/storage/transport"
-	"dos/internal/services/storage/worker"
 )
 
 type Config struct {
@@ -17,5 +16,4 @@ type Config struct {
 	Master    transport.MasterTransportConfig `yaml:"master"`
 	Service   core.StorageServiceConfig       `yaml:"service"`
 	Logger    logger.LogConfig                `yaml:"logger"`
-	Heartbeat worker.PeriodicConfig           `yaml:"heartbeat"`
 }

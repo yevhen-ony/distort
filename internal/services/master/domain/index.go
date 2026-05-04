@@ -50,7 +50,7 @@ func (i *InMemChunkNodeIndex) GetChunkNodes(_ context.Context, chunkID t.ChunkID
 	return result
 }
 
-func (i *InMemChunkNodeIndex) AttachChunk(_ context.Context, nodeID t.NodeID, chunkID t.ChunkID) {
+func (i *InMemChunkNodeIndex) AttachChunk(_ context.Context, nodeID t.NodeID, chunkID t.ChunkID) bool {
 	i.mu.Lock()	
 	defer i.mu.Unlock()
 
@@ -59,8 +59,11 @@ func (i *InMemChunkNodeIndex) AttachChunk(_ context.Context, nodeID t.NodeID, ch
 		nodes = NodeSet{}
 		i.chunkNodes[chunkID] = nodes
 	}
+	if _, ok := nodes[nodeID]; ok {
+		return false
+	}
+
 	nodes[nodeID] = struct{}{}
-	
 
 	chunks := i.nodeChunks[nodeID]
 	if chunks == nil {
@@ -69,7 +72,7 @@ func (i *InMemChunkNodeIndex) AttachChunk(_ context.Context, nodeID t.NodeID, ch
 	}
 	chunks[chunkID] = struct{}{}
 	
-	return
+	return true
 }
 
 func (i *InMemChunkNodeIndex) DetachNode(_ context.Context, nodeID t.NodeID) {

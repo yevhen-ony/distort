@@ -70,3 +70,13 @@ func (r *InMemChunkRepo) Get(_ context.Context, id t.ChunkID) (m.Chunk, error) {
 	}
 	return *chunk.Clone(), nil
 }
+
+func (r *InMemChunkRepo) IncReplication(_ context.Context, id t.ChunkID) error {
+	chunk, ok := r.chunks[id]	
+	if !ok {
+		return m.ErrChunkNotFound 
+	}
+	chunk.ReplicaCount++
+	return nil
+}
+

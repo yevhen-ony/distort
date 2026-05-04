@@ -33,8 +33,10 @@ func (s *MasterService) ReportChunkStorage(
 			})
 			continue
 		}
-
-		s.index.AttachChunk(ctx, nodeID, chunk.ID)
+		
+		if s.index.AttachChunk(ctx, nodeID, chunk.ID) {
+			s.chunkRepo.IncReplication(ctx, chunk.ID)
+		}
 	}
 	return rejected, nil
 }

@@ -90,7 +90,7 @@ func TestService_CommitUploadSession(test *testing.T) {
 		require.NoError(test, err)
 
   		// Simulate race: ID becomes taken after session start but before commit.
-		svc.catalog[desc.ID] = t.ChunkMeta{}
+		svc.catalog[desc.ID] = &s.ChunkState{}
 
 		err = svc.CommitUploadSession(session, desc)
 		require.Error(test, err)
