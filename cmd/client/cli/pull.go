@@ -2,18 +2,22 @@ package main
 
 import (
 	"context"
-	t "dos/internal/common/types"
-	"dos/internal/services/client/io/file"
 	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
+
+	t "dos/internal/common/types"
+	"dos/internal/services/client/io/file"
 )
 
 func (app *App) Pull(ctx context.Context, id string, destPath string) error {
+	app.progressOutput.Start()
+	defer app.progressOutput.Stop()
+
 	comparer := func (lhs, rhs t.ChunkKey) int {
-		if lhs < rhs { return 1 }
-		if lhs > rhs { return -1 }
+		if lhs < rhs { return -1 }
+		if lhs > rhs { return 1 }
 		return 0
 
 	}

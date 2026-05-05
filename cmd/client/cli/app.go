@@ -1,10 +1,14 @@
 package main
 
 import (
+	"fmt"
+
+	"github.com/gosuri/uilive"
+
 	"dos/internal/common/connect"
 	"dos/internal/services/client/domain"
+	"dos/internal/services/client/progress"
 	"dos/internal/services/client/transport"
-	"fmt"
 )
 
 type App struct {
@@ -13,6 +17,9 @@ type App struct {
 	Master  *transport.MasterTransport
 	Storage *transport.StorageTransport
 	Service *domain.Service
+
+	progressView   *progress.ProgressView
+	progressOutput *uilive.Writer
 }
 
 func (app *App) Close() error {
@@ -37,17 +44,28 @@ func NewApp(cfg *Config) (*App, error) {
 		return nil, fmt.Errorf("init storage transport: %w", err)
 	}
 
-	service, err := domain.New(master, storage)
+	output := uilive.New()
+	view := progress.NewProgressView()
+	opt := domain.WithProgressUpdates(func(e *progress.ProgressEvent) {
+		view.Update(e)
+		fmt.Fprint(output, view.String())
+	})
+
+	service, err := domain.NewService(master, storage, opt)
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("init service: %w", err)
 	}
+
 	app := &App{
 		Config:  cfg,
 		Conn:    conn,
 		Master:  master,
 		Storage: storage,
 		Service: service,
+
+		progressView:   view,
+		progressOutput: output,
 	}
 	return app, nil
 }
