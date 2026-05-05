@@ -7,7 +7,6 @@ import (
 
 	"dos/internal/common/connect"
 	"dos/internal/services/client/domain"
-	"dos/internal/services/client/progress"
 	"dos/internal/services/client/transport"
 )
 
@@ -18,7 +17,6 @@ type App struct {
 	Storage *transport.StorageTransport
 	Service *domain.Service
 
-	progressView   *progress.ProgressView
 	progressOutput *uilive.Writer
 }
 
@@ -45,10 +43,9 @@ func NewApp(cfg *Config) (*App, error) {
 	}
 
 	output := uilive.New()
-	view := progress.NewProgressView()
-	opt := domain.WithProgressUpdates(func(e *progress.ProgressEvent) {
-		view.Update(e)
-		fmt.Fprint(output, view.String())
+	opt := domain.WithProgressHandler(func(op *domain.ObjectProgress) {
+		fmt.Fprint(output, op.String())
+	 	_ = output.Flush()
 	})
 
 	service, err := domain.NewService(master, storage, opt)
@@ -64,7 +61,6 @@ func NewApp(cfg *Config) (*App, error) {
 		Storage: storage,
 		Service: service,
 
-		progressView:   view,
 		progressOutput: output,
 	}
 	return app, nil

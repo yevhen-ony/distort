@@ -13,12 +13,12 @@ import (
 
 type ChunkKeyComparer func(t.ChunkKey, t.ChunkKey) int
 
-type FileObjectAssembler struct {
+type ObjectAssembler struct {
 	destPath string
 	compare ChunkKeyComparer 
 }
 
-func NewFileObjectAssembler(destPath string, compare ChunkKeyComparer) (*FileObjectAssembler, error) {
+func NewFileObjectAssembler(destPath string, compare ChunkKeyComparer) (*ObjectAssembler, error) {
 	destDir := filepath.Dir(destPath)
 	err := os.MkdirAll(destDir, 0o755)
 	if err != nil {
@@ -28,10 +28,10 @@ func NewFileObjectAssembler(destPath string, compare ChunkKeyComparer) (*FileObj
 	if compare == nil {
 		return nil, errors.New("missing compare func")
 	}
-	return &FileObjectAssembler{destPath: destPath, compare: compare}, nil
+	return &ObjectAssembler{destPath: destPath, compare: compare}, nil
 }
 
-func (a *FileObjectAssembler) NewWriter(obj t.ObjectDesc, chunks []t.ChunkDesc) (c.ObjectWriter, error) {
+func (a *ObjectAssembler) NewWriter(obj t.ObjectDesc, chunks []t.ChunkDesc) (*ObjectWriter, error) {
 
 	slices.SortFunc(chunks, func(lhs, rhs t.ChunkDesc) int {
 		return a.compare(lhs.ChunkKey, rhs.ChunkKey)
@@ -56,17 +56,17 @@ func (a *FileObjectAssembler) NewWriter(obj t.ObjectDesc, chunks []t.ChunkDesc) 
 		_ = fd.Close()
 		return nil, err
 	}
-	writer := &FileObjectWriter{fd: fd, layout: layout}
+	writer := &ObjectWriter{fd: fd, layout: layout}
 
 	return writer, nil
 }
 
-type FileObjectWriter struct {
+type ObjectWriter struct {
 	fd *os.File
 	layout map[t.ChunkID]region
 }
 
-func (w *FileObjectWriter) WriteChunk(id t.ChunkID, data []byte) error {
+func (w *ObjectWriter) WriteChunk(id t.ChunkID, data []byte) error {
 
 	reg, ok := w.layout[id]	
 	if !ok {
@@ -86,7 +86,7 @@ func (w *FileObjectWriter) WriteChunk(id t.ChunkID, data []byte) error {
 	return nil 
 }
 
-func (w *FileObjectWriter) Close() error {
+func (w *ObjectWriter) Close() error {
 
 	if err := w.fd.Sync(); err != nil {
 		return err

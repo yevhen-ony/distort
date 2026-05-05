@@ -11,17 +11,17 @@ import (
 	c "dos/internal/services/client"
 )
 
-type FileChunker struct {
+type ObjectChunker struct {
 	fd  *os.File
-	cfg *FileChunkerConfig
+	cfg *ObjectChunkerConfig
 	key int
 }
 
-type FileChunkerConfig struct {
+type ObjectChunkerConfig struct {
 	ChunkSize config.Size `yaml:"chunk_size"`
 }
 
-func NewFileChunker(path string, cfg *FileChunkerConfig) (*FileChunker, error) {
+func NewObjectChunker(path string, cfg *ObjectChunkerConfig) (*ObjectChunker, error) {
 	if cfg == nil {
 		return nil, errors.New("missing config") 
 	}
@@ -32,11 +32,11 @@ func NewFileChunker(path string, cfg *FileChunkerConfig) (*FileChunker, error) {
 	if err != nil {
 		return nil, err
 	}
-	chunker := &FileChunker{fd: fd, cfg: cfg}
+	chunker := &ObjectChunker{fd: fd, cfg: cfg}
 	return chunker, nil
 }
 
-func (fc *FileChunker) Next() (t.ChunkKey, []byte, error) {
+func (fc *ObjectChunker) Next() (t.ChunkKey, []byte, error) {
 	chunkKey := t.ChunkKey(fmt.Sprintf("%06d", fc.key))
 	fc.key++
 
@@ -58,6 +58,6 @@ func (fc *FileChunker) Next() (t.ChunkKey, []byte, error) {
 	}
 }
 
-func (fc *FileChunker) Close() error {
+func (fc *ObjectChunker) Close() error {
 	return fc.fd.Close()
 }

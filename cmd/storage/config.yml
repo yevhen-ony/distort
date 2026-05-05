@@ -3,7 +3,7 @@ logger:
   service: storage 
 
 api:
-  frame_size: 5 
+  frame_size: 3MB
 
 store:
   root_dir: ./chunkserver_data

@@ -94,7 +94,7 @@ type ChunkDescLike interface {
 	GetChunkId() string
 }
 
-func ChunkDescFromPB(pbObj ChunkDescLike) t.ChunkMeta {
+func ChunkMetaFromPB(pbObj ChunkDescLike) t.ChunkMeta {
 	digest := DigestFromPB(pbObj.GetDigest())
 	return t.ChunkMeta{
 		ID: t.ChunkID(pbObj.GetChunkId()),

@@ -11,7 +11,7 @@ func (app *App) Push(ctx context.Context, objectID string, path string) error {
 	app.progressOutput.Start()
 	defer app.progressOutput.Stop()
 
-	chunker, err := file.NewFileChunker(path, &app.Config.Chunker)
+	chunker, err := file.NewObjectChunker(path, &app.Config.Chunker)
 	if err != nil {
 		return fmt.Errorf("init chunker: %w", err)
 	}

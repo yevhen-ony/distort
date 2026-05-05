@@ -8,7 +8,8 @@ import (
 
 	t "dos/internal/common/types"
 	c "dos/internal/services/client"
-	"dos/internal/services/client/progress"
+	"dos/internal/services/client/transport"
+	"dos/internal/services/client/io/file"
 )
 
 var (
@@ -17,16 +18,18 @@ var (
 )
 
 type Service struct {
-	master  c.MasterTransport
-	storage c.StorageTransport
+	master  *transport.MasterTransport
+	storage *transport.StorageTransport
 
-	onProgressUpdate func(*progress.ProgressEvent)
+	onProgress func(*ObjectProgress)
 }
 
 type ServiceOption func(*Service)
 
 func NewService(
-	master c.MasterTransport, storage c.StorageTransport, opts ...ServiceOption,
+	master *transport.MasterTransport,
+	storage *transport.StorageTransport,
+	opts ...ServiceOption,
 ) (*Service, error) {
 
 	if master == nil {
@@ -36,7 +39,7 @@ func NewService(
 		return nil, ErrMissingStorageTransport
 	}
 	svc := &Service{master: master, storage: storage}
-	svc.onProgressUpdate = func(*progress.ProgressEvent) {} // noop by default
+	svc.onProgress = func(*ObjectProgress) {} // noop by default
 
 	for _, opt := range opts {
 		opt(svc)
@@ -44,12 +47,13 @@ func NewService(
 	return svc, nil
 }
 
-func (s *Service) Push(ctx context.Context, objectID t.ObjectID, source c.ChunkSource) error {
+func (s *Service) Push(ctx context.Context, objectID t.ObjectID, source *file.ObjectChunker) error {
 
 	if err := s.master.CreateObject(ctx, objectID); err != nil {
 		return fmt.Errorf("create object: %w", err)
 	}
-	s.onProgressUpdate(progress.ObjectState{ObjectID: objectID}.ToEvent())
+	progress := NewObjectProgress(objectID)
+	s.onProgress(progress)
 
 	for {
 		key, data, err := source.Next()
@@ -59,7 +63,7 @@ func (s *Service) Push(ctx context.Context, objectID t.ObjectID, source c.ChunkS
 		if err != nil {
 			return fmt.Errorf("read chunk: %w", err)
 		}
-		allocQuery := &c.AllocateChunkQuery{
+		allocQuery := &transport.AllocateChunkQuery{
 			ObjectID:  objectID,
 			ChunkKey:  key,
 			ChunkSize: int64(len(data)),
@@ -70,27 +74,29 @@ func (s *Service) Push(ctx context.Context, objectID t.ObjectID, source c.ChunkS
 		}
 
 		chunk := c.NewChunk(loc.ChunkID, data)
-		if err := s.storage.PushChunk(ctx, loc.Nodes, &chunk); err != nil {
+		opt := transport.WithProgressHandler(func(cp transport.ChunkProgress) {
+			progress.UpdateChunk(key, cp)		
+			s.onProgress(progress)
+		})
+
+		session := s.storage.NewTransferSession(loc.Nodes, opt) 
+		if err := session.Upload(ctx, &chunk); err != nil {
 			return err
 		}
-
-		s.onProgressUpdate(progress.ChunkState{
-			ObjectID: objectID,
-			Meta:     chunk.Meta,
-			Key:      key,
-		}.ToEvent())
 	}
+	progress.Done = true
 	return nil
 }
 
-func (s *Service) Pull(ctx context.Context, objectID t.ObjectID, asm c.ObjectAssembler) error {
+func (s *Service) Pull(ctx context.Context, objectID t.ObjectID, asm *file.ObjectAssembler) error {
 
 	access, err := s.master.GetObjectAccess(ctx, objectID)
 	if err != nil {
 		return fmt.Errorf("get object access: %w", err)
 	}
 
-	s.onProgressUpdate(progress.ObjectState{ObjectID: objectID}.ToEvent())
+	progress := NewObjectProgress(objectID)
+	s.onProgress(progress)
 
 	chunkDescs := make([]t.ChunkDesc, len(access.Chunks))
 	for i, cp := range access.Chunks {
@@ -104,24 +110,27 @@ func (s *Service) Pull(ctx context.Context, objectID t.ObjectID, asm c.ObjectAss
 	defer ow.Close()
 
 	for _, cp := range access.Chunks {
-		chunk, err := s.storage.PullChunk(ctx, cp.Nodes, cp.ChunkID)
+		
+		opt := transport.WithProgressHandler(func(prog transport.ChunkProgress) {
+			progress.UpdateChunk(cp.ChunkKey, prog)		
+			s.onProgress(progress)
+		})
+		session := s.storage.NewTransferSession(cp.Nodes, opt)
+		chunk, err := session.Download(ctx, cp.ChunkID)
 		if err != nil {
 			return fmt.Errorf("pull chunk %s: %w", cp.ChunkID, err)
 		}
 		if err := ow.WriteChunk(chunk.Meta.ID, chunk.Data); err != nil {
 			return fmt.Errorf("write chunk %s: %w", cp.ChunkID, err)
 		}
-		s.onProgressUpdate(progress.ChunkState{
-			ObjectID: objectID,
-			Meta:     chunk.Meta,
-			Key:      cp.ChunkKey,
-		}.ToEvent())
 	}
+	progress.Done = true
+	s.onProgress(progress)
 	return nil
 }
 
-func WithProgressUpdates(h func(*progress.ProgressEvent)) ServiceOption {
+func WithProgressHandler(h func(*ObjectProgress)) ServiceOption {
 	return func(s *Service) {
-		s.onProgressUpdate = h
+		s.onProgress = h
 	}
 }

@@ -10,7 +10,6 @@ import (
 	"dos/internal/common/connect"
 	"dos/internal/common/convert"
 	t "dos/internal/common/types"
-	c "dos/internal/services/client"
 )
 
 type MasterTransport struct {
@@ -45,8 +44,14 @@ func (mt *MasterTransport) CreateObject(ctx context.Context, oid t.ObjectID) err
 	return nil
 }
 
+type AllocateChunkQuery struct {
+	ObjectID t.ObjectID
+	ChunkKey t.ChunkKey
+	ChunkSize int64
+}
+
 func (mt *MasterTransport) AllocateChunk(
-	ctx context.Context, query *c.AllocateChunkQuery,
+	ctx context.Context, query *AllocateChunkQuery,
 ) (t.ChunkPlacement, error)  {
 	conn, err := mt.conn.Get(mt.config.Addr)
 	if err != nil {

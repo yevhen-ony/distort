@@ -102,7 +102,7 @@ func (s *StorageServer) ReportStorage(
 
 	desc := make([]t.ChunkMeta, 0, len(req.GetChunkReports()))
 	for _, report := range req.GetChunkReports() {
-		d := convert.ChunkDescFromPB(report)
+		d := convert.ChunkMetaFromPB(report)
 		desc = append(desc, d)
 	}
 

@@ -14,7 +14,7 @@ var (
 type Config struct {
 	Master  transport.MasterTransportConfig  `yaml:"master"`
 	Storage transport.StorageTransportConfig `yaml:"storage"`
-	Chunker file.FileChunkerConfig           `yaml:"chunker"`
+	Chunker file.ObjectChunkerConfig           `yaml:"chunker"`
 }
 
 func (cfg *Config) BindFlags(cmd *cobra.Command) {

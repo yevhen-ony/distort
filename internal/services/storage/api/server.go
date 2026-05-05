@@ -47,7 +47,7 @@ func (srv *Server) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) 
 
 	slog.DebugContext(stream.Context(), "put chunk request", "chunk_id", header.GetChunkId())
 
-	chunkDesc := convert.ChunkDescFromPB(header) 
+	chunkDesc := convert.ChunkMetaFromPB(header) 
 	session, err := srv.service.StartUploadSession(&chunkDesc)
 	if err != nil {
 		return fmt.Errorf("start upload session: %w", err)
