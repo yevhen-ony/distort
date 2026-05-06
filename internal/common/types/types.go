@@ -15,14 +15,14 @@ type NodeRef struct {
 }
 
 type ChunkDesc struct {
-	ChunkID  ChunkID
-	ChunkKey ChunkKey
+	ChunkID   ChunkID
+	ChunkKey  ChunkKey
 	ChunkSize int64
 }
 
 type ChunkPlacement struct {
 	ChunkDesc
-	Nodes    []NodeRef
+	Nodes []NodeRef
 }
 
 type ObjectDesc struct {
@@ -30,9 +30,14 @@ type ObjectDesc struct {
 	TotalSize int64
 }
 
+type ObjectItem struct {
+	ID         ObjectID
+	ChunkCount int
+}
+
 type ObjectAccess struct {
 	ObjectDesc
-	Chunks    []ChunkPlacement
+	Chunks []ChunkPlacement
 }
 
 type NodeStats struct {
@@ -48,7 +53,7 @@ type ChunkMeta struct {
 
 func (meta *ChunkMeta) Clone() *ChunkMeta {
 	return &ChunkMeta{
-		ID: meta.ID,
+		ID:     meta.ID,
 		Digest: meta.Digest.Clone(),
 	}
 }

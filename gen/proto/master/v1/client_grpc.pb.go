@@ -20,6 +20,7 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	MasterClientService_CreateObject_FullMethodName    = "/master.v1.MasterClientService/CreateObject"
+	MasterClientService_ListObjects_FullMethodName     = "/master.v1.MasterClientService/ListObjects"
 	MasterClientService_AllocateChunk_FullMethodName   = "/master.v1.MasterClientService/AllocateChunk"
 	MasterClientService_GetObjectAccess_FullMethodName = "/master.v1.MasterClientService/GetObjectAccess"
 )
@@ -29,6 +30,7 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MasterClientServiceClient interface {
 	CreateObject(ctx context.Context, in *CreateObjectRequest, opts ...grpc.CallOption) (*CreateObjectResponse, error)
+	ListObjects(ctx context.Context, in *ListObjectsRequest, opts ...grpc.CallOption) (*ListObjectsResponse, error)
 	AllocateChunk(ctx context.Context, in *AllocateChunkRequest, opts ...grpc.CallOption) (*AllocateChunkResponse, error)
 	GetObjectAccess(ctx context.Context, in *GetObjectAccessRequest, opts ...grpc.CallOption) (*GetObjectAccessResponse, error)
 }
@@ -45,6 +47,16 @@ func (c *masterClientServiceClient) CreateObject(ctx context.Context, in *Create
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateObjectResponse)
 	err := c.cc.Invoke(ctx, MasterClientService_CreateObject_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *masterClientServiceClient) ListObjects(ctx context.Context, in *ListObjectsRequest, opts ...grpc.CallOption) (*ListObjectsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListObjectsResponse)
+	err := c.cc.Invoke(ctx, MasterClientService_ListObjects_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -76,6 +88,7 @@ func (c *masterClientServiceClient) GetObjectAccess(ctx context.Context, in *Get
 // for forward compatibility.
 type MasterClientServiceServer interface {
 	CreateObject(context.Context, *CreateObjectRequest) (*CreateObjectResponse, error)
+	ListObjects(context.Context, *ListObjectsRequest) (*ListObjectsResponse, error)
 	AllocateChunk(context.Context, *AllocateChunkRequest) (*AllocateChunkResponse, error)
 	GetObjectAccess(context.Context, *GetObjectAccessRequest) (*GetObjectAccessResponse, error)
 	mustEmbedUnimplementedMasterClientServiceServer()
@@ -90,6 +103,9 @@ type UnimplementedMasterClientServiceServer struct{}
 
 func (UnimplementedMasterClientServiceServer) CreateObject(context.Context, *CreateObjectRequest) (*CreateObjectResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateObject not implemented")
+}
+func (UnimplementedMasterClientServiceServer) ListObjects(context.Context, *ListObjectsRequest) (*ListObjectsResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListObjects not implemented")
 }
 func (UnimplementedMasterClientServiceServer) AllocateChunk(context.Context, *AllocateChunkRequest) (*AllocateChunkResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AllocateChunk not implemented")
@@ -132,6 +148,24 @@ func _MasterClientService_CreateObject_Handler(srv interface{}, ctx context.Cont
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MasterClientServiceServer).CreateObject(ctx, req.(*CreateObjectRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MasterClientService_ListObjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListObjectsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MasterClientServiceServer).ListObjects(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MasterClientService_ListObjects_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MasterClientServiceServer).ListObjects(ctx, req.(*ListObjectsRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -182,6 +216,10 @@ var MasterClientService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "CreateObject",
 			Handler:    _MasterClientService_CreateObject_Handler,
+		},
+		{
+			MethodName: "ListObjects",
+			Handler:    _MasterClientService_ListObjects_Handler,
 		},
 		{
 			MethodName: "AllocateChunk",

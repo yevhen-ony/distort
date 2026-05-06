@@ -13,7 +13,7 @@ import (
 )
 
 type MasterTransport struct {
-	conn   *connect.ConnCache
+	client pb.MasterClientServiceClient 
 	config *MasterTransportConfig
 }
 
@@ -24,19 +24,21 @@ func NewMasterTransport(conn *connect.ConnCache, config *MasterTransportConfig) 
 	if config == nil {
 		return nil, errors.New("missing config")
 	}
-	return &MasterTransport{conn: conn, config: config}, nil
+
+	c, err := conn.Get(config.Addr)
+	if err != nil {
+		return nil, fmt.Errorf("get conn: %w", err)
+	}
+	client := pb.NewMasterClientServiceClient(c)
+		
+	return &MasterTransport{client: client, config: config}, nil
 }
 
 func (mt *MasterTransport) CreateObject(ctx context.Context, oid t.ObjectID) error {
-	conn, err := mt.conn.Get(mt.config.Addr)
-	if err != nil {
-		return fmt.Errorf("get conn: %w", err)
-	}
-	client := pb.NewMasterClientServiceClient(conn)
 	
 	req := &pb.CreateObjectRequest{ObjectId: string(oid)}
 
-	_, err = client.CreateObject(ctx, req)
+	_, err := mt.client.CreateObject(ctx, req)
 	if err != nil {
 		return fmt.Errorf("transport: %w", err)
 	}
@@ -53,18 +55,13 @@ type AllocateChunkQuery struct {
 func (mt *MasterTransport) AllocateChunk(
 	ctx context.Context, query *AllocateChunkQuery,
 ) (t.ChunkPlacement, error)  {
-	conn, err := mt.conn.Get(mt.config.Addr)
-	if err != nil {
-		return t.ChunkPlacement{}, fmt.Errorf("get conn: %w", err) 
-	}
-	client := pb.NewMasterClientServiceClient(conn)
 
 	req := &pb.AllocateChunkRequest{
 		ObjectId: string(query.ObjectID),
 		ChunkKey: string(query.ChunkKey),
 		ChunkSize: query.ChunkSize,
 	}
-	rsp, err := client.AllocateChunk(ctx, req)
+	rsp, err := mt.client.AllocateChunk(ctx, req)
 	if err != nil {
 		return t.ChunkPlacement{}, fmt.Errorf("transport: %w", err) 
 	}
@@ -75,17 +72,28 @@ func (mt *MasterTransport) AllocateChunk(
 func (mt *MasterTransport) GetObjectAccess(
 	ctx context.Context, oid t.ObjectID,
 ) (t.ObjectAccess, error)  {
-	conn, err := mt.conn.Get(mt.config.Addr)
-	if err != nil {
-		return t.ObjectAccess{}, fmt.Errorf("get conn: %w", err)
-	}
-	client :=  pb.NewMasterClientServiceClient(conn)
 
 	req := &pb.GetObjectAccessRequest{ObjectId: string(oid)}
-	rsp, err := client.GetObjectAccess(ctx, req)
+	rsp, err := mt.client.GetObjectAccess(ctx, req)
 	if err != nil {
 		return t.ObjectAccess{}, fmt.Errorf("transport: %w", err)
 	}
 	objAccess := *convert.ObjectAccessFromPB(rsp)
 	return objAccess, nil  
 }
+
+func (mt *MasterTransport) ListObjects( ctx context.Context) ([]t.ObjectItem, error) {
+
+	rsp, err :=  mt.client.ListObjects(ctx, &pb.ListObjectsRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("transport: %w", err)
+	}
+
+	pbItems := rsp.GetObjects()
+	items := make([]t.ObjectItem, len(pbItems))
+	for i, pbItem := range pbItems {
+		items[i] = convert.ObjectItemFromPB(pbItem)
+	}
+	return items, nil
+}
+

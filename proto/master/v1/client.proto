@@ -8,8 +8,20 @@ option go_package = "dos/gen/proto/master/v1;master";
 
 service MasterClientService {
   rpc CreateObject(CreateObjectRequest) returns (CreateObjectResponse);
+  rpc ListObjects(ListObjectsRequest) returns (ListObjectsResponse);
   rpc AllocateChunk(AllocateChunkRequest) returns (AllocateChunkResponse);
   rpc GetObjectAccess(GetObjectAccessRequest) returns (GetObjectAccessResponse);
+}
+
+message ListObjectsRequest {}
+
+message ListObjectsResponse {
+  repeated ObjectItem objects = 1;
+}
+
+message ObjectItem {
+  string object_id = 1;
+  int64 chunk_count = 2;
 }
 
 message CreateObjectRequest {

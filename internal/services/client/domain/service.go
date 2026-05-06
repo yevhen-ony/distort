@@ -129,6 +129,14 @@ func (s *Service) Pull(ctx context.Context, objectID t.ObjectID, asm *file.Objec
 	return nil
 }
 
+func (s *Service) List(ctx context.Context) ([]t.ObjectItem, error) {
+	items, err := s.master.ListObjects(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("list objects: %w", err) 
+	}
+	return items, nil
+}
+
 func WithProgressHandler(h func(*ObjectProgress)) ServiceOption {
 	return func(s *Service) {
 		s.onProgress = h

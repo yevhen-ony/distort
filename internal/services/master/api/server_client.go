@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 
+	mpb "dos/gen/proto/master/v1"
 	pb "dos/gen/proto/master/v1"
 	"dos/internal/common/convert"
 	t "dos/internal/common/types"
@@ -12,7 +13,7 @@ import (
 )
 
 type ClientServer struct {
-	pb.UnimplementedMasterClientServiceServer
+pb.UnimplementedMasterClientServiceServer
 	service m.Service
 }
 
@@ -110,8 +111,6 @@ func (s *ClientServer) GetObjectAccess(
 		return nil, err
 	}
 
-	slog.Info("*** 2")
-
 	rsp = &pb.GetObjectAccessResponse{
 		ObjectId:  string(object.ID),
 		TotalSize: object.TotalSize,
@@ -119,3 +118,26 @@ func (s *ClientServer) GetObjectAccess(
 	}
 	return rsp, nil
 }
+
+func (s *ClientServer) ListObjects(
+	ctx context.Context, req *pb.ListObjectsRequest,
+) ( rsp *pb.ListObjectsResponse, err error) {
+
+	defer func() {
+		if err != nil {
+			slog.ErrorContext(ctx, "list objects failed", "error", err)
+			err = toStatus(err)
+		}
+	}()
+	slog.DebugContext(ctx, "list objects requested")
+
+	objects, err := s.service.ListObjects(ctx)
+	if err != nil {
+		return nil, err
+	}
+	rsp = &mpb.ListObjectsResponse{
+		Objects: convert.ObjectItemToPB(objects...),
+	}
+	return rsp, nil	
+}
+

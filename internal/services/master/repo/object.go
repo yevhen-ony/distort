@@ -38,6 +38,17 @@ func (o *InMemObjectRepo) Get(_ context.Context, oid t.ObjectID) (m.Object, erro
 	return *obj.Clone(), nil
 }
 
+func (o *InMemObjectRepo) List(_ context.Context) []t.ObjectItem {
+	res := make([]t.ObjectItem, 0, len(o.objects))
+	for _, obj := range o.objects {
+		res = append(res, t.ObjectItem{
+			ID: obj.ID,
+			ChunkCount: len(obj.Chunks),
+		})
+	}
+	return res
+}
+
 func (o *InMemObjectRepo) AddChunk(_ context.Context, oid t.ObjectID, key t.ChunkKey, cid t.ChunkID) error {
 	obj, ok := o.objects[oid]
 	if !ok {

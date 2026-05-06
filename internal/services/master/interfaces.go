@@ -11,6 +11,7 @@ type Service interface {
 	CreateObject(context.Context, t.ObjectID) error
 	AllocateChunk(context.Context, *AllocateChunkCommand) (t.ChunkPlacement, error)
 	GetObjectAccess(context.Context, t.ObjectID) (t.ObjectAccess, error)
+	ListObjects(context.Context) ([]t.ObjectItem, error)
 
 	RegisterStorageNode(context.Context, string) (t.NodeRef, error)
 	ReportChunkStorage(context.Context, t.NodeID, []t.ChunkMeta) ([]t.ChunkStorageReject, error)
@@ -20,6 +21,7 @@ type Service interface {
 type ObjectRepo interface {
 	Create(context.Context, t.ObjectID) error
 	Get(context.Context, t.ObjectID) (Object, error)
+	List(context.Context) []t.ObjectItem
 	AddChunk(context.Context, t.ObjectID, t.ChunkKey, t.ChunkID) error
 }
 

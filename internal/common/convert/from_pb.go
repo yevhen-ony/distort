@@ -115,5 +115,16 @@ func ChunkStorageRejectFromPB(pbObj ChunkStorageRejectLike) t.ChunkStorageReject
 	}
 }
 
+type ObjectItemLike interface {
+	GetObjectId() string
+	GetChunkCount() int64
+}
 
+func ObjectItemFromPB(pbObj ObjectItemLike) t.ObjectItem {
+	
+	return t.ObjectItem {
+		ID: t.ObjectID(pbObj.GetObjectId()),
+		ChunkCount: int(pbObj.GetChunkCount()),
+	}
+}
 

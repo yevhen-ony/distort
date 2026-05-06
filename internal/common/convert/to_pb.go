@@ -69,3 +69,14 @@ func ChunkDescToPB(d ...t.ChunkMeta) []*mpb.ChunkDesc {
 	}
 	return pbDesc
 }
+
+func ObjectItemToPB(infos ...t.ObjectItem) []*mpb.ObjectItem {
+	pbInfos := make([]*mpb.ObjectItem, len(infos)) 
+	for i, info := range infos {
+		pbInfos[i] = &mpb.ObjectItem{
+			ObjectId: string(info.ID),
+			ChunkCount: int64(info.ChunkCount),
+		}
+	}
+	return pbInfos
+}
