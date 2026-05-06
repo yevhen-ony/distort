@@ -9,3 +9,5 @@ listen:
 service:
   replication_count: 1
   chunk_allocation_margin_bytes: 512 
+  node_inactivity_timeout: 30s
+  node_cleanup_interval: 15s

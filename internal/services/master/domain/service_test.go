@@ -15,7 +15,7 @@ import (
 func newTestService(t *testing.T) *MasterService {
 	t.Helper()
 
-	return NewMasterService(
+	service, err := NewMasterService(
 		repo.NewInMemChunkRepo(),
 		repo.NewInMemObjectRepo(),
 		repo.NewInMemNodeRegistry(),
@@ -24,6 +24,8 @@ func newTestService(t *testing.T) *MasterService {
 			ChunkAllocationMarginBytes: 0,
 		},
 	)
+	require.NoError(t, err)
+	return service
 }
 
 func TestMasterService_CreateObject(test *testing.T) {

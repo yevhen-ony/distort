@@ -40,7 +40,7 @@ func (r *InMemChunkRepo) NewChunkID() t.ChunkID {
 }
 
 func genChunkID() t.ChunkID {
-	var b [16]byte
+	var b [8]byte
 	rand.Read(b[:])
 	return t.ChunkID(hex.EncodeToString(b[:]))
 }
@@ -77,6 +77,18 @@ func (r *InMemChunkRepo) IncReplication(_ context.Context, id t.ChunkID) error {
 		return m.ErrChunkNotFound 
 	}
 	chunk.ReplicaCount++
+	return nil
+}
+
+func (r *InMemChunkRepo) DecReplication(_ context.Context, id t.ChunkID) error {
+	chunk, ok := r.chunks[id]
+	if !ok {
+		return m.ErrChunkNotFound
+	}
+	if chunk.ReplicaCount == 0 {
+		return m.ErrChunkReplicaUnderflow
+	}
+	chunk.ReplicaCount--
 	return nil
 }
 

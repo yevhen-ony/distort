@@ -4,6 +4,7 @@ import (
 	"context"
 	t "dos/internal/common/types"
 	m "dos/internal/services/master"
+	"errors"
 	"fmt"
 )
 
@@ -65,3 +66,25 @@ func (s *MasterService) GetCandidateNodes(
 	}
 	return nodes, nil	
 }
+
+func (s *MasterService) EvictStorageNode(ctx context.Context, nodeID t.NodeID) error {
+	if _, err := s.nodeReg.Get(ctx, nodeID); err != nil {
+		return fmt.Errorf("get node %s: %w", nodeID, err)
+	}
+	
+	var errs []error
+	chunks := s.index.GetNodeChunks(ctx, nodeID)
+	for _, chunk := range chunks {
+		if err := s.chunkRepo.DecReplication(ctx, chunk); err != nil {
+			errs = append(errs, fmt.Errorf("dec replica for chunk %s: %w", chunk, err))
+		}
+	}
+
+	s.index.DetachNode(ctx, nodeID)
+
+	if err := s.nodeReg.Unregister(ctx, nodeID); err != nil {
+		errs = append(errs, fmt.Errorf("unregister node %s: %w", nodeID, err))
+	}
+	return errors.Join(errs...)
+}
+

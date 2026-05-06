@@ -4,6 +4,7 @@ import (
 	"context"
 	"dos/internal/common/digest"
 	t "dos/internal/common/types"
+	"time"
 )
 
 
@@ -16,6 +17,7 @@ type Service interface {
 	RegisterStorageNode(context.Context, string) (t.NodeRef, error)
 	ReportChunkStorage(context.Context, t.NodeID, []t.ChunkMeta) ([]t.ChunkStorageReject, error)
 	Heartbeat(context.Context, t.NodeID, t.NodeStats) error
+	EvictStorageNode(ctx context.Context, nodeID t.NodeID) error
 }
 
 type ObjectRepo interface {
@@ -31,6 +33,7 @@ type ChunkRepo interface {
 	Get(context.Context, t.ChunkID) (Chunk, error)
 	SetDigest(context.Context, t.ChunkID, *digest.Digest) error
 	IncReplication(context.Context, t.ChunkID) error
+	DecReplication(context.Context, t.ChunkID) error
 }
 
 type NodeQuery struct {
@@ -40,12 +43,13 @@ type NodeQuery struct {
 
 type NodeRegistry interface {
 	Register(context.Context, string) (t.NodeRef, error)
-	Unregister(context.Context, t.NodeID) 
+	Unregister(context.Context, t.NodeID) error 
 
 	Get(context.Context, t.NodeID) (Node, error)
 	GetMany(context.Context, ...t.NodeID) []Node
 	Find(context.Context, NodeQuery) ([]Node, error)
 	UpdateStats(context.Context, t.NodeID, t.NodeStats) error
+	GetInactive(context.Context, time.Time) []t.NodeID
 }
 
 type ChunkNodeIndex interface {

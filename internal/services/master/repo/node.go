@@ -48,17 +48,19 @@ func (r *InMemNodeRegistry) Register(_ context.Context, addr string) (t.NodeRef,
 	return nodeRef, nil 
 }
 
-func (r *InMemNodeRegistry) Unregister(_ context.Context, nid t.NodeID) {
+func (r *InMemNodeRegistry) Unregister(_ context.Context, nid t.NodeID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	node := r.nodes[nid]
 	if node == nil {
-		return
+		return nil
 	}
 
 	delete(r.nodes, nid)
 	delete(r.addrs, node.Addr)
+	
+	return nil
 }
 
 func (r *InMemNodeRegistry) UpdateStats(_ context.Context, nid t.NodeID, stats t.NodeStats) error {
@@ -102,6 +104,19 @@ func (r *InMemNodeRegistry) GetMany(ctx context.Context, ids ...t.NodeID) []m.No
 	return nodes
 }
 
+func (r *InMemNodeRegistry) GetInactive(ctx context.Context, cutoff time.Time) []t.NodeID {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	res := []t.NodeID{}
+	for _, node := range r.nodes {
+		if node.LastSeenAt.Before(cutoff) {
+			res = append(res, node.ID)
+		}
+	}
+	return res
+}
+
 func (r *InMemNodeRegistry) Find(ctx context.Context, query m.NodeQuery) ([]m.Node, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
@@ -129,7 +144,7 @@ func (r *InMemNodeRegistry) newNodeID() t.NodeID {
 }
 
 func genNodeID() t.NodeID {
-	var b [16]byte
+	var b [8]byte
 	rand.Read(b[:])
 	return t.NodeID(hex.EncodeToString(b[:]))
 }
