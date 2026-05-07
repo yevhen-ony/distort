@@ -14,22 +14,22 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type MasterTransportConfig struct {
-	MasterAddr string `yaml:"master_addr"`
+type MasterConfig struct {
+	Addr string `yaml:"addr"`
 }
 
-type MasterTransport struct {
+type Master struct {
 	client mpb.MasterStorageServiceClient
-	config *MasterTransportConfig
+	config *MasterConfig
 }
 
-func NewMasterTransport(conn *connect.ConnCache, cfg *MasterTransportConfig) (*MasterTransport, error) {
+func NewMaster(conn *connect.ConnCache, cfg *MasterConfig) (*Master, error) {
 
-	c, err := conn.Get(cfg.MasterAddr)	
+	c, err := conn.Get(cfg.Addr)	
 	if err != nil {
-		return nil, fmt.Errorf("get conn %s: %w", cfg.MasterAddr, err)
+		return nil, fmt.Errorf("get conn %s: %w", cfg.Addr, err)
 	}
-	mt := &MasterTransport{
+	mt := &Master{
 		client: mpb.NewMasterStorageServiceClient(c),
 		config: cfg,
 	}
@@ -37,7 +37,7 @@ func NewMasterTransport(conn *connect.ConnCache, cfg *MasterTransportConfig) (*M
 }
 
 
-func (mt *MasterTransport) RegisterStorageNode(ctx context.Context, addr string) (t.NodeID, error) {
+func (mt *Master) RegisterNode(ctx context.Context, addr string) (t.NodeID, error) {
 
 	req := &mpb.RegisterStorageNodeRequest{ Addr: addr }
 	rsp, err := mt.client.RegisterStorageNode(ctx, req)
@@ -50,7 +50,7 @@ func (mt *MasterTransport) RegisterStorageNode(ctx context.Context, addr string)
 	return t.NodeID(rsp.NodeId), nil
 }
 
-func (mt *MasterTransport) Heartbeat(
+func (mt *Master) Heartbeat(
 	ctx context.Context, nodeID t.NodeID, stats t.NodeStats,
 ) (s.HeartbeatResult, error) {
 
@@ -69,7 +69,7 @@ func (mt *MasterTransport) Heartbeat(
 	return s.HeartbeatResult{}, nil
 }
 
-func (mt *MasterTransport) ReportChunkStorage(
+func (mt *Master) ReportChunks(
 	ctx context.Context, nodeID t.NodeID, desc []t.ChunkMeta,
 ) ([]t.ChunkStorageReject, error) {
 

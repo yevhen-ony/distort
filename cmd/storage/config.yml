@@ -12,8 +12,11 @@ listen:
   host: "0.0.0.0"
   port: 10001
 
-master:
-  master_addr: localhost:10002
+master_transport:
+  addr: localhost:10002
+
+chunk_transport:
+  frame_size: 3MB
 
 service:
   advertise_addr: localhost:10001

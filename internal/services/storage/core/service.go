@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"dos/internal/common/retry"
+	"dos/internal/common/transport/chunkrpc"
 	t "dos/internal/common/types"
 	s "dos/internal/services/storage"
 )
@@ -27,8 +28,9 @@ type Service struct {
 	totalBytes int64
 	mu         sync.RWMutex
 
-	store  s.ChunkStorage
-	master s.MasterTransport
+	diskStore  s.ChunkStorage
+	masterTransport s.MasterTransport
+	chunkTransport *chunkrpc.Transport
 
 	config StorageServiceConfig
 	nodeID t.NodeID
@@ -38,18 +40,27 @@ type Service struct {
 	reportWake chan struct{}
 }
 
-func New(store s.ChunkStorage, master s.MasterTransport, config StorageServiceConfig) (*Service, error) {
+func New(
+	diskStore s.ChunkStorage,
+	masterTransport s.MasterTransport,
+	chunkTransport *chunkrpc.Transport,
+	config StorageServiceConfig,
+) (*Service, error) {
 
-	if store == nil {
+	if diskStore == nil {
 		return nil, errors.New("missing store")
 	}
-	if master == nil {
+	if masterTransport == nil {
 		return nil, errors.New("missing master transport")
+	}
+	if chunkTransport == nil {
+		return nil, errors.New("missing storage transport")
 	}
 
 	service := &Service{
-		store:  store,
-		master: master,
+		diskStore:  diskStore,
+		masterTransport: masterTransport,
+		chunkTransport: chunkTransport,
 		config: config,
 		reportWake: make(chan struct{}, 1),
 	}
@@ -64,7 +75,7 @@ func (svc *Service) StartUploadSession(desc *t.ChunkMeta) (s.ChunkWriter, error)
 	if ok {
 		return nil, s.ErrChunkConflict
 	}
-	w, err := svc.store.NewWriter()
+	w, err := svc.diskStore.NewWriter()
 	if err != nil {
 		return nil, fmt.Errorf("create chunk writer: %w", err)
 	}
@@ -98,7 +109,7 @@ func (svc *Service) GetChunk(chunkID t.ChunkID) (t.Chunk, error) {
 	if !ok {
 		return t.Chunk{}, s.ErrChunkNotFound
 	}
-	reader, err := svc.store.Get(chunkID)
+	reader, err := svc.diskStore.Get(chunkID)
 	if err != nil {
 		return t.Chunk{}, fmt.Errorf("get from store: %w", err)
 	}
@@ -113,6 +124,14 @@ func (svc *Service) GetChunk(chunkID t.ChunkID) (t.Chunk, error) {
 	return chunk, nil
 }
 
+// func (svc *Service) ReplicateChunk(chunkID t.ChunkID, nodeRefs []t.NodeRef) error {
+// 	chunk, err := svc.GetChunk(chunkID)
+// 	if err != nil {
+// 		return err
+// 	}
+//
+// }
+
 func (svc *Service) Heartbeat(ctx context.Context) error {
 	svc.mu.RLock()
 	stats := t.NodeStats{
@@ -122,7 +141,7 @@ func (svc *Service) Heartbeat(ctx context.Context) error {
 	}
 	svc.mu.RUnlock()
 
-	res, err := svc.master.Heartbeat(ctx, svc.nodeID, stats)
+	res, err := svc.masterTransport.Heartbeat(ctx, svc.nodeID, stats)
 	if err != nil {
 		return err
 	}
@@ -141,7 +160,7 @@ func (svc *Service) Register(ctx context.Context) error {
 	var nodeID t.NodeID
 	err := retry.Retry{Delay: time.Second}.Run(ctx, func(ctx context.Context) error {
 		var innerErr error
-		nodeID, innerErr = svc.master.RegisterStorageNode(ctx, svc.config.AdvertiseAddr)
+		nodeID, innerErr = svc.masterTransport.RegisterNode(ctx, svc.config.AdvertiseAddr)
 		return innerErr
 	})
 
@@ -211,7 +230,7 @@ func (svc *Service) Start(ctx context.Context) error {
 
 func (svc *Service) BuildCatalog() error {
 
-	ids, err := svc.store.GetAllIDs()
+	ids, err := svc.diskStore.GetAllIDs()
 	if err != nil {
 		return fmt.Errorf("get all ids: %w", err)
 	}
@@ -219,7 +238,7 @@ func (svc *Service) BuildCatalog() error {
 	catalog := make(map[t.ChunkID]*s.ChunkState, len(ids))
 	var totalBytes int64
 	for _, id := range ids {
-		meta, err := svc.store.GetMeta(id)
+		meta, err := svc.diskStore.GetMeta(id)
 		if err != nil {
 			slog.Error("read chunk", "id", id, "error", err)
 			continue
@@ -253,7 +272,7 @@ func (svc *Service) ReportChunks(ctx context.Context) error {
 		return nil
 	}
 
-	_, err := svc.master.ReportChunkStorage(ctx, nodeID, toReport)
+	_, err := svc.masterTransport.ReportChunks(ctx, nodeID, toReport)
 	if err != nil {
 		return fmt.Errorf("request chunk report: %w", err)
 	}

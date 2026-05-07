@@ -3,6 +3,7 @@ package main
 import (
 	"dos/internal/common/listener"
 	"dos/internal/common/logger"
+	"dos/internal/common/transport/chunkrpc"
 	"dos/internal/services/storage/api"
 	"dos/internal/services/storage/core"
 	"dos/internal/services/storage/store"
@@ -10,10 +11,11 @@ import (
 )
 
 type Config struct {
-	API       api.ServerConfig                `yaml:"api"`
-	Store     store.ChunkStorageConfig        `yaml:"store"`
-	Listen    listener.ListenerConfig         `yaml:"listen"`
-	Master    transport.MasterTransportConfig `yaml:"master"`
-	Service   core.StorageServiceConfig       `yaml:"service"`
-	Logger    logger.LogConfig                `yaml:"logger"`
+	API             api.ServerConfig          `yaml:"api"`
+	Store           store.ChunkStorageConfig  `yaml:"store"`
+	Listen          listener.ListenerConfig   `yaml:"listen"`
+	MasterTransport transport.MasterConfig    `yaml:"master_transport"`
+	ChunkTransport  chunkrpc.Config           `yaml:"chunk_transport"`
+	Service         core.StorageServiceConfig `yaml:"service"`
+	Logger          logger.LogConfig          `yaml:"logger"`
 }

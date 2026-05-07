@@ -28,7 +28,7 @@ func newTestService(test *testing.T) (*Service, *store.FSChunkStorage) {
   	require.NoError(test, err)
 
   	svc := &Service{
-  		store:   store,
+  		diskStore:   store,
   		catalog: make(s.ChunkCatalog),
   	}
   	return svc, store

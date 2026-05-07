@@ -27,6 +27,6 @@ type HeartbeatResult struct {
 
 type MasterTransport interface {
 	Heartbeat(context.Context,t.NodeID,t.NodeStats) (HeartbeatResult, error)
-	ReportChunkStorage(context.Context, t.NodeID, []t.ChunkMeta) ([]t.ChunkStorageReject, error)
-	RegisterStorageNode(ctx context.Context, addr string) (t.NodeID, error)
+	ReportChunks(context.Context, t.NodeID, []t.ChunkMeta) ([]t.ChunkStorageReject, error)
+	RegisterNode(ctx context.Context, addr string) (t.NodeID, error)
 }

@@ -13,6 +13,7 @@ import (
 	"dos/internal/common/connect"
 	"dos/internal/common/listener"
 	"dos/internal/common/logger"
+	"dos/internal/common/transport/chunkrpc"
 	"dos/internal/services/storage/api"
 	"dos/internal/services/storage/core"
 	"dos/internal/services/storage/store"
@@ -39,6 +40,8 @@ func run() error {
 	}
 	
 	logger.Init(&cfg.Logger)
+
+	slog.Info("config", "master_addr", cfg.MasterTransport.Addr)
 	
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
     defer stop()
@@ -51,12 +54,14 @@ func run() error {
 	conn := connect.NewConnCache()
 	defer conn.Close()
 
-	master, err := transport.NewMasterTransport(conn, &cfg.Master)
+	masterTransport, err := transport.NewMaster(conn, &cfg.MasterTransport)
 	if err != nil {
 		return fmt.Errorf("construct master transport: %w", err)
 	}
 
-	svc, err := core.New(storage, master, cfg.Service)
+	chunkTransport, err := chunkrpc.NewTransport(conn, &cfg.ChunkTransport)	
+
+	svc, err := core.New(storage, masterTransport, chunkTransport, cfg.Service)
 	if err != nil {
 		return fmt.Errorf("construct service: %w", err)
 	}
