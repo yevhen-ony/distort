@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"math/rand/v2"
 	"sync"
@@ -89,21 +90,25 @@ func (svc *Service) CommitUploadSession(w s.ChunkWriter, meta *t.ChunkMeta) erro
 	return nil
 }
 
-func (svc *Service) GetChunk(chunkID t.ChunkID) (*s.Chunk, error) {
+func (svc *Service) GetChunk(chunkID t.ChunkID) (t.Chunk, error) {
 	svc.mu.RLock()
 	state, ok := svc.catalog[chunkID]
 	svc.mu.RUnlock()
 
 	if !ok {
-		return nil, s.ErrChunkNotFound
+		return t.Chunk{}, s.ErrChunkNotFound
 	}
 	reader, err := svc.store.Get(chunkID)
 	if err != nil {
-		return nil, fmt.Errorf("get from store: %w", err)
+		return t.Chunk{}, fmt.Errorf("get from store: %w", err)
 	}
-	chunk := &s.Chunk{
+	data, err := io.ReadAll(reader)
+	if err != nil {
+		return t.Chunk{}, fmt.Errorf("read chunk: %w", err)
+	}
+	chunk := t.Chunk{
 		Meta: state.ChunkMeta,
-		Data: reader,
+		Data: data,
 	}
 	return chunk, nil
 }

@@ -9,6 +9,7 @@ import (
 	spb "dos/gen/proto/storage/v1"
 	"dos/internal/common/convert"
 	t "dos/internal/common/types"
+	"dos/internal/common/utils"
 	s "dos/internal/services/storage"
 	"dos/internal/services/storage/core"
 )
@@ -105,20 +106,11 @@ func (srv *Server) GetChunk(req *spb.GetChunkRequest, stream spb.ChunkService_Ge
 		return fmt.Errorf("send header: %w", err)
 	}
 
-	buf := make([]byte, srv.config.FrameSize)
-	for {
-		n, readErr := chunk.Data.Read(buf)
-		if n > 0 {
-			rsp := &spb.GetChunkResponse{Data: buf[:n]}
-			if sendErr := stream.Send(rsp); sendErr != nil {
-				return fmt.Errorf("send part: %w", sendErr)
-			}
-		}
-		if readErr == io.EOF {
-			break
-		}
-		if readErr != nil {
-			return fmt.Errorf("read part: %w", readErr)
+	frames := utils.SplitFrames(chunk.Data, int64(srv.config.FrameSize))
+	for _, frame := range frames {
+		rsp := &spb.GetChunkResponse{Data: frame}
+		if err := stream.Send(rsp); err != nil {
+			return fmt.Errorf("send part: %w", err)
 		}
 	}
 	return nil
