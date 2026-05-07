@@ -8,7 +8,6 @@ import (
 
 	"dos/internal/common/transport/chunkrpc"
 	t "dos/internal/common/types"
-	c "dos/internal/services/client"
 	"dos/internal/services/client/transport"
 	"dos/internal/services/client/io/file"
 )
@@ -40,7 +39,7 @@ func NewService(
 		return nil, ErrMissingStorageTransport
 	}
 	svc := &Service{master: master, storage: storage}
-	svc.onProgress = func(*ObjectProgress) {} // noop by default
+	svc.onProgress = func(*ObjectProgress) {} // nop by default
 
 	for _, opt := range opts {
 		opt(svc)
@@ -74,7 +73,7 @@ func (s *Service) Push(ctx context.Context, objectID t.ObjectID, source *file.Ob
 			return fmt.Errorf("alloc chunk: %w", err)
 		}
 
-		chunk := c.NewChunk(loc.ChunkID, data)
+		chunk := t.NewChunk(loc.ChunkID, data)
 		opt := chunkrpc.WithProgressHandler(func(cp chunkrpc.Progress) {
 			progress.UpdateChunk(key, cp)		
 			s.onProgress(progress)

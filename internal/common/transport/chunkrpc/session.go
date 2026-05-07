@@ -7,9 +7,7 @@ import (
 	spb "dos/gen/proto/storage/v1"
 	"dos/internal/common/connect"
 	"dos/internal/common/convert"
-	"dos/internal/common/digest"
 	t "dos/internal/common/types"
-	c "dos/internal/services/client"
 	"errors"
 	"fmt"
 	"io"
@@ -25,7 +23,7 @@ type Session struct {
 	progress   Progress
 }
 
-func (s *Session) Upload(ctx context.Context, chunk *c.Chunk) error {
+func (s *Session) Upload(ctx context.Context, chunk *t.Chunk) error {
 	var errs []error
 	for _, node := range s.nodes {
 		err := s.uploadToNode(ctx, node, chunk)
@@ -39,7 +37,7 @@ func (s *Session) Upload(ctx context.Context, chunk *c.Chunk) error {
 }
 
 
-func (s *Session) uploadToNode(ctx context.Context, nodeRef t.NodeRef, chunk *c.Chunk) error {
+func (s *Session) uploadToNode(ctx context.Context, nodeRef t.NodeRef, chunk *t.Chunk) error {
 	conn, err := s.conn.Get(nodeRef.Addr)
 	if err != nil {
 		return fmt.Errorf("get conn: %w", err)
@@ -98,7 +96,7 @@ func (s *Session) uploadData(stream spb.ChunkService_PutChunkClient, data []byte
 	return nil
 }
 
-func (s *Session) Download(ctx context.Context, chunkID t.ChunkID) (c.Chunk, error) {
+func (s *Session) Download(ctx context.Context, chunkID t.ChunkID) (t.Chunk, error) {
 	var errs []error
 	for _, node := range s.nodes {
 		chunk, err := s.downloadFromNode(ctx, node, chunkID)
@@ -108,17 +106,17 @@ func (s *Session) Download(ctx context.Context, chunkID t.ChunkID) (c.Chunk, err
 		slog.WarnContext(ctx, "pull chunk failed", "addr", node.Addr, "chunk", chunkID, "error", err)
 		errs = append(errs, fmt.Errorf("receive chunk %s from %s: %w", chunkID, node.Addr, err))
 	}
-	return c.Chunk{}, fmt.Errorf("all candidate nodes failed: %w", errors.Join(errs...))
+	return t.Chunk{}, fmt.Errorf("all candidate nodes failed: %w", errors.Join(errs...))
 
 }
 
 func (s *Session) downloadFromNode(
 	ctx context.Context, nodeRef t.NodeRef, chunkID t.ChunkID,
-) (c.Chunk, error) {
+) (t.Chunk, error) {
 
 	conn, err := s.conn.Get(nodeRef.Addr)
 	if err != nil {
-		return c.Chunk{}, fmt.Errorf("get conn: %w", err)
+		return t.Chunk{}, fmt.Errorf("get conn: %w", err)
 	}
 
 	client := spb.NewChunkServiceClient(conn)
@@ -131,17 +129,17 @@ func (s *Session) downloadFromNode(
 		ChunkId: string(chunkID),
 	})
 	if err != nil {
-		return c.Chunk{}, fmt.Errorf("send request: %w", err)
+		return t.Chunk{}, fmt.Errorf("send request: %w", err)
 	}
 
 	rsp, err := stream.Recv()
 	if err != nil {
-		return c.Chunk{}, fmt.Errorf("recv header: %w", err)
+		return t.Chunk{}, fmt.Errorf("recv header: %w", err)
 	}
 
 	header := rsp.GetHeader()
 	if header == nil {
-		return c.Chunk{}, ErrInvalidHeader
+		return t.Chunk{}, ErrInvalidHeader
 	}
 
 	headerMeta := convert.ChunkMetaFromPB(header)
@@ -149,24 +147,13 @@ func (s *Session) downloadFromNode(
 	s.progress = NewProgress(headerMeta, nodeRef)
 	s.emitProgress()
 
-	data, digest, err := s.downloadData(stream)
+	chunk, err := s.downloadData(stream, chunkID)
 	if err != nil {
-		return c.Chunk{}, fmt.Errorf("recv data: %w", err)
+		return t.Chunk{}, fmt.Errorf("recv data: %w", err)
 	}
-
-	meta := t.ChunkMeta{
-		ID:     chunkID,
-		Digest: digest,
-	}
-
 	
-	if err := headerMeta.Match(meta); err != nil {
-		return c.Chunk{}, err
-	}
-
-	chunk := c.Chunk{
-		Meta: meta,
-		Data: data,
+	if err := headerMeta.Match(chunk.Meta); err != nil {
+		return t.Chunk{}, err
 	}
 
 	s.progress.Done = true
@@ -176,11 +163,10 @@ func (s *Session) downloadFromNode(
 }
 
 func (s *Session) downloadData(
-	stream spb.ChunkService_GetChunkClient,
-) ([]byte, *digest.Digest, error) {
+	stream spb.ChunkService_GetChunkClient, chunkID t.ChunkID,
+) (t.Chunk, error) {
 
 	var buf bytes.Buffer
-	dg := digest.New()
 
 	for {
 		rsp, err := stream.Recv()
@@ -188,21 +174,22 @@ func (s *Session) downloadData(
 			break
 		}
 		if err != nil {
-			return nil, nil, err
+			return t.Chunk{}, err
 		}
 
 		data := rsp.GetData()
 		if data == nil {
-			return nil, nil, ErrInvalidData
+			return t.Chunk{}, ErrInvalidData
 		}
 
 		buf.Write(rsp.Data)
-		dg.Write(rsp.Data)
 
 		s.progress.SentBytes += int64(len(rsp.Data))
 		s.emitProgress()
 	}
-	return buf.Bytes(), dg.Digest(), nil
+
+	chunk := t.NewChunk(chunkID, buf.Bytes())
+	return chunk, nil
 }
 
 func (s *Session) emitProgress() {

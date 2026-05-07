@@ -1,6 +1,7 @@
 package types
 
 import (
+	"dos/internal/common/digest"
 	"errors"
 	"fmt"
 )
@@ -15,4 +16,19 @@ func (m ChunkMeta) Match(other ChunkMeta) error {
 	}
 
 	return nil
+}
+
+func NewChunk(id ChunkID, data []byte) Chunk {
+	dg := digest.New()
+	dg.Write(data)
+
+	return Chunk {
+		Meta: ChunkMeta{ID: id, Digest: dg.Digest()},
+		Data: data,
+	}
+}
+
+func (c Chunk) Validate() error {
+	got := NewChunk(c.Meta.ID, c.Data)
+	return c.Meta.Match(got.Meta)
 }

@@ -62,3 +62,8 @@ type ChunkStorageReject struct {
 	ChunkID ChunkID
 	Reason  string
 }
+
+type Chunk struct {
+	Meta ChunkMeta
+	Data []byte 
+}
