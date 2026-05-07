@@ -23,17 +23,17 @@ type Session struct {
 	progress   Progress
 }
 
-func (s *Session) Upload(ctx context.Context, chunk *t.Chunk) error {
+func (s *Session) Upload(ctx context.Context, chunk *t.Chunk) (t.NodeID, error) {
 	var errs []error
 	for _, node := range s.nodes {
 		err := s.uploadToNode(ctx, node, chunk)
 		if err == nil {
-			return nil
+			return node.ID, nil
 		}
 		slog.WarnContext(ctx, "send chunk failed", "addr", node.Addr, "chunk", chunk.Meta.ID, "error", err)
 		errs = append(errs, fmt.Errorf("send chunk %s to %s failed: %w", chunk.Meta.ID, node.Addr, err))
 	}
-	return fmt.Errorf("all candidate nodes failed: %w", errors.Join(errs...))
+	return "", fmt.Errorf("all candidate nodes failed: %w", errors.Join(errs...))
 }
 
 

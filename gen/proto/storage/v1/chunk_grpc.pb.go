@@ -19,8 +19,9 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	ChunkService_PutChunk_FullMethodName = "/chunk.v1.ChunkService/PutChunk"
-	ChunkService_GetChunk_FullMethodName = "/chunk.v1.ChunkService/GetChunk"
+	ChunkService_PutChunk_FullMethodName       = "/chunk.v1.ChunkService/PutChunk"
+	ChunkService_GetChunk_FullMethodName       = "/chunk.v1.ChunkService/GetChunk"
+	ChunkService_ReplicateChunk_FullMethodName = "/chunk.v1.ChunkService/ReplicateChunk"
 )
 
 // ChunkServiceClient is the client API for ChunkService service.
@@ -29,6 +30,7 @@ const (
 type ChunkServiceClient interface {
 	PutChunk(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[PutChunkRequest, PutChunkResponse], error)
 	GetChunk(ctx context.Context, in *GetChunkRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GetChunkResponse], error)
+	ReplicateChunk(ctx context.Context, in *ReplicateChunkRequest, opts ...grpc.CallOption) (*ReplicateChunkResponse, error)
 }
 
 type chunkServiceClient struct {
@@ -71,12 +73,23 @@ func (c *chunkServiceClient) GetChunk(ctx context.Context, in *GetChunkRequest, 
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ChunkService_GetChunkClient = grpc.ServerStreamingClient[GetChunkResponse]
 
+func (c *chunkServiceClient) ReplicateChunk(ctx context.Context, in *ReplicateChunkRequest, opts ...grpc.CallOption) (*ReplicateChunkResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ReplicateChunkResponse)
+	err := c.cc.Invoke(ctx, ChunkService_ReplicateChunk_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChunkServiceServer is the server API for ChunkService service.
 // All implementations must embed UnimplementedChunkServiceServer
 // for forward compatibility.
 type ChunkServiceServer interface {
 	PutChunk(grpc.ClientStreamingServer[PutChunkRequest, PutChunkResponse]) error
 	GetChunk(*GetChunkRequest, grpc.ServerStreamingServer[GetChunkResponse]) error
+	ReplicateChunk(context.Context, *ReplicateChunkRequest) (*ReplicateChunkResponse, error)
 	mustEmbedUnimplementedChunkServiceServer()
 }
 
@@ -92,6 +105,9 @@ func (UnimplementedChunkServiceServer) PutChunk(grpc.ClientStreamingServer[PutCh
 }
 func (UnimplementedChunkServiceServer) GetChunk(*GetChunkRequest, grpc.ServerStreamingServer[GetChunkResponse]) error {
 	return status.Error(codes.Unimplemented, "method GetChunk not implemented")
+}
+func (UnimplementedChunkServiceServer) ReplicateChunk(context.Context, *ReplicateChunkRequest) (*ReplicateChunkResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ReplicateChunk not implemented")
 }
 func (UnimplementedChunkServiceServer) mustEmbedUnimplementedChunkServiceServer() {}
 func (UnimplementedChunkServiceServer) testEmbeddedByValue()                      {}
@@ -132,13 +148,36 @@ func _ChunkService_GetChunk_Handler(srv interface{}, stream grpc.ServerStream) e
 // This type alias is provided for backwards compatibility with existing code that references the prior non-generic stream type by name.
 type ChunkService_GetChunkServer = grpc.ServerStreamingServer[GetChunkResponse]
 
+func _ChunkService_ReplicateChunk_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ReplicateChunkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChunkServiceServer).ReplicateChunk(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChunkService_ReplicateChunk_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChunkServiceServer).ReplicateChunk(ctx, req.(*ReplicateChunkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ChunkService_ServiceDesc is the grpc.ServiceDesc for ChunkService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
 var ChunkService_ServiceDesc = grpc.ServiceDesc{
 	ServiceName: "chunk.v1.ChunkService",
 	HandlerType: (*ChunkServiceServer)(nil),
-	Methods:     []grpc.MethodDesc{},
+	Methods: []grpc.MethodDesc{
+		{
+			MethodName: "ReplicateChunk",
+			Handler:    _ChunkService_ReplicateChunk_Handler,
+		},
+	},
 	Streams: []grpc.StreamDesc{
 		{
 			StreamName:    "PutChunk",

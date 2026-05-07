@@ -113,6 +113,8 @@ func (svc *Service) GetChunk(chunkID t.ChunkID) (t.Chunk, error) {
 	if err != nil {
 		return t.Chunk{}, fmt.Errorf("get from store: %w", err)
 	}
+	defer reader.Close()
+
 	data, err := io.ReadAll(reader)
 	if err != nil {
 		return t.Chunk{}, fmt.Errorf("read chunk: %w", err)
@@ -124,13 +126,21 @@ func (svc *Service) GetChunk(chunkID t.ChunkID) (t.Chunk, error) {
 	return chunk, nil
 }
 
-// func (svc *Service) ReplicateChunk(chunkID t.ChunkID, nodeRefs []t.NodeRef) error {
-// 	chunk, err := svc.GetChunk(chunkID)
-// 	if err != nil {
-// 		return err
-// 	}
-//
-// }
+func (svc *Service) ReplicateChunk(
+	ctx context.Context, chunkID t.ChunkID, candidates []t.NodeRef,
+) (t.NodeID, error) {
+	chunk, err := svc.GetChunk(chunkID)
+	if err != nil {
+		return "", fmt.Errorf("get chunk: %w", err)
+	}
+
+	session := svc.chunkTransport.NewTransferSession(candidates)
+	nodeID, err := session.Upload(ctx, &chunk)
+	if err != nil {
+		return "", fmt.Errorf("upload replica: %w", err)
+	}
+	return nodeID, nil
+}
 
 func (svc *Service) Heartbeat(ctx context.Context) error {
 	svc.mu.RLock()

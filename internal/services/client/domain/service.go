@@ -80,7 +80,7 @@ func (s *Service) Push(ctx context.Context, objectID t.ObjectID, source *file.Ob
 		})
 
 		session := s.storage.NewTransferSession(loc.Nodes, opt) 
-		if err := session.Upload(ctx, &chunk); err != nil {
+		if _, err := session.Upload(ctx, &chunk); err != nil {
 			return err
 		}
 	}

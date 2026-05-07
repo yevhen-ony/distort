@@ -1,6 +1,7 @@
 package api
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"log/slog"
@@ -114,6 +115,35 @@ func (srv *Server) GetChunk(req *spb.GetChunkRequest, stream spb.ChunkService_Ge
 		}
 	}
 	return nil
+}
+
+func (srv *Server) ReplicateChunk(
+	ctx context.Context, req *spb.ReplicateChunkRequest,
+) (rsp *spb.ReplicateChunkResponse, err error) {
+	defer func() {
+		if err != nil {
+			slog.ErrorContext(ctx, "replicate chunk failed", "chunk_id", req.GetChunkId(), "error", err)
+			err = toStatus(err)
+		}
+	}()
+	slog.DebugContext(ctx, "replicate chunk requested", "chunk_id", req.GetChunkId())
+
+	err = srv.service.ValidateNodeID(t.NodeID(req.GetNodeId()))
+	if err != nil {
+		return nil, err 
+	}
+	
+	chunkID := t.ChunkID(req.GetChunkId())
+
+	pbNodes := req.GetCandidates()
+	nodes := make([]t.NodeRef, 0, len(pbNodes))
+	for _, pbNode := range pbNodes {
+		nodes = append(nodes, *convert.NodeRefFromPB(pbNode))
+	}
+
+	nodeID, err := srv.service.ReplicateChunk(ctx, chunkID, nodes)
+	rsp = &spb.ReplicateChunkResponse{NodeId: string(nodeID)}
+	return rsp, nil
 }
 
 func (srv *Server) validatePutChunkHeader(header *spb.PutChunkHeader) error {
