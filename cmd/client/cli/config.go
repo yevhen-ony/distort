@@ -1,6 +1,7 @@
 package main
 
 import (
+	"dos/internal/common/transport/chunkrpc"
 	"dos/internal/services/client/io/file"
 	"dos/internal/services/client/transport"
 
@@ -12,9 +13,9 @@ var (
 )
 
 type Config struct {
-	Master  transport.MasterTransportConfig  `yaml:"master"`
-	Storage transport.StorageTransportConfig `yaml:"storage"`
-	Chunker file.ObjectChunkerConfig           `yaml:"chunker"`
+	Master  transport.MasterTransportConfig `yaml:"master"`
+	Storage chunkrpc.Config                 `yaml:"storage"`
+	Chunker file.ObjectChunkerConfig        `yaml:"chunker"`
 }
 
 func (cfg *Config) BindFlags(cmd *cobra.Command) {
@@ -23,7 +24,7 @@ func (cfg *Config) BindFlags(cmd *cobra.Command) {
 
 func (cfg *Config) ApplyFlags(cmd *cobra.Command) error {
 	if cmd == nil {
-		return nil 
+		return nil
 	}
 
 	if flag := cmd.Flag(masterAddrKey); flag != nil && flag.Changed {

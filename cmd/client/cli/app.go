@@ -6,6 +6,7 @@ import (
 	"github.com/gosuri/uilive"
 
 	"dos/internal/common/connect"
+	"dos/internal/common/transport/chunkrpc"
 	"dos/internal/services/client/domain"
 	"dos/internal/services/client/transport"
 )
@@ -14,7 +15,7 @@ type App struct {
 	Config  *Config
 	Conn    *connect.ConnCache
 	Master  *transport.MasterTransport
-	Storage *transport.StorageTransport
+	Storage *chunkrpc.Transport
 	Service *domain.Service
 
 	progressOutput *uilive.Writer
@@ -36,7 +37,7 @@ func NewApp(cfg *Config) (*App, error) {
 		return nil, fmt.Errorf("init master transport: %w", err)
 	}
 
-	storage, err := transport.NewStorageTransport(conn, &cfg.Storage)
+	storage, err := chunkrpc.NewTransport(conn, &cfg.Storage)
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("init storage transport: %w", err)

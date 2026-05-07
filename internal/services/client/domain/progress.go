@@ -1,8 +1,8 @@
 package domain
 
 import (
+	"dos/internal/common/transport/chunkrpc"
 	t "dos/internal/common/types"
-	"dos/internal/services/client/transport"
 	"fmt"
 	"strings"
 	"sync"
@@ -11,7 +11,7 @@ import (
 type ObjectProgress struct {
 	ObjectID t.ObjectID
 	ChunksOrder []t.ChunkKey
-	Chunks map[t.ChunkKey]transport.ChunkProgress 
+	Chunks map[t.ChunkKey]chunkrpc.Progress 
 	Done bool
 
 	mu sync.Mutex
@@ -20,18 +20,18 @@ type ObjectProgress struct {
 func NewObjectProgress(objectID t.ObjectID) *ObjectProgress {
 	return &ObjectProgress{
 		ObjectID: objectID,
-		Chunks: make(map[t.ChunkKey]transport.ChunkProgress),
+		Chunks: make(map[t.ChunkKey]chunkrpc.Progress),
 	}
 }
 
-func (op *ObjectProgress) UpdateChunk(key t.ChunkKey, cp transport.ChunkProgress) {
+func (op *ObjectProgress) UpdateChunk(key t.ChunkKey, chunk chunkrpc.Progress) {
   	op.mu.Lock()
   	defer op.mu.Unlock()
 
 	if _, ok := op.Chunks[key]; !ok {
 		op.ChunksOrder = append(op.ChunksOrder, key)
 	}
-	op.Chunks[key] = cp
+	op.Chunks[key] = chunk
 }
 
 

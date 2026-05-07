@@ -1,4 +1,4 @@
-package transport
+package chunkrpc 
 
 import (
 	"bytes"
@@ -16,16 +16,16 @@ import (
 	"log/slog"
 )
 
-type ChunkTransferSession struct {
-	config     *StorageTransportConfig
+type Session struct {
+	config     *Config
 	conn       *connect.ConnCache
 	nodes      []t.NodeRef
 
-	onProgress ChunkProgressHandler
-	progress   ChunkProgress
+	onProgress ProgressHandler
+	progress   Progress
 }
 
-func (s *ChunkTransferSession) Upload(ctx context.Context, chunk *c.Chunk) error {
+func (s *Session) Upload(ctx context.Context, chunk *c.Chunk) error {
 	var errs []error
 	for _, node := range s.nodes {
 		err := s.uploadToNode(ctx, node, chunk)
@@ -39,7 +39,7 @@ func (s *ChunkTransferSession) Upload(ctx context.Context, chunk *c.Chunk) error
 }
 
 
-func (s *ChunkTransferSession) uploadToNode(ctx context.Context, nodeRef t.NodeRef, chunk *c.Chunk) error {
+func (s *Session) uploadToNode(ctx context.Context, nodeRef t.NodeRef, chunk *c.Chunk) error {
 	conn, err := s.conn.Get(nodeRef.Addr)
 	if err != nil {
 		return fmt.Errorf("get conn: %w", err)
@@ -60,7 +60,7 @@ func (s *ChunkTransferSession) uploadToNode(ctx context.Context, nodeRef t.NodeR
 		},
 	}
 
-	s.progress = NewChunkProgress(chunk.Meta, nodeRef)
+	s.progress = NewProgress(chunk.Meta, nodeRef)
 	s.emitProgress()
 
 	err = stream.Send(&spb.PutChunkRequest{Header: header})
@@ -82,7 +82,7 @@ func (s *ChunkTransferSession) uploadToNode(ctx context.Context, nodeRef t.NodeR
 	return nil
 }
 
-func (s *ChunkTransferSession) uploadData(stream spb.ChunkService_PutChunkClient, data []byte) error {
+func (s *Session) uploadData(stream spb.ChunkService_PutChunkClient, data []byte) error {
 	for len(data) > 0 {
 		n := min(int64(s.config.FrameSize), int64(len(data)))
 		err := stream.Send(&spb.PutChunkRequest{Data: data[:n]})
@@ -98,7 +98,7 @@ func (s *ChunkTransferSession) uploadData(stream spb.ChunkService_PutChunkClient
 	return nil
 }
 
-func (s *ChunkTransferSession) Download(ctx context.Context, chunkID t.ChunkID) (c.Chunk, error) {
+func (s *Session) Download(ctx context.Context, chunkID t.ChunkID) (c.Chunk, error) {
 	var errs []error
 	for _, node := range s.nodes {
 		chunk, err := s.downloadFromNode(ctx, node, chunkID)
@@ -106,13 +106,13 @@ func (s *ChunkTransferSession) Download(ctx context.Context, chunkID t.ChunkID) 
 			return chunk, nil
 		}
 		slog.WarnContext(ctx, "pull chunk failed", "addr", node.Addr, "chunk", chunkID, "error", err)
-		errs = append(errs, fmt.Errorf("send chunk %s to %s: %w", chunkID, node.Addr, err))
+		errs = append(errs, fmt.Errorf("receive chunk %s from %s: %w", chunkID, node.Addr, err))
 	}
 	return c.Chunk{}, fmt.Errorf("all candidate nodes failed: %w", errors.Join(errs...))
 
 }
 
-func (s *ChunkTransferSession) downloadFromNode(
+func (s *Session) downloadFromNode(
 	ctx context.Context, nodeRef t.NodeRef, chunkID t.ChunkID,
 ) (c.Chunk, error) {
 
@@ -141,12 +141,12 @@ func (s *ChunkTransferSession) downloadFromNode(
 
 	header := rsp.GetHeader()
 	if header == nil {
-		return c.Chunk{}, ErrHeaderInvalid
+		return c.Chunk{}, ErrInvalidHeader
 	}
 
 	headerMeta := convert.ChunkMetaFromPB(header)
 
-	s.progress = NewChunkProgress(headerMeta, nodeRef)
+	s.progress = NewProgress(headerMeta, nodeRef)
 	s.emitProgress()
 
 	data, digest, err := s.downloadData(stream)
@@ -159,8 +159,8 @@ func (s *ChunkTransferSession) downloadFromNode(
 		Digest: digest,
 	}
 
-	err = matchChunkMeta(headerMeta, meta)
-	if err != nil {
+	
+	if err := headerMeta.Match(meta); err != nil {
 		return c.Chunk{}, err
 	}
 
@@ -175,7 +175,7 @@ func (s *ChunkTransferSession) downloadFromNode(
 	return chunk, nil
 }
 
-func (s *ChunkTransferSession) downloadData(
+func (s *Session) downloadData(
 	stream spb.ChunkService_GetChunkClient,
 ) ([]byte, *digest.Digest, error) {
 
@@ -193,7 +193,7 @@ func (s *ChunkTransferSession) downloadData(
 
 		data := rsp.GetData()
 		if data == nil {
-			return nil, nil, ErrDataInvalid
+			return nil, nil, ErrInvalidData
 		}
 
 		buf.Write(rsp.Data)
@@ -205,19 +205,8 @@ func (s *ChunkTransferSession) downloadData(
 	return buf.Bytes(), dg.Digest(), nil
 }
 
-func (s *ChunkTransferSession) emitProgress() {
+func (s *Session) emitProgress() {
 	if s.onProgress != nil {
 		s.onProgress(s.progress)
 	}
-}
-
-func matchChunkMeta(want, got t.ChunkMeta) error {
-	if err := got.Digest.Match(want.Digest); err != nil {
-		return err
-	}
-
-	if want.ID != got.ID {
-		return fmt.Errorf("id mismatch: %w", ErrChunkMetaMismatch)
-	}
-	return nil
 }

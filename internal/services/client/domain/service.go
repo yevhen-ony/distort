@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 
+	"dos/internal/common/transport/chunkrpc"
 	t "dos/internal/common/types"
 	c "dos/internal/services/client"
 	"dos/internal/services/client/transport"
@@ -19,7 +20,7 @@ var (
 
 type Service struct {
 	master  *transport.MasterTransport
-	storage *transport.StorageTransport
+	storage *chunkrpc.Transport
 
 	onProgress func(*ObjectProgress)
 }
@@ -28,7 +29,7 @@ type ServiceOption func(*Service)
 
 func NewService(
 	master *transport.MasterTransport,
-	storage *transport.StorageTransport,
+	storage *chunkrpc.Transport,
 	opts ...ServiceOption,
 ) (*Service, error) {
 
@@ -74,7 +75,7 @@ func (s *Service) Push(ctx context.Context, objectID t.ObjectID, source *file.Ob
 		}
 
 		chunk := c.NewChunk(loc.ChunkID, data)
-		opt := transport.WithProgressHandler(func(cp transport.ChunkProgress) {
+		opt := chunkrpc.WithProgressHandler(func(cp chunkrpc.Progress) {
 			progress.UpdateChunk(key, cp)		
 			s.onProgress(progress)
 		})
@@ -111,7 +112,7 @@ func (s *Service) Pull(ctx context.Context, objectID t.ObjectID, asm *file.Objec
 
 	for _, cp := range access.Chunks {
 		
-		opt := transport.WithProgressHandler(func(prog transport.ChunkProgress) {
+		opt := chunkrpc.WithProgressHandler(func(prog chunkrpc.Progress) {
 			progress.UpdateChunk(cp.ChunkKey, prog)		
 			s.onProgress(progress)
 		})
