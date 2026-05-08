@@ -69,9 +69,11 @@ func (mt *Master) Heartbeat(
 	return s.HeartbeatResult{}, nil
 }
 
+
+
 func (mt *Master) ReportChunks(
 	ctx context.Context, nodeID t.NodeID, desc []t.ChunkMeta,
-) ([]t.ChunkStorageReject, error) {
+) (t.ReportResult, error) {
 
 	req := &mpb.ReportStorageRequest{
 		NodeId: string(nodeID),
@@ -79,14 +81,21 @@ func (mt *Master) ReportChunks(
 	}
 	rsp, err := mt.client.ReportStorage(ctx, req)
 	if err != nil {
-		return nil, fmt.Errorf("report storage: %w", err) 
+		return t.ReportResult{}, fmt.Errorf("report storage: %w", err) 
 	}
-	
-	rejects := make([]t.ChunkStorageReject, 0, len(rsp.GetRejects()))
-	for _, pbReject := range rsp.GetRejects() {
-		rejects = append(rejects, convert.ChunkStorageRejectFromPB(pbReject))
+	rejected := make([]t.ChunkID, len(rsp.GetRejected()))
+	for i, idVal := range rsp.GetRejected() {
+		rejected[i] = t.ChunkID(idVal)
 	}
-	return rejects, nil
+	accepted := make([]t.ChunkID, len(rsp.GetAccepted()))
+	for i, idVal := range rsp.GetAccepted() {
+		accepted[i] = t.ChunkID(idVal)
+	}
+	res := t.ReportResult{
+		Accepted: accepted,
+		Rejected: rejected,
+	}
+	return res, nil
 }
 
 

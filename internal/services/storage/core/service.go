@@ -97,7 +97,7 @@ func (svc *Service) CommitUploadSession(w s.ChunkWriter, meta *t.ChunkMeta) erro
 	if err := w.Commit(meta.ID); err != nil {
 		return fmt.Errorf("session commit: %w", err)
 	}
-	svc.catalog[meta.ID] = &s.ChunkState{ChunkMeta: *meta}
+	svc.catalog[meta.ID] = &s.ChunkRecord{Meta: *meta}
 	return nil
 }
 
@@ -120,7 +120,7 @@ func (svc *Service) GetChunk(chunkID t.ChunkID) (t.Chunk, error) {
 		return t.Chunk{}, fmt.Errorf("read chunk: %w", err)
 	}
 	chunk := t.Chunk{
-		Meta: state.ChunkMeta,
+		Meta: state.Meta,
 		Data: data,
 	}
 	return chunk, nil
@@ -140,6 +140,27 @@ func (svc *Service) ReplicateChunk(
 		return "", fmt.Errorf("upload replica: %w", err)
 	}
 	return nodeID, nil
+}
+
+func (svc *Service) DeleteChunk(ctx context.Context, chunkID t.ChunkID) error {
+	
+	svc.mu.RLock()
+	_, ok := svc.catalog[chunkID]
+	svc.mu.RUnlock()
+
+	if !ok {
+		slog.WarnContext(ctx, "delete non-existing chunk", "chunk_id", chunkID)
+		return nil 
+	}
+
+	svc.mu.Lock()
+	delete(svc.catalog, chunkID)
+	svc.mu.Unlock()
+
+	if err := svc.diskStore.Delete(chunkID); err != nil {
+		return fmt.Errorf("delete data from disk: %w", err)
+	}
+	return nil
 }
 
 func (svc *Service) Heartbeat(ctx context.Context) error {
@@ -240,12 +261,12 @@ func (svc *Service) Start(ctx context.Context) error {
 
 func (svc *Service) BuildCatalog() error {
 
-	ids, err := svc.diskStore.GetAllIDs()
+	ids, err := svc.diskStore.List()
 	if err != nil {
 		return fmt.Errorf("get all ids: %w", err)
 	}
 
-	catalog := make(map[t.ChunkID]*s.ChunkState, len(ids))
+	catalog := make(map[t.ChunkID]*s.ChunkRecord, len(ids))
 	var totalBytes int64
 	for _, id := range ids {
 		meta, err := svc.diskStore.GetMeta(id)
@@ -253,7 +274,7 @@ func (svc *Service) BuildCatalog() error {
 			slog.Error("read chunk", "id", id, "error", err)
 			continue
 		}
-		catalog[id] = &s.ChunkState{ChunkMeta: meta, Reported: false}
+		catalog[id] = &s.ChunkRecord{Meta: meta, State: s.ChunkStateStaged}
 		totalBytes += meta.Digest.Size
 	}
 
@@ -268,9 +289,9 @@ func (svc *Service) BuildCatalog() error {
 func (svc *Service) ReportChunks(ctx context.Context) error {
 	toReport := []t.ChunkMeta{}
 	svc.mu.RLock()
-	for _, s := range svc.catalog {
-		if !s.Reported {
-			toReport = append(toReport, *s.ChunkMeta.Clone())
+	for _, r := range svc.catalog {
+		if r.State == s.ChunkStateStaged {
+			toReport = append(toReport, *r.Meta.Clone())
 		}
 	}
 	nodeID := svc.nodeID
@@ -282,22 +303,28 @@ func (svc *Service) ReportChunks(ctx context.Context) error {
 		return nil
 	}
 
-	_, err := svc.masterTransport.ReportChunks(ctx, nodeID, toReport)
+	res, err := svc.masterTransport.ReportChunks(ctx, nodeID, toReport)
 	if err != nil {
 		return fmt.Errorf("request chunk report: %w", err)
 	}
 
 	svc.mu.Lock()
 	defer svc.mu.Unlock()
+
 	if svc.nodeID != nodeID {
 		return fmt.Errorf("registration changed: invalid report")
 	}
 
-	for _, chunk := range toReport {
-		if state, ok := svc.catalog[chunk.ID]; ok {
-			state.Reported = true
+	for _, chunkID := range res.Accepted {
+		if state, ok := svc.catalog[chunkID]; ok {
+			state.State = s.ChunkStateActive
 		}
 	}
+
+	if len(res.Rejected) > 0 {
+		slog.WarnContext(ctx, "rejected chunk", "chunk_ids", res.Rejected)
+	}
+
 	return nil
 }
 

@@ -146,6 +146,33 @@ func (srv *Server) ReplicateChunk(
 	return rsp, nil
 }
 
+func (srv *Server) DeleteChunk(
+	ctx context.Context, req *spb.DeleteChunkRequest,
+) (rsp *spb.DeleteChunkResponse, err error) {
+	
+	defer func() {
+		if err != nil {
+			slog.ErrorContext(ctx, "delete chunk failed", "chunk_id", req.GetChunkId(), "error", err)
+			err = toStatus(err)
+		}
+	}()
+	slog.WarnContext(ctx, "delete chunk requested", "chunk_id", req.GetChunkId())
+
+	err = srv.service.ValidateNodeID(t.NodeID(req.GetNodeId()))
+	if err != nil {
+		return nil, err 
+	}
+	
+	chunkID := t.ChunkID(req.GetChunkId())
+	err = srv.service.DeleteChunk(ctx, chunkID)
+	if err != nil {
+		return nil, err
+	}
+
+	return rsp, nil
+}
+
+
 func (srv *Server) validatePutChunkHeader(header *spb.PutChunkHeader) error {
 	if header == nil {
 		return fmt.Errorf("missing header: %w", s.ErrInvalidHeader)

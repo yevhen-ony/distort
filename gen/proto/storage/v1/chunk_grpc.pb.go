@@ -22,6 +22,7 @@ const (
 	ChunkService_PutChunk_FullMethodName       = "/chunk.v1.ChunkService/PutChunk"
 	ChunkService_GetChunk_FullMethodName       = "/chunk.v1.ChunkService/GetChunk"
 	ChunkService_ReplicateChunk_FullMethodName = "/chunk.v1.ChunkService/ReplicateChunk"
+	ChunkService_DeleteChunk_FullMethodName    = "/chunk.v1.ChunkService/DeleteChunk"
 )
 
 // ChunkServiceClient is the client API for ChunkService service.
@@ -31,6 +32,7 @@ type ChunkServiceClient interface {
 	PutChunk(ctx context.Context, opts ...grpc.CallOption) (grpc.ClientStreamingClient[PutChunkRequest, PutChunkResponse], error)
 	GetChunk(ctx context.Context, in *GetChunkRequest, opts ...grpc.CallOption) (grpc.ServerStreamingClient[GetChunkResponse], error)
 	ReplicateChunk(ctx context.Context, in *ReplicateChunkRequest, opts ...grpc.CallOption) (*ReplicateChunkResponse, error)
+	DeleteChunk(ctx context.Context, in *DeleteChunkRequest, opts ...grpc.CallOption) (*DeleteChunkResponse, error)
 }
 
 type chunkServiceClient struct {
@@ -83,6 +85,16 @@ func (c *chunkServiceClient) ReplicateChunk(ctx context.Context, in *ReplicateCh
 	return out, nil
 }
 
+func (c *chunkServiceClient) DeleteChunk(ctx context.Context, in *DeleteChunkRequest, opts ...grpc.CallOption) (*DeleteChunkResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DeleteChunkResponse)
+	err := c.cc.Invoke(ctx, ChunkService_DeleteChunk_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // ChunkServiceServer is the server API for ChunkService service.
 // All implementations must embed UnimplementedChunkServiceServer
 // for forward compatibility.
@@ -90,6 +102,7 @@ type ChunkServiceServer interface {
 	PutChunk(grpc.ClientStreamingServer[PutChunkRequest, PutChunkResponse]) error
 	GetChunk(*GetChunkRequest, grpc.ServerStreamingServer[GetChunkResponse]) error
 	ReplicateChunk(context.Context, *ReplicateChunkRequest) (*ReplicateChunkResponse, error)
+	DeleteChunk(context.Context, *DeleteChunkRequest) (*DeleteChunkResponse, error)
 	mustEmbedUnimplementedChunkServiceServer()
 }
 
@@ -108,6 +121,9 @@ func (UnimplementedChunkServiceServer) GetChunk(*GetChunkRequest, grpc.ServerStr
 }
 func (UnimplementedChunkServiceServer) ReplicateChunk(context.Context, *ReplicateChunkRequest) (*ReplicateChunkResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ReplicateChunk not implemented")
+}
+func (UnimplementedChunkServiceServer) DeleteChunk(context.Context, *DeleteChunkRequest) (*DeleteChunkResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DeleteChunk not implemented")
 }
 func (UnimplementedChunkServiceServer) mustEmbedUnimplementedChunkServiceServer() {}
 func (UnimplementedChunkServiceServer) testEmbeddedByValue()                      {}
@@ -166,6 +182,24 @@ func _ChunkService_ReplicateChunk_Handler(srv interface{}, ctx context.Context, 
 	return interceptor(ctx, in, info, handler)
 }
 
+func _ChunkService_DeleteChunk_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DeleteChunkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(ChunkServiceServer).DeleteChunk(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: ChunkService_DeleteChunk_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(ChunkServiceServer).DeleteChunk(ctx, req.(*DeleteChunkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // ChunkService_ServiceDesc is the grpc.ServiceDesc for ChunkService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -176,6 +210,10 @@ var ChunkService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ReplicateChunk",
 			Handler:    _ChunkService_ReplicateChunk_Handler,
+		},
+		{
+			MethodName: "DeleteChunk",
+			Handler:    _ChunkService_DeleteChunk_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{

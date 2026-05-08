@@ -77,7 +77,7 @@ func TestFSChunkStorage_GetAllIDs(test *testing.T) {
 		store, err := New(cfg)
 		require.NoError(test, err)
 
-		ids, err := store.GetAllIDs()
+		ids, err := store.List()
 		require.NoError(test, err, "get all ids")
 		require.Empty(test, ids, "no ids returned")
 
@@ -91,7 +91,7 @@ func TestFSChunkStorage_GetAllIDs(test *testing.T) {
 		storeChunk(test, store.commitDir, t.ChunkID("ch-1"), []byte("hello"))
 		storeChunk(test, store.commitDir, t.ChunkID("ch-2"), []byte("world"))
 
-		ids, err := store.GetAllIDs()
+		ids, err := store.List()
 		require.NoError(test, err)
 		assert.ElementsMatch(test, []t.ChunkID{"ch-1", "ch-2"}, ids)
 	})

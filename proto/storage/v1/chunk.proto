@@ -10,7 +10,15 @@ service ChunkService {
   rpc PutChunk(stream PutChunkRequest) returns (PutChunkResponse);
   rpc GetChunk(GetChunkRequest) returns (stream GetChunkResponse);
   rpc ReplicateChunk(ReplicateChunkRequest) returns (ReplicateChunkResponse);
+  rpc DeleteChunk(DeleteChunkRequest) returns (DeleteChunkResponse);
 }
+
+message DeleteChunkRequest {
+  string node_id = 1;
+  string chunk_id = 2;
+}
+
+message DeleteChunkResponse {}
 
 message ReplicateChunkRequest{
   string node_id = 1;

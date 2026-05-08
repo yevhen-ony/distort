@@ -15,10 +15,11 @@ type ChunkWriter interface {
 }
 
 type ChunkStorage interface {
-	Get(chunkID t.ChunkID) (io.ReadCloser, error)
-	GetMeta(chunkID t.ChunkID) (t.ChunkMeta, error)
+	Get(t.ChunkID) (io.ReadCloser, error)
+	GetMeta(t.ChunkID) (t.ChunkMeta, error)
 	NewWriter() (ChunkWriter, error)
-	GetAllIDs() ([]t.ChunkID, error)
+	List() ([]t.ChunkID, error)
+	Delete(t.ChunkID) error
 }
 
 type HeartbeatResult struct {
@@ -27,6 +28,6 @@ type HeartbeatResult struct {
 
 type MasterTransport interface {
 	Heartbeat(context.Context,t.NodeID,t.NodeStats) (HeartbeatResult, error)
-	ReportChunks(context.Context, t.NodeID, []t.ChunkMeta) ([]t.ChunkStorageReject, error)
+	ReportChunks(context.Context, t.NodeID, []t.ChunkMeta) (t.ReportResult, error)
 	RegisterNode(ctx context.Context, addr string) (t.NodeID, error)
 }

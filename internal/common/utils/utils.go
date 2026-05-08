@@ -16,3 +16,12 @@ func SplitFrames(data []byte, size int64) [][]byte {
 	}
 	return frames
 }
+
+func Map[X any, Y any](xs []X, fn func(X)Y) []Y {
+	ys := make([]Y, len(xs))
+	for i, x := range xs {
+		ys[i] = fn(x) 
+	}
+	return ys
+}
+

@@ -107,14 +107,6 @@ type ChunkStorageRejectLike interface {
 	GetReason() string
 }
 
-func ChunkStorageRejectFromPB(pbObj ChunkStorageRejectLike) t.ChunkStorageReject{
-
-	return t.ChunkStorageReject{
-		ChunkID: t.ChunkID(pbObj.GetChunkId()),
-		Reason: pbObj.GetReason(),
-	}
-}
-
 type ObjectItemLike interface {
 	GetObjectId() string
 	GetChunkCount() int64

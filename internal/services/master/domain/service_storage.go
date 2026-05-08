@@ -6,6 +6,7 @@ import (
 	m "dos/internal/services/master"
 	"errors"
 	"fmt"
+	"log/slog"
 )
 
 func (s *MasterService) RegisterStorageNode(ctx context.Context, addr string) (t.NodeRef, error) {
@@ -19,27 +20,26 @@ func (s *MasterService) RegisterStorageNode(ctx context.Context, addr string) (t
 
 func (s *MasterService) ReportChunkStorage(
 	ctx context.Context, nodeID t.NodeID, chunks []t.ChunkMeta,
-) ([]t.ChunkStorageReject, error) {
+) (t.ReportResult, error) {
 
 	if _, err := s.nodeReg.Get(ctx, nodeID); err != nil {
-		return nil, fmt.Errorf("get node %s: %w", nodeID, err)
+		return t.ReportResult{}, fmt.Errorf("get node %s: %w", nodeID, err)
 	}
 
-	rejected := []t.ChunkStorageReject{} 
+	result := t.ReportResult{}
 	for _, chunk := range chunks {
 		if err := s.chunkRepo.SetDigest(ctx, chunk.ID, chunk.Digest); err != nil {
-			rejected = append(rejected, t.ChunkStorageReject{
-				ChunkID: chunk.ID,
-				Reason: m.ErrChunkDigestConflict.Error(),
-			})
+			slog.WarnContext(ctx, "reject chunk report", "chunk_id", chunk.ID, "reason", err)
+			result.Rejected = append(result.Rejected, chunk.ID)
 			continue
 		}
 		
 		if s.index.AttachChunk(ctx, nodeID, chunk.ID) {
 			s.chunkRepo.IncReplication(ctx, chunk.ID)
 		}
+		result.Accepted = append(result.Accepted, chunk.ID)
 	}
-	return rejected, nil
+	return result, nil
 }
 
 func (s *MasterService) Heartbeat(ctx context.Context, nodeID t.NodeID, stats t.NodeStats) error {

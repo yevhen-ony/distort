@@ -54,10 +54,9 @@ func TestService_CommitUploadSession(test *testing.T) {
 
 		require.NoError(test, svc.CommitUploadSession(writer, desc))
 
-		meta, ok := svc.catalog[desc.ID]
+		record, ok := svc.catalog[desc.ID]
 		require.True(test, ok)
-		assert.Equal(test, desc.Digest.Size, meta.Digest.Size)
-		assert.Equal(test, desc.Digest.Checksum, meta.Digest.Checksum)
+		assert.NoError(test, desc.Digest.Match(record.Meta.Digest))
 
 		r, err := st.Get(desc.ID)
 		require.NoError(test, err)
@@ -90,14 +89,14 @@ func TestService_CommitUploadSession(test *testing.T) {
 		require.NoError(test, err)
 
   		// Simulate race: ID becomes taken after session start but before commit.
-		svc.catalog[desc.ID] = &s.ChunkState{}
+		svc.catalog[desc.ID] = &s.ChunkRecord{}
 
 		err = svc.CommitUploadSession(session, desc)
 		require.Error(test, err)
 
 		// Existing entry must stay untouched.
-		meta := svc.catalog[desc.ID]
-		assert.Equal(test, int64(0), meta.Digest.Size)
-		assert.Equal(test, "", string(meta.Digest.Checksum))
+		record := svc.catalog[desc.ID]
+		assert.Equal(test, int64(0), record.Meta.Digest.Size)
+		assert.Equal(test, "", string(record.Meta.Digest.Checksum))
 	})
 }

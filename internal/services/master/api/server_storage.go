@@ -5,6 +5,7 @@ import (
 	mpb "dos/gen/proto/master/v1"
 	"dos/internal/common/convert"
 	t "dos/internal/common/types"
+	"dos/internal/common/utils"
 	m "dos/internal/services/master"
 	"fmt"
 	"log/slog"
@@ -100,24 +101,15 @@ func (s *StorageServer) ReportStorage(
 
 	nodeID := t.NodeID(req.GetNodeId())
 
-	desc := make([]t.ChunkMeta, 0, len(req.GetChunkReports()))
-	for _, report := range req.GetChunkReports() {
-		d := convert.ChunkMetaFromPB(report)
-		desc = append(desc, d)
-	}
+	metas := utils.Map(req.GetChunkReports(), func(r *mpb.ChunkDesc) t.ChunkMeta {
+		return convert.ChunkMetaFromPB(r)
+	})
 
-	rejects, err := s.service.ReportChunkStorage(ctx, nodeID, desc)
+	result, err := s.service.ReportChunkStorage(ctx, nodeID, metas)
 	if err != nil {
 		return nil, err
 	}
 
-	pbRejects := make([]*mpb.StorageReject, len(rejects))
-	for i, rej := range rejects {
-		pbRejects[i] = &mpb.StorageReject{
-			ChunkId: string(rej.ChunkID),
-			Reason:  rej.Reason,
-		}
-	}
-	rsp = &mpb.ReportStorageResponse{Rejects: pbRejects}
+	rsp = convert.ReportResultToPB(result)
 	return rsp, nil
 }

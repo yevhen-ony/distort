@@ -58,12 +58,12 @@ func (meta *ChunkMeta) Clone() *ChunkMeta {
 	}
 }
 
-type ChunkStorageReject struct {
-	ChunkID ChunkID
-	Reason  string
-}
-
 type Chunk struct {
 	Meta ChunkMeta
 	Data []byte 
+}
+
+type ReportResult struct {
+	Accepted []ChunkID
+	Rejected []ChunkID
 }

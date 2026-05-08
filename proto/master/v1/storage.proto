@@ -26,12 +26,8 @@ message ReportStorageRequest {
 }
 
 message ReportStorageResponse {
-  repeated StorageReject rejects = 1;
-}
-
-message StorageReject {
-  string chunk_id = 1;
-  string reason = 2;
+  repeated string accepted = 1;
+  repeated string rejected = 2;
 }
 
 message ChunkDesc {

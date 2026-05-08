@@ -5,6 +5,7 @@ import (
 	mpb "dos/gen/proto/master/v1"
 	"dos/internal/common/digest"
 	t "dos/internal/common/types"
+	"dos/internal/common/utils"
 )
 
 func NodeRefToPB(mNode ...t.NodeRef) []*cpb.NodeRef {
@@ -79,4 +80,14 @@ func ObjectItemToPB(infos ...t.ObjectItem) []*mpb.ObjectItem {
 		}
 	}
 	return pbInfos
+}
+
+func ReportResultToPB(res t.ReportResult) *mpb.ReportStorageResponse {
+	accepted := utils.Map(res.Accepted, func(cid t.ChunkID) string { return string(cid) })
+	rejected := utils.Map(res.Rejected, func(cid t.ChunkID) string { return string(cid) })
+	rsp := &mpb.ReportStorageResponse{
+		Accepted: accepted,
+		Rejected: rejected,
+	}
+	return rsp
 }

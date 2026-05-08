@@ -1,6 +1,7 @@
 package store
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -13,7 +14,7 @@ import (
 
 type FSChunkStorage struct {
 	commitDir string
-	tempDir string
+	tempDir   string
 }
 
 func New(config *ChunkStorageConfig) (*FSChunkStorage, error) {
@@ -30,7 +31,7 @@ func New(config *ChunkStorageConfig) (*FSChunkStorage, error) {
 
 	s := &FSChunkStorage{
 		commitDir: commitDir,
-		tempDir: tempDir,
+		tempDir:   tempDir,
 	}
 	return s, nil
 }
@@ -42,39 +43,48 @@ func (stg *FSChunkStorage) Get(chunkID t.ChunkID) (io.ReadCloser, error) {
 	if err != nil {
 		return nil, err
 	}
-	return f, nil 
+	return f, nil
+}
+
+func (stg *FSChunkStorage) Delete(chunkID t.ChunkID) error {
+	chunkPath := filepath.Join(stg.commitDir, string(chunkID))
+	err := os.Remove(chunkPath)
+	if errors.Is(err, os.ErrNotExist) {
+		return nil
+	}
+	return err
 }
 
 func (stg *FSChunkStorage) GetMeta(chunkID t.ChunkID) (t.ChunkMeta, error) {
 
 	chunkPath := filepath.Join(stg.commitDir, string(chunkID))
-	
+
 	fd, err := os.Open(chunkPath)
 	if err != nil {
 		return t.ChunkMeta{}, fmt.Errorf("open chunk: %w", err)
 	}
 	defer fd.Close()
-	
+
 	dg := digest.New()
 	if _, err := io.Copy(dg, fd); err != nil {
 		return t.ChunkMeta{}, fmt.Errorf("read chunk: %w", err)
 	}
 
 	meta := t.ChunkMeta{
-		ID: chunkID,
+		ID:     chunkID,
 		Digest: dg.Digest(),
 	}
-	
+
 	return meta, nil
 }
 
-func (stg *FSChunkStorage) GetAllIDs() ([]t.ChunkID, error) {
+func (stg *FSChunkStorage) List() ([]t.ChunkID, error) {
 	entries, err := os.ReadDir(stg.commitDir)
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
 	chunks := []t.ChunkID{}
-	for _, e := range entries  {
+	for _, e := range entries {
 		if e.IsDir() {
 			continue
 		}
@@ -92,9 +102,9 @@ func (stg *FSChunkStorage) NewWriter() (s.ChunkWriter, error) {
 	}
 
 	w := &FSChunkWriter{
-		fd: fd,
-		commitDir: stg.commitDir, 
-		dg: digest.New(),
+		fd:        fd,
+		commitDir: stg.commitDir,
+		dg:        digest.New(),
 	}
 	return w, nil
 }
