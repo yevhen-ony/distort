@@ -32,3 +32,23 @@ func (c Chunk) Validate() error {
 	got := NewChunk(c.Meta.ID, c.Data)
 	return c.Meta.Match(got.Meta)
 }
+
+func NewReplicaChainFailed(chunkID ChunkID, targets []NodeRef) *ReplicaChainFailedReport {
+	return &ReplicaChainFailedReport{
+		ChunkID: chunkID,
+		Targets: targets,
+	}
+}
+
+func (rcf *ReplicaChainFailedReport) ToRecord() ReplicaReport {
+	return ReplicaReport{ReplicaChainFailed: rcf}
+}
+
+func NewReplicaStaged(chunk ChunkMeta) *ReplicaStagedReport {
+	return &ReplicaStagedReport{Chunk: chunk}
+}
+
+
+func (rs *ReplicaStagedReport) ToRecord() ReplicaReport {
+	return ReplicaReport{ReplicaStaged: rs}
+}

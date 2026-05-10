@@ -6,6 +6,7 @@ import (
 
 	"dos/internal/common/digest"
 	t "dos/internal/common/types"
+	"dos/internal/common/utils"
 )
 
 type ChunkPlacementLike interface {
@@ -15,9 +16,9 @@ type ChunkPlacementLike interface {
 	GetNodes() []*pb.NodeRef
 }
 
-func NodeRefFromPB(pbNode *pb.NodeRef) *t.NodeRef {
+func NodeRefFromPB(pbNode *pb.NodeRef) t.NodeRef {
 
-	return &t.NodeRef{
+	return t.NodeRef{
 		ID: t.NodeID(pbNode.GetNodeId()),
 		Addr: pbNode.GetAddr(),
 	}
@@ -27,7 +28,7 @@ func ChunkPlacementFromPB(pbObj ChunkPlacementLike) *t.ChunkPlacement {
 	pbNodes := pbObj.GetNodes()
 	nodes := make([]t.NodeRef, 0, len(pbNodes))
 	for _, pbNode := range pbNodes {
-		nodes = append(nodes, *NodeRefFromPB(pbNode))
+		nodes = append(nodes, NodeRefFromPB(pbNode))
 	}
 	return &t.ChunkPlacement{
 		ChunkDesc: t.ChunkDesc{
@@ -120,3 +121,41 @@ func ObjectItemFromPB(pbObj ObjectItemLike) t.ObjectItem {
 	}
 }
 
+
+func ReplicaStagedReportFromPB(pb *mpb.ReplicaStaged) *t.ReplicaStagedReport {
+	if pb == nil {
+		return nil 
+	}
+
+	return &t.ReplicaStagedReport{
+		Chunk: ChunkMetaFromPB(pb.GetChunk()),
+	}
+}
+
+func ReplicaChainFailedReportFromPB(pb *mpb.ReplicaChainFailed) *t.ReplicaChainFailedReport {
+	if pb == nil {
+		return nil 
+	}
+
+	return &t.ReplicaChainFailedReport{
+		ChunkID: t.ChunkID(pb.GetChunkId()),
+		Targets: utils.Map(pb.GetTargets(), NodeRefFromPB),
+	}
+}
+
+func ReplicaReportFromPB(pb *mpb.ReplicaReport) t.ReplicaReport {
+	if pb == nil {
+		return t.ReplicaReport{}
+	}
+
+	switch rec := pb.GetRecord().(type) {
+	case *mpb.ReplicaReport_Staged:
+		return ReplicaStagedReportFromPB(rec.Staged).ToRecord()
+
+	case *mpb.ReplicaReport_ChainFailed:
+		return ReplicaChainFailedReportFromPB(rec.ChainFailed).ToRecord()
+
+	default:
+		return t.ReplicaReport{}
+	}
+}

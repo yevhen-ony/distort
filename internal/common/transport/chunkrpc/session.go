@@ -15,7 +15,7 @@ import (
 )
 
 type Session struct {
-	config     *Config
+	config     Config
 	conn       *connect.ConnCache
 	nodes      []t.NodeRef
 
@@ -82,7 +82,7 @@ func (s *Session) uploadToNode(ctx context.Context, nodeRef t.NodeRef, chunk *t.
 
 func (s *Session) uploadData(stream spb.ChunkService_PutChunkClient, data []byte) error {
 	for len(data) > 0 {
-		n := min(int64(s.config.FrameSize), int64(len(data)))
+		n := min(int64(s.config.FrameSize()), int64(len(data)))
 		err := stream.Send(&spb.PutChunkRequest{Data: data[:n]})
 		if err != nil {
 			return err

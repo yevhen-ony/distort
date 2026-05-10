@@ -1,6 +1,7 @@
-package core 
+package core
 
 import (
+	"context"
 	"crypto/sha256"
 	"encoding/hex"
 	"io"
@@ -9,8 +10,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	t "dos/internal/common/types"
 	"dos/internal/common/digest"
+	t "dos/internal/common/types"
 	s "dos/internal/services/storage"
 	"dos/internal/services/storage/store"
 )
@@ -20,14 +21,14 @@ func checksumHex(data []byte) string {
 	return hex.EncodeToString(sum[:])
 }
 
-func newTestService(test *testing.T) (*Service, *store.FSChunkStorage) {
+func newTestService(test *testing.T) (*StorageService, *store.FSChunkStorage) {
   	test.Helper()
 
 	cfg := &store.ChunkStorageConfig{RootDir: test.TempDir()}
   	store, err := store.New(cfg)
   	require.NoError(test, err)
 
-  	svc := &Service{
+  	svc := &StorageService{
   		diskStore:   store,
   		catalog: make(s.ChunkCatalog),
   	}
@@ -52,7 +53,7 @@ func TestService_CommitUploadSession(test *testing.T) {
 		_, err = writer.Write(payload)
 		require.NoError(test, err)
 
-		require.NoError(test, svc.CommitUploadSession(writer, desc))
+		require.NoError(test, svc.CommitUploadSession(context.Background(), writer, desc))
 
 		record, ok := svc.catalog[desc.ID]
 		require.True(test, ok)
@@ -91,7 +92,7 @@ func TestService_CommitUploadSession(test *testing.T) {
   		// Simulate race: ID becomes taken after session start but before commit.
 		svc.catalog[desc.ID] = &s.ChunkRecord{}
 
-		err = svc.CommitUploadSession(session, desc)
+		err = svc.CommitUploadSession(context.Background(), session, desc)
 		require.Error(test, err)
 
 		// Existing entry must stay untouched.

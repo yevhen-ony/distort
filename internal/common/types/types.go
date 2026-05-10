@@ -67,3 +67,20 @@ type ReportResult struct {
 	Accepted []ChunkID
 	Rejected []ChunkID
 }
+
+type ReplicaStagedReport struct {
+	Chunk ChunkMeta
+}
+
+type ReplicaChainFailedReport struct {
+	ChunkID ChunkID
+	Targets []NodeRef
+}
+
+type ReplicaReport struct {
+	ReplicaStaged      *ReplicaStagedReport
+	ReplicaChainFailed *ReplicaChainFailedReport
+}
+
+
+

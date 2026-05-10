@@ -8,74 +8,51 @@ import (
 	"dos/internal/common/utils"
 )
 
-func NodeRefToPB(mNode ...t.NodeRef) []*cpb.NodeRef {
-
-	pbNodes	:= make([]*cpb.NodeRef, 0, len(mNode))
-	for _, mn := range mNode {
-		pbNodes = append(pbNodes, &cpb.NodeRef{
-			NodeId: string(mn.ID),
-			Addr: mn.Addr,
-		})
+func NodeRefToPB(ref t.NodeRef) *cpb.NodeRef {
+	return &cpb.NodeRef{
+		NodeId: string(ref.ID),
+		Addr:   ref.Addr,
 	}
-	return pbNodes
 }
 
-func ChunkPlacementToPB(mChunk ...t.ChunkPlacement) []*mpb.ChunkPlacement {
-
-	pbChunks := make([]*mpb.ChunkPlacement, 0, len(mChunk))
-	for _, mc := range mChunk{
-		pbChunks = append(pbChunks, &mpb.ChunkPlacement{
-			ChunkId: string(mc.ChunkID),
-			ChunkKey: string(mc.ChunkKey),
-			ChunkSize: mc.ChunkSize,
-			Nodes: NodeRefToPB(mc.Nodes...),
-		})
+func ChunkPlacementToPB(cp t.ChunkPlacement) *mpb.ChunkPlacement {
+	return &mpb.ChunkPlacement{
+		ChunkId:   string(cp.ChunkID),
+		ChunkKey:  string(cp.ChunkKey),
+		ChunkSize: cp.ChunkSize,
+		Nodes: utils.Map(cp.Nodes, func(ref t.NodeRef) *cpb.NodeRef {
+			return NodeRefToPB(ref)
+		}),
 	}
-	return pbChunks 
 }
 
-func DigestToPB(d ...*digest.Digest) []*cpb.Digest {
-
-	pbDigests := make([]*cpb.Digest, 0, len(d))
-	for _, dgt := range d {
-		pbDigests = append(pbDigests, &cpb.Digest{
-			Checksum: string(dgt.Checksum),
-			Size: dgt.Size,
-		})
+func DigestToPB(d *digest.Digest) *cpb.Digest {
+	return &cpb.Digest{
+		Checksum: string(d.Checksum),
+		Size:     d.Size,
 	}
-	return pbDigests
 }
 
-func NodeStatsToPB(s ...t.NodeStats) []*cpb.NodeStats {
-
-	pbStats := make([]*cpb.NodeStats, 0, len(s))
-	for _, stats := range s {
-		pbStats = append(pbStats, &cpb.NodeStats{
-			FreeBytes: stats.FreeBytes,
-			UsedBytes: stats.UsedBytes,
-			ChunkCount: int32(stats.ChunkCount),
-		})
+func NodeStatsToPB(stat t.NodeStats) *cpb.NodeStats {
+	return &cpb.NodeStats{
+		FreeBytes:  stat.FreeBytes,
+		UsedBytes:  stat.UsedBytes,
+		ChunkCount: int32(stat.ChunkCount),
 	}
-	return pbStats
 }
 
-func ChunkDescToPB(d ...t.ChunkMeta) []*mpb.ChunkDesc {
-
-	pbDesc := make([]*mpb.ChunkDesc, 0, len(d))
-	for _, desc := range d {
-		pbDesc = append(pbDesc, &mpb.ChunkDesc{
-			ChunkId: string(desc.ID),
-			Digest: DigestToPB(desc.Digest)[0],
-		})
+func ChunkMetaToPB(meta t.ChunkMeta) *cpb.ChunkMeta {
+	return &cpb.ChunkMeta{
+		ChunkId: string(meta.ID),
+		Digest:  DigestToPB(meta.Digest),
 	}
-	return pbDesc
 }
 
 func ObjectItemToPB(infos ...t.ObjectItem) []*mpb.ObjectItem {
-	pbInfos := make([]*mpb.ObjectItem, len(infos)) 
+	pbInfos := make([]*mpb.ObjectItem, len(infos))
 	for i, info := range infos {
 		pbInfos[i] = &mpb.ObjectItem{
-			ObjectId: string(info.ID),
+			ObjectId:   string(info.ID),
 			ChunkCount: int64(info.ChunkCount),
 		}
 	}
@@ -91,3 +68,38 @@ func ReportResultToPB(res t.ReportResult) *mpb.ReportStorageResponse {
 	}
 	return rsp
 }
+
+func ReplicaStagedReportToPB(r t.ReplicaStagedReport) *mpb.ReplicaStaged {
+	return &mpb.ReplicaStaged{
+		Chunk: ChunkMetaToPB(r.Chunk),
+	}
+}
+
+func ReplicaChainFailedReportToPB(r t.ReplicaChainFailedReport) *mpb.ReplicaChainFailed {
+	return &mpb.ReplicaChainFailed{
+		ChunkId: string(r.ChunkID),
+		Targets: utils.Map(r.Targets, NodeRefToPB),
+	}
+}
+
+func ReplicaReportToPB(rr t.ReplicaReport) *mpb.ReplicaReport {
+	switch {
+	case rr.ReplicaStaged != nil:
+		return &mpb.ReplicaReport{
+			Record: &mpb.ReplicaReport_Staged{
+				Staged: ReplicaStagedReportToPB(*rr.ReplicaStaged),
+			},
+		}
+
+	case rr.ReplicaChainFailed != nil:
+		return &mpb.ReplicaReport{
+			Record: &mpb.ReplicaReport_ChainFailed{
+				ChainFailed: ReplicaChainFailedReportToPB(*rr.ReplicaChainFailed),
+			},
+		}
+
+	default:
+		return &mpb.ReplicaReport{}
+	}
+}
+

@@ -8,7 +8,7 @@ import (
 )
 
 func (s *MasterService) CreateObject(ctx context.Context, oid t.ObjectID) error {
-	return s.objectRepo.Create(ctx, oid)
+	return s.objectRepo.Create(ctx, oid, s.config.ReplicationCount)
 }
 
 func (s *MasterService) AllocateChunk(
@@ -34,13 +34,13 @@ func (s *MasterService) AllocateChunk(
 	}
 
 	chunkID := s.chunkRepo.NewChunkID()
+	if err := s.chunkRepo.Create(ctx, chunkID, cmd.ObjectID); err  != nil {
+		return t.ChunkPlacement{}, fmt.Errorf("create chunk: %w", err)
+	}
+
 	err = s.objectRepo.AddChunk(ctx, cmd.ObjectID, cmd.ChunkKey, chunkID)
 	if err != nil {
 		return t.ChunkPlacement{}, fmt.Errorf("add chunk to object: %w", err)
-	}
-
-	if err := s.chunkRepo.Create(ctx, chunkID); err  != nil {
-		return t.ChunkPlacement{}, fmt.Errorf("create chunk: %w", err)
 	}
 	
 	res := t.ChunkPlacement{

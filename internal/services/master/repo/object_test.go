@@ -16,7 +16,7 @@ func TestInMemObjectRepo_Create(test *testing.T) {
 	ctx := context.Background()
 
 	test.Run("CreateNew", func(test *testing.T) {
-		err := r.Create(ctx, t.ObjectID("obj-1"))
+		err := r.Create(ctx, t.ObjectID("obj-1"), 1)
 		require.NoError(test, err)
 
 		got, err := r.Get(ctx, t.ObjectID("obj-1"))
@@ -26,7 +26,7 @@ func TestInMemObjectRepo_Create(test *testing.T) {
 	})
 
 	test.Run("Conflict", func(test *testing.T) {
-		err := r.Create(ctx, t.ObjectID("obj-1"))
+		err := r.Create(ctx, t.ObjectID("obj-1"), 1)
 		require.ErrorIs(test, err, m.ErrObjectExists)
 	})
 }
@@ -36,7 +36,7 @@ func TestInMemObjectRepo_Get(test *testing.T) {
 	ctx := context.Background()
 	oid := t.ObjectID("obj-1")
 
-	require.NoError(test, r.Create(ctx, oid))
+	require.NoError(test, r.Create(ctx, oid, 1))
 	require.NoError(test, r.AddChunk(ctx, oid, t.ChunkKey("1"), t.ChunkID("chunk-a")))
 
 	test.Run("NotFound", func(test *testing.T) {
@@ -67,7 +67,7 @@ func TestInMemObjectRepo_AddChunk(test *testing.T) {
 	ctx := context.Background()
 	oid := t.ObjectID("obj-1")
 
-	require.NoError(test, r.Create(ctx, oid))
+	require.NoError(test, r.Create(ctx, oid, 1))
 
 	test.Run("UniqueKey", func(test *testing.T) {
 		err := r.AddChunk(ctx, oid, t.ChunkKey("0"), t.ChunkID("chunk-a"))

@@ -2,25 +2,22 @@ logger:
   level: debug
   service: storage 
 
-api:
-  frame_size: 3MB
-
-store:
-  root_dir: ./chunkserver_data
-
 listen:
   host: "0.0.0.0"
   port: 10001
 
-master_transport:
-  addr: localhost:10002
+store:
+  max_storage: 10GB
+  root_dir: ./chunkserver_data
 
-chunk_transport:
+transport:
+  advertise_addr: localhost:10001
+  master_addr: localhost:10002
   frame_size: 3MB
 
 service:
-  advertise_addr: localhost:10001
-  max_storage_bytes: 1073741824 
-  heartbeat_delay: 5s
-  report_delay: 5s
+  heartbeat_interval: 5s
+  report_interval: 5s
+  registration_timeout: 1m
+  replication_timeout: 3m
 

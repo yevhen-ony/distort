@@ -9,6 +9,7 @@ import (
 	pb "dos/gen/proto/master/v1"
 	"dos/internal/common/convert"
 	t "dos/internal/common/types"
+	"dos/internal/common/utils"
 	m "dos/internal/services/master"
 )
 
@@ -78,14 +79,8 @@ func (s *ClientServer) AllocateChunk(
 	}
 
 	rsp = &pb.AllocateChunkResponse{
-		Chunk: &pb.ChunkPlacement{
-			ChunkId:   string(chunk.ChunkID),
-			ChunkKey:  string(chunk.ChunkKey),
-			ChunkSize: chunk.ChunkSize,
-			Nodes:     convert.NodeRefToPB(chunk.Nodes...),
-		},
+		Chunk: convert.ChunkPlacementToPB(chunk),
 	}
-
 	return rsp, nil
 }
 
@@ -114,7 +109,10 @@ func (s *ClientServer) GetObjectAccess(
 	rsp = &pb.GetObjectAccessResponse{
 		ObjectId:  string(object.ID),
 		TotalSize: object.TotalSize,
-		Chunks:    convert.ChunkPlacementToPB(object.Chunks...),
+		Chunks:    utils.Map(object.Chunks, func(cp t.ChunkPlacement) *pb.ChunkPlacement { 
+			return convert.ChunkPlacementToPB(cp) 
+		}),
+		
 	}
 	return rsp, nil
 }

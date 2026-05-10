@@ -6,46 +6,51 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
-	"math/rand/v2"
 	"sync"
 	"time"
 
-	"dos/internal/common/retry"
+	"dos/internal/common/dosctx"
 	"dos/internal/common/transport/chunkrpc"
 	t "dos/internal/common/types"
 	s "dos/internal/services/storage"
 )
 
-type StorageServiceConfig struct {
-	AdvertiseAddr   string        `yaml:"advertise_addr"`
-	MaxStorageBytes int64         `yaml:"max_storage_bytes"`
-	HeartbeatDelay  time.Duration `yaml:"heartbeat_delay"`
-	ReportDelay     time.Duration `yaml:"report_delay"`
+type StorageServiceConfig interface {
+	AdvertiseAddr() string
+	MaxStorage() int64
+	HeartbeatInterval() time.Duration
+	ReportInterval() time.Duration
+	ReplicationTimeout() time.Duration
 }
 
-type Service struct {
+type ReportSink interface {
+	Enqueue(context.Context, t.ReplicaReport)
+	Flush(context.Context)
+}
+
+type StorageService struct {
 	catalog    s.ChunkCatalog
 	totalBytes int64
 	mu         sync.RWMutex
 
-	diskStore  s.ChunkStorage
+	diskStore       s.ChunkStorage
 	masterTransport s.MasterTransport
-	chunkTransport *chunkrpc.Transport
+	chunkTransport  *chunkrpc.Transport
+
+	identity   *IdentityService
+	reportSink ReportSink
 
 	config StorageServiceConfig
 	nodeID t.NodeID
-
-	started    bool
-
-	reportWake chan struct{}
 }
 
 func New(
 	diskStore s.ChunkStorage,
 	masterTransport s.MasterTransport,
 	chunkTransport *chunkrpc.Transport,
+	reportSink ReportSink,
 	config StorageServiceConfig,
-) (*Service, error) {
+) (*StorageService, error) {
 
 	if diskStore == nil {
 		return nil, errors.New("missing store")
@@ -57,17 +62,20 @@ func New(
 		return nil, errors.New("missing storage transport")
 	}
 
-	service := &Service{
-		diskStore:  diskStore,
+	service := &StorageService{
+		diskStore:       diskStore,
 		masterTransport: masterTransport,
-		chunkTransport: chunkTransport,
-		config: config,
-		reportWake: make(chan struct{}, 1),
+		chunkTransport:  chunkTransport,
+		reportSink:      reportSink,
+		config:          config,
+	}
+	if err := service.buildCatalog(); err != nil {
+		return nil, fmt.Errorf("build catalog: %w", err)
 	}
 	return service, nil
 }
 
-func (svc *Service) StartUploadSession(desc *t.ChunkMeta) (s.ChunkWriter, error) {
+func (svc *StorageService) StartUploadSession(desc *t.ChunkMeta) (s.ChunkWriter, error) {
 	svc.mu.RLock()
 	_, ok := svc.catalog[desc.ID]
 	svc.mu.RUnlock()
@@ -82,7 +90,10 @@ func (svc *Service) StartUploadSession(desc *t.ChunkMeta) (s.ChunkWriter, error)
 	return w, nil
 }
 
-func (svc *Service) CommitUploadSession(w s.ChunkWriter, meta *t.ChunkMeta) error {
+func (svc *StorageService) CommitUploadSession(
+	ctx context.Context, w s.ChunkWriter, meta *t.ChunkMeta,
+) error {
+
 	if err := meta.Digest.Match(w.Digest()); err != nil {
 		return err
 	}
@@ -97,11 +108,12 @@ func (svc *Service) CommitUploadSession(w s.ChunkWriter, meta *t.ChunkMeta) erro
 	if err := w.Commit(meta.ID); err != nil {
 		return fmt.Errorf("session commit: %w", err)
 	}
-	svc.catalog[meta.ID] = &s.ChunkRecord{Meta: *meta}
+	svc.catalog[meta.ID] = s.NewChunkRecord(*meta)
+	svc.reportSink.Enqueue(ctx, t.NewReplicaStaged(*meta).ToRecord())
 	return nil
 }
 
-func (svc *Service) GetChunk(chunkID t.ChunkID) (t.Chunk, error) {
+func (svc *StorageService) GetChunk(chunkID t.ChunkID) (t.Chunk, error) {
 	svc.mu.RLock()
 	state, ok := svc.catalog[chunkID]
 	svc.mu.RUnlock()
@@ -126,31 +138,42 @@ func (svc *Service) GetChunk(chunkID t.ChunkID) (t.Chunk, error) {
 	return chunk, nil
 }
 
-func (svc *Service) ReplicateChunk(
-	ctx context.Context, chunkID t.ChunkID, candidates []t.NodeRef,
-) (t.NodeID, error) {
+func (svc *StorageService) ReplicateChunk(
+	ctx context.Context, chunkID t.ChunkID, targets []t.NodeRef,
+) error {
+
+	ctx = dosctx.WithChunkID(ctx, chunkID)
+	ctx, cancel := context.WithTimeout(ctx, svc.config.ReplicationTimeout())
+	defer cancel()
+
 	chunk, err := svc.GetChunk(chunkID)
 	if err != nil {
-		return "", fmt.Errorf("get chunk: %w", err)
+		return fmt.Errorf("get chunk: %w", err)
 	}
 
-	session := svc.chunkTransport.NewTransferSession(candidates)
-	nodeID, err := session.Upload(ctx, &chunk)
-	if err != nil {
-		return "", fmt.Errorf("upload replica: %w", err)
+	session := svc.chunkTransport.NewTransferSession(targets)
+	if _, err = session.Upload(ctx, &chunk); err != nil {
+		slog.ErrorContext(ctx, "chank replication failed", "targets", targets, "error", err)
+
+		report := t.NewReplicaChainFailed(chunkID, targets).ToRecord()
+		svc.reportSink.Enqueue(ctx, report)
+		svc.reportSink.Flush(ctx)
+
+		return fmt.Errorf("upload replica: %w", err)
 	}
-	return nodeID, nil
+
+	return nil
 }
 
-func (svc *Service) DeleteChunk(ctx context.Context, chunkID t.ChunkID) error {
-	
+func (svc *StorageService) DeleteChunk(ctx context.Context, chunkID t.ChunkID) error {
+
 	svc.mu.RLock()
 	_, ok := svc.catalog[chunkID]
 	svc.mu.RUnlock()
 
 	if !ok {
 		slog.WarnContext(ctx, "delete non-existing chunk", "chunk_id", chunkID)
-		return nil 
+		return nil
 	}
 
 	svc.mu.Lock()
@@ -163,10 +186,10 @@ func (svc *Service) DeleteChunk(ctx context.Context, chunkID t.ChunkID) error {
 	return nil
 }
 
-func (svc *Service) Heartbeat(ctx context.Context) error {
+func (svc *StorageService) Heartbeat(ctx context.Context) error {
 	svc.mu.RLock()
 	stats := t.NodeStats{
-		FreeBytes:  svc.config.MaxStorageBytes - svc.totalBytes,
+		FreeBytes:  svc.config.MaxStorage() - svc.totalBytes,
 		UsedBytes:  svc.totalBytes,
 		ChunkCount: len(svc.catalog),
 	}
@@ -179,42 +202,14 @@ func (svc *Service) Heartbeat(ctx context.Context) error {
 
 	if res.NodeUnknown {
 		slog.Warn("request new node id")
-		if err := svc.Register(ctx); err != nil {
+		if err := svc.identity.RequestNewID(ctx); err != nil {
 			return err
 		}
 	}
 	return nil
 }
 
-func (svc *Service) Register(ctx context.Context) error {
-
-	var nodeID t.NodeID
-	err := retry.Retry{Delay: time.Second}.Run(ctx, func(ctx context.Context) error {
-		var innerErr error
-		nodeID, innerErr = svc.masterTransport.RegisterNode(ctx, svc.config.AdvertiseAddr)
-		return innerErr
-	})
-
-	if err != nil {
-		return fmt.Errorf("register storage node: %w", err)
-	}
-	svc.mu.Lock()
-	svc.nodeID = nodeID
-	svc.mu.Unlock()
-	return nil
-}
-
-func (svc *Service) ValidateNodeID(nodeID t.NodeID) error {
-	if svc.nodeID == "" {
-		return s.ErrNodeNotRegistered
-	}
-	if nodeID != svc.nodeID {
-		return s.ErrInvalidNodeID
-	}
-	return nil
-}
-
-func (svc *Service) RunHearbeatLoop(ctx context.Context) {
+func (svc *StorageService) RunHearbeatLoop(ctx context.Context) {
 	timer := time.NewTimer(0)
 	defer timer.Stop()
 
@@ -231,39 +226,15 @@ func (svc *Service) RunHearbeatLoop(ctx context.Context) {
 		case <-timer.C:
 		}
 
-		timer.Reset(jitter(svc.config.HeartbeatDelay, 0.2))
+		timer.Reset(jitter(svc.config.HeartbeatInterval(), 0.2))
 	}
 }
 
-func (svc *Service) Start(ctx context.Context) error {
-
-	svc.mu.Lock()
-	if svc.started {
-		svc.mu.Unlock()
-		return nil
-	}
-	svc.started = true
-	svc.mu.Unlock()
-
-	if err := svc.Register(ctx); err != nil {
-		return fmt.Errorf("register node: %w", err)
-	}
-
-	if err := svc.BuildCatalog(); err != nil {
-		return fmt.Errorf("build catalog: %w", err)
-	}
-
-	go svc.RunReportLoop(ctx)
-	go svc.RunHearbeatLoop(ctx)
-
-	return nil
-}
-
-func (svc *Service) BuildCatalog() error {
+func (svc *StorageService) buildCatalog() error {
 
 	ids, err := svc.diskStore.List()
 	if err != nil {
-		return fmt.Errorf("get all ids: %w", err)
+		return fmt.Errorf("list chunks: %w", err)
 	}
 
 	catalog := make(map[t.ChunkID]*s.ChunkRecord, len(ids))
@@ -286,71 +257,3 @@ func (svc *Service) BuildCatalog() error {
 	return nil
 }
 
-func (svc *Service) ReportChunks(ctx context.Context) error {
-	toReport := []t.ChunkMeta{}
-	svc.mu.RLock()
-	for _, r := range svc.catalog {
-		if r.State == s.ChunkStateStaged {
-			toReport = append(toReport, *r.Meta.Clone())
-		}
-	}
-	nodeID := svc.nodeID
-	svc.mu.RUnlock()
-	if nodeID == "" {
-		return s.ErrNodeNotRegistered
-	}
-	if len(toReport) == 0 {
-		return nil
-	}
-
-	res, err := svc.masterTransport.ReportChunks(ctx, nodeID, toReport)
-	if err != nil {
-		return fmt.Errorf("request chunk report: %w", err)
-	}
-
-	svc.mu.Lock()
-	defer svc.mu.Unlock()
-
-	if svc.nodeID != nodeID {
-		return fmt.Errorf("registration changed: invalid report")
-	}
-
-	for _, chunkID := range res.Accepted {
-		if state, ok := svc.catalog[chunkID]; ok {
-			state.State = s.ChunkStateActive
-		}
-	}
-
-	if len(res.Rejected) > 0 {
-		slog.WarnContext(ctx, "rejected chunk", "chunk_ids", res.Rejected)
-	}
-
-	return nil
-}
-
-func (svc *Service) RunReportLoop(ctx context.Context) {
-	timer := time.NewTimer(0)
-	defer timer.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-timer.C:
-		case <- svc.reportWake:
-		}
-
-		slog.DebugContext(ctx, "exec report chunks")
-		if err := svc.ReportChunks(ctx); err != nil {
-			slog.ErrorContext(ctx, "report chunks failed", "error", err)
-		}
-
-		timer.Reset(jitter(svc.config.ReportDelay, 0.2))
-	}
-}
-
-func jitter(base time.Duration, frac float64) time.Duration {
-	delta := float64(base) * frac
-	j := (rand.Float64() * 2 - 1) * delta
-	return time.Duration(float64(base) + j)
-}

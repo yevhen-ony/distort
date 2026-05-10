@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-func RunGRPCServer(ctx context.Context, cfg *ListenerConfig, register func(*grpc.Server)) error {
+func RunGRPCServer(ctx context.Context, cfg *Config, register func(*grpc.Server)) error {
 
     lis, err := net.Listen("tcp", cfg.Addr())
     if err != nil {

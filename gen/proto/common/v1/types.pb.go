@@ -21,6 +21,58 @@ const (
 	_ = protoimpl.EnforceVersion(protoimpl.MaxVersion - 20)
 )
 
+type ChunkMeta struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
+	Digest        *Digest                `protobuf:"bytes,2,opt,name=digest,proto3" json:"digest,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChunkMeta) Reset() {
+	*x = ChunkMeta{}
+	mi := &file_common_v1_types_proto_msgTypes[0]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChunkMeta) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChunkMeta) ProtoMessage() {}
+
+func (x *ChunkMeta) ProtoReflect() protoreflect.Message {
+	mi := &file_common_v1_types_proto_msgTypes[0]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChunkMeta.ProtoReflect.Descriptor instead.
+func (*ChunkMeta) Descriptor() ([]byte, []int) {
+	return file_common_v1_types_proto_rawDescGZIP(), []int{0}
+}
+
+func (x *ChunkMeta) GetChunkId() string {
+	if x != nil {
+		return x.ChunkId
+	}
+	return ""
+}
+
+func (x *ChunkMeta) GetDigest() *Digest {
+	if x != nil {
+		return x.Digest
+	}
+	return nil
+}
+
 type NodeRef struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
@@ -31,7 +83,7 @@ type NodeRef struct {
 
 func (x *NodeRef) Reset() {
 	*x = NodeRef{}
-	mi := &file_common_v1_types_proto_msgTypes[0]
+	mi := &file_common_v1_types_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -43,7 +95,7 @@ func (x *NodeRef) String() string {
 func (*NodeRef) ProtoMessage() {}
 
 func (x *NodeRef) ProtoReflect() protoreflect.Message {
-	mi := &file_common_v1_types_proto_msgTypes[0]
+	mi := &file_common_v1_types_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -56,7 +108,7 @@ func (x *NodeRef) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeRef.ProtoReflect.Descriptor instead.
 func (*NodeRef) Descriptor() ([]byte, []int) {
-	return file_common_v1_types_proto_rawDescGZIP(), []int{0}
+	return file_common_v1_types_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *NodeRef) GetNodeId() string {
@@ -84,7 +136,7 @@ type NodeStats struct {
 
 func (x *NodeStats) Reset() {
 	*x = NodeStats{}
-	mi := &file_common_v1_types_proto_msgTypes[1]
+	mi := &file_common_v1_types_proto_msgTypes[2]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -96,7 +148,7 @@ func (x *NodeStats) String() string {
 func (*NodeStats) ProtoMessage() {}
 
 func (x *NodeStats) ProtoReflect() protoreflect.Message {
-	mi := &file_common_v1_types_proto_msgTypes[1]
+	mi := &file_common_v1_types_proto_msgTypes[2]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -109,7 +161,7 @@ func (x *NodeStats) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use NodeStats.ProtoReflect.Descriptor instead.
 func (*NodeStats) Descriptor() ([]byte, []int) {
-	return file_common_v1_types_proto_rawDescGZIP(), []int{1}
+	return file_common_v1_types_proto_rawDescGZIP(), []int{2}
 }
 
 func (x *NodeStats) GetFreeBytes() int64 {
@@ -143,7 +195,7 @@ type ChunkPlacement struct {
 
 func (x *ChunkPlacement) Reset() {
 	*x = ChunkPlacement{}
-	mi := &file_common_v1_types_proto_msgTypes[2]
+	mi := &file_common_v1_types_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -155,7 +207,7 @@ func (x *ChunkPlacement) String() string {
 func (*ChunkPlacement) ProtoMessage() {}
 
 func (x *ChunkPlacement) ProtoReflect() protoreflect.Message {
-	mi := &file_common_v1_types_proto_msgTypes[2]
+	mi := &file_common_v1_types_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -168,7 +220,7 @@ func (x *ChunkPlacement) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChunkPlacement.ProtoReflect.Descriptor instead.
 func (*ChunkPlacement) Descriptor() ([]byte, []int) {
-	return file_common_v1_types_proto_rawDescGZIP(), []int{2}
+	return file_common_v1_types_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ChunkPlacement) GetChunkId() string {
@@ -195,7 +247,7 @@ type Digest struct {
 
 func (x *Digest) Reset() {
 	*x = Digest{}
-	mi := &file_common_v1_types_proto_msgTypes[3]
+	mi := &file_common_v1_types_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -207,7 +259,7 @@ func (x *Digest) String() string {
 func (*Digest) ProtoMessage() {}
 
 func (x *Digest) ProtoReflect() protoreflect.Message {
-	mi := &file_common_v1_types_proto_msgTypes[3]
+	mi := &file_common_v1_types_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -220,7 +272,7 @@ func (x *Digest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Digest.ProtoReflect.Descriptor instead.
 func (*Digest) Descriptor() ([]byte, []int) {
-	return file_common_v1_types_proto_rawDescGZIP(), []int{3}
+	return file_common_v1_types_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *Digest) GetChecksum() string {
@@ -241,7 +293,10 @@ var File_common_v1_types_proto protoreflect.FileDescriptor
 
 const file_common_v1_types_proto_rawDesc = "" +
 	"\n" +
-	"\x15common/v1/types.proto\x12\tcommon.v1\"6\n" +
+	"\x15common/v1/types.proto\x12\tcommon.v1\"Q\n" +
+	"\tChunkMeta\x12\x19\n" +
+	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12)\n" +
+	"\x06digest\x18\x02 \x01(\v2\x11.common.v1.DigestR\x06digest\"6\n" +
 	"\aNodeRef\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x12\n" +
 	"\x04addr\x18\x02 \x01(\tR\x04addr\"j\n" +
@@ -271,20 +326,22 @@ func file_common_v1_types_proto_rawDescGZIP() []byte {
 	return file_common_v1_types_proto_rawDescData
 }
 
-var file_common_v1_types_proto_msgTypes = make([]protoimpl.MessageInfo, 4)
+var file_common_v1_types_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_common_v1_types_proto_goTypes = []any{
-	(*NodeRef)(nil),        // 0: common.v1.NodeRef
-	(*NodeStats)(nil),      // 1: common.v1.NodeStats
-	(*ChunkPlacement)(nil), // 2: common.v1.ChunkPlacement
-	(*Digest)(nil),         // 3: common.v1.Digest
+	(*ChunkMeta)(nil),      // 0: common.v1.ChunkMeta
+	(*NodeRef)(nil),        // 1: common.v1.NodeRef
+	(*NodeStats)(nil),      // 2: common.v1.NodeStats
+	(*ChunkPlacement)(nil), // 3: common.v1.ChunkPlacement
+	(*Digest)(nil),         // 4: common.v1.Digest
 }
 var file_common_v1_types_proto_depIdxs = []int32{
-	0, // 0: common.v1.ChunkPlacement.nodes:type_name -> common.v1.NodeRef
-	1, // [1:1] is the sub-list for method output_type
-	1, // [1:1] is the sub-list for method input_type
-	1, // [1:1] is the sub-list for extension type_name
-	1, // [1:1] is the sub-list for extension extendee
-	0, // [0:1] is the sub-list for field type_name
+	4, // 0: common.v1.ChunkMeta.digest:type_name -> common.v1.Digest
+	1, // 1: common.v1.ChunkPlacement.nodes:type_name -> common.v1.NodeRef
+	2, // [2:2] is the sub-list for method output_type
+	2, // [2:2] is the sub-list for method input_type
+	2, // [2:2] is the sub-list for extension type_name
+	2, // [2:2] is the sub-list for extension extendee
+	0, // [0:2] is the sub-list for field type_name
 }
 
 func init() { file_common_v1_types_proto_init() }
@@ -298,7 +355,7 @@ func file_common_v1_types_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_v1_types_proto_rawDesc), len(file_common_v1_types_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   4,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   0,
 		},

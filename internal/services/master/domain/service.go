@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"time"
 
+	t "dos/internal/common/types"
 	m "dos/internal/services/master"
 )
 
@@ -21,6 +22,10 @@ type MasterServiceConfig struct {
 	NodeCleanupInterval        time.Duration `yaml:"node_cleanup_interval"`
 }
 
+type ReconcileSink interface {
+	Enqueue(context.Context, t.ChunkID)
+}
+
 type MasterService struct {
 	chunkRepo  m.ChunkRepo
 	objectRepo m.ObjectRepo
@@ -29,6 +34,8 @@ type MasterService struct {
 	index           m.ChunkNodeIndex
 	placementPolicy m.PlacementPolicy
 	config          *MasterServiceConfig
+
+	reconcileSink ReconcileSink
 }
 
 func NewMasterService(
@@ -112,3 +119,5 @@ func validateConfig(config *MasterServiceConfig) error {
 	}
 	return nil
 }
+
+

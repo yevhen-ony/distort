@@ -8,26 +8,27 @@ import (
 	"dos/internal/common/connect"
 	"dos/internal/common/convert"
 	t "dos/internal/common/types"
+	"dos/internal/common/utils"
 	s "dos/internal/services/storage"
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
 )
 
-type MasterConfig struct {
-	Addr string `yaml:"addr"`
+type MasterConfig interface {
+	MasterAddr() string
 }
 
 type Master struct {
 	client mpb.MasterStorageServiceClient
-	config *MasterConfig
+	config MasterConfig
 }
 
-func NewMaster(conn *connect.ConnCache, cfg *MasterConfig) (*Master, error) {
+func NewMaster(conn *connect.ConnCache, cfg MasterConfig) (*Master, error) {
 
-	c, err := conn.Get(cfg.Addr)	
+	c, err := conn.Get(cfg.MasterAddr())	
 	if err != nil {
-		return nil, fmt.Errorf("get conn %s: %w", cfg.Addr, err)
+		return nil, fmt.Errorf("get conn %s: %w", cfg.MasterAddr(), err)
 	}
 	mt := &Master{
 		client: mpb.NewMasterStorageServiceClient(c),
@@ -56,7 +57,7 @@ func (mt *Master) Heartbeat(
 
 	req := &mpb.HeartbeatRequest{
 		NodeId: string(nodeID),
-		Stats: convert.NodeStatsToPB(stats)[0],
+		Stats: convert.NodeStatsToPB(stats),
 	}
 
 	_, err := mt.client.Heartbeat(ctx, req)
@@ -72,12 +73,12 @@ func (mt *Master) Heartbeat(
 
 
 func (mt *Master) ReportChunks(
-	ctx context.Context, nodeID t.NodeID, desc []t.ChunkMeta,
+	ctx context.Context, nodeID t.NodeID, reports []t.ReplicaReport,
 ) (t.ReportResult, error) {
 
 	req := &mpb.ReportStorageRequest{
 		NodeId: string(nodeID),
-		ChunkReports: convert.ChunkDescToPB(desc...),
+		Reports: utils.Map(reports, convert.ReplicaReportToPB),
 	}
 	rsp, err := mt.client.ReportStorage(ctx, req)
 	if err != nil {

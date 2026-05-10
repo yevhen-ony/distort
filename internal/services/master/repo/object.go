@@ -1,15 +1,16 @@
 package repo
 
-import ( 
+import (
 	"context"
+	"sync"
 
-	m "dos/internal/services/master"
 	t "dos/internal/common/types"
-
+	m "dos/internal/services/master"
 )
 
 type InMemObjectRepo struct {
 	objects map[t.ObjectID]*m.Object
+	mu sync.RWMutex
 }
 
 func NewInMemObjectRepo() *InMemObjectRepo {
@@ -18,7 +19,10 @@ func NewInMemObjectRepo() *InMemObjectRepo {
 	}
 }
 
-func (o *InMemObjectRepo) Create(_ context.Context, oid t.ObjectID) error {
+func (o *InMemObjectRepo) Create(_ context.Context, oid t.ObjectID, desiredReplication int) error {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
 	if _, ok := o.objects[oid]; ok {
 		return m.ErrObjectExists 
 	}
@@ -26,11 +30,15 @@ func (o *InMemObjectRepo) Create(_ context.Context, oid t.ObjectID) error {
 	o.objects[oid] = &m.Object{
 		ID: oid,
 		Chunks: map[t.ChunkKey]t.ChunkID{},
+		DesiredReplication: desiredReplication,
 	}
 	return nil
 }
 
 func (o *InMemObjectRepo) Get(_ context.Context, oid t.ObjectID) (m.Object, error) {
+	o.mu.RLock()
+	defer o.mu.RUnlock()
+
 	obj, ok := o.objects[oid]
 	if !ok {
 		return m.Object{}, m.ErrObjectNotFound
@@ -38,7 +46,21 @@ func (o *InMemObjectRepo) Get(_ context.Context, oid t.ObjectID) (m.Object, erro
 	return *obj.Clone(), nil
 }
 
+func (o *InMemObjectRepo) GetReplication(_ context.Context, oid t.ObjectID) (int, error) {
+	o.mu.RLock()
+	defer o.mu.RUnlock()
+
+	obj, ok := o.objects[oid]
+	if !ok {
+		return 0, m.ErrObjectNotFound
+	}
+	return obj.DesiredReplication, nil
+}
+
 func (o *InMemObjectRepo) List(_ context.Context) []t.ObjectItem {
+	o.mu.RLock()
+	defer o.mu.RUnlock()
+
 	res := make([]t.ObjectItem, 0, len(o.objects))
 	for _, obj := range o.objects {
 		res = append(res, t.ObjectItem{
@@ -50,6 +72,9 @@ func (o *InMemObjectRepo) List(_ context.Context) []t.ObjectItem {
 }
 
 func (o *InMemObjectRepo) AddChunk(_ context.Context, oid t.ObjectID, key t.ChunkKey, cid t.ChunkID) error {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
 	obj, ok := o.objects[oid]
 	if !ok {
 		return m.ErrObjectNotFound

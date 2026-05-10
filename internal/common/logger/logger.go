@@ -1,17 +1,19 @@
 package logger
 
 import (
+	"context"
+	"dos/internal/common/dosctx"
 	"log/slog"
 	"os"
 	"strings"
 )
 
-type LogConfig struct {
+type Config struct {
 	Level   string `yaml:"level"`
 	Service string `yaml:"service"`
 }
 
-func (lc *LogConfig) GetLevel() slog.Level {
+func (lc *Config) GetLevel() slog.Level {
 	switch strings.ToLower(lc.Level) {
 	case "debug":
 		return slog.LevelDebug 
@@ -22,7 +24,28 @@ func (lc *LogConfig) GetLevel() slog.Level {
 	}
 }
 
-func Init(cfg *LogConfig) *slog.Logger {
+type ContextHandler struct {
+	slog.Handler
+}
+
+func NewContextHandler(next slog.Handler) slog.Handler {
+	return &ContextHandler{
+		Handler: next,
+	}
+}
+
+func (h *ContextHandler) Handle(ctx context.Context, r slog.Record) error {
+	if objectID, ok := dosctx.ObjectID(ctx); ok {
+		r.AddAttrs(slog.String("object_id", string(objectID)))
+	}
+	if chunkID, ok := dosctx.ChunkID(ctx); ok {
+		r.AddAttrs(slog.String("chunk_id", string(chunkID)))
+	}
+	return h.Handler.Handle(ctx, r)
+}
+
+
+func Init(cfg *Config) *slog.Logger {
 	handlerOpts := &slog.HandlerOptions{
 		Level: cfg.GetLevel(),
 		ReplaceAttr: func(groups []string, a slog.Attr) slog.Attr {
@@ -33,8 +56,12 @@ func Init(cfg *LogConfig) *slog.Logger {
 			return a
 		},
 	}
-	handler := slog.NewTextHandler(os.Stdout, handlerOpts)
+	handler := NewContextHandler(
+		slog.NewTextHandler(os.Stdout, handlerOpts),
+	)
 	l := slog.New(handler).With("service", cfg.Service)
 	slog.SetDefault(l)
 	return l
 }
+
+

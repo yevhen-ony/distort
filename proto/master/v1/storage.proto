@@ -22,17 +22,28 @@ message HeartbeatResponse {
 
 message ReportStorageRequest {
   string node_id = 1;
-  repeated ChunkDesc chunk_reports = 2;
+  repeated ReplicaReport reports  = 2;
+}
+
+message ReplicaReport {
+  oneof record {
+    ReplicaStaged staged = 1;
+    ReplicaChainFailed chain_failed = 2;
+  }
+}
+
+message ReplicaStaged {
+  common.v1.ChunkMeta chunk = 1;
+}
+
+message ReplicaChainFailed {
+  string chunk_id = 1;
+  repeated common.v1.NodeRef targets = 2;
 }
 
 message ReportStorageResponse {
   repeated string accepted = 1;
   repeated string rejected = 2;
-}
-
-message ChunkDesc {
-  string chunk_id = 1;
-  common.v1.Digest digest = 2;
 }
 
 message RegisterStorageNodeRequest {

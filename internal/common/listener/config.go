@@ -2,11 +2,11 @@ package listener
 
 import "fmt"
 
-type ListenerConfig struct {
+type Config struct {
 	Host string `yaml:"host"`
 	Port int    `yaml:"port"`
 }
 
-func (c ListenerConfig) Addr() string {
+func (c Config) Addr() string {
 	return fmt.Sprintf("%s:%d", c.Host, c.Port)
 }

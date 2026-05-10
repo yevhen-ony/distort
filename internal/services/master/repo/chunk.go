@@ -21,7 +21,7 @@ func NewInMemChunkRepo() *InMemChunkRepo {
 	}
 }
 
-func (r *InMemChunkRepo) Create(_ context.Context, id t.ChunkID) error {
+func (r *InMemChunkRepo) Create(_ context.Context, id t.ChunkID, objectID t.ObjectID) error {
 	if _, ok := r.chunks[id]; ok {
 		return m.ErrChunkExists
 	}

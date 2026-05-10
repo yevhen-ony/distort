@@ -18,8 +18,8 @@ func (s *MasterService) RegisterStorageNode(ctx context.Context, addr string) (t
 	return nref, err
 }
 
-func (s *MasterService) ReportChunkStorage(
-	ctx context.Context, nodeID t.NodeID, chunks []t.ChunkMeta,
+func (s *MasterService) ReportReplication(
+	ctx context.Context, nodeID t.NodeID, reports []t.ReplicaReport,
 ) (t.ReportResult, error) {
 
 	if _, err := s.nodeReg.Get(ctx, nodeID); err != nil {

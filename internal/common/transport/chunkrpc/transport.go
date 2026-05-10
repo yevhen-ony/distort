@@ -7,12 +7,16 @@ import (
 	t "dos/internal/common/types"
 )
 
-type Transport struct {
-	conn   *connect.ConnCache
-	config *Config
+type Config interface {
+	FrameSize() int64
 }
 
-func NewTransport(conn *connect.ConnCache, config *Config) (*Transport, error) {
+type Transport struct {
+	conn   *connect.ConnCache
+	config Config
+}
+
+func NewTransport(conn *connect.ConnCache, config Config) (*Transport, error) {
 	if conn == nil {
 		return nil, errors.New("missing connection pool")
 	}

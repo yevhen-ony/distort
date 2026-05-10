@@ -15,17 +15,23 @@ import (
 	"dos/internal/services/storage/core"
 )
 
+type Config interface {
+	FrameSize() int64
+}
+
 type Server struct {
 	spb.UnimplementedChunkServiceServer
 
-	service *core.Service
-	config  *ServerConfig
+	identity *core.IdentityService
+	storage  *core.StorageService
+	config   *ServerConfig
 }
 
-func New(service *core.Service, config *ServerConfig) *Server {
+func New(identity *core.IdentityService, storage *core.StorageService, config *ServerConfig) *Server {
 	return &Server{
-		service: service,
-		config: config,
+		identity: identity,
+		storage:  storage,
+		config:   config,
 	}
 }
 
@@ -49,8 +55,8 @@ func (srv *Server) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) 
 
 	slog.DebugContext(stream.Context(), "put chunk request", "chunk_id", header.GetChunkId())
 
-	chunkDesc := convert.ChunkMetaFromPB(header) 
-	session, err := srv.service.StartUploadSession(&chunkDesc)
+	chunkDesc := convert.ChunkMetaFromPB(header)
+	session, err := srv.storage.StartUploadSession(&chunkDesc)
 	if err != nil {
 		return fmt.Errorf("start upload session: %w", err)
 	}
@@ -70,7 +76,8 @@ func (srv *Server) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) 
 		}
 	}
 
-	if err := srv.service.CommitUploadSession(session, &chunkDesc); err != nil {
+	err = srv.storage.CommitUploadSession(stream.Context(), session, &chunkDesc)
+	if err != nil {
 		return fmt.Errorf("commit upload session: %w", err)
 	}
 	if err := stream.SendAndClose(&spb.PutChunkResponse{}); err != nil {
@@ -89,17 +96,17 @@ func (srv *Server) GetChunk(req *spb.GetChunkRequest, stream spb.ChunkService_Ge
 	}()
 	slog.DebugContext(stream.Context(), "get chunk request", "chunk_id", req.GetChunkId())
 
-	chunk, err := srv.service.GetChunk(t.ChunkID(req.GetChunkId()))
+	chunk, err := srv.storage.GetChunk(t.ChunkID(req.GetChunkId()))
 	if err != nil {
 		return fmt.Errorf("get chunk: %w", err)
 	}
 
 	rsp := &spb.GetChunkResponse{
 		Header: &spb.GetChunkHeader{
-			ChunkId:   string(chunk.Meta.ID),
+			ChunkId: string(chunk.Meta.ID),
 			Digest: &cpb.Digest{
 				Checksum: string(chunk.Meta.Digest.Checksum),
-				Size: chunk.Meta.Digest.Size,
+				Size:     chunk.Meta.Digest.Size,
 			},
 		},
 	}
@@ -128,28 +135,26 @@ func (srv *Server) ReplicateChunk(
 	}()
 	slog.DebugContext(ctx, "replicate chunk requested", "chunk_id", req.GetChunkId())
 
-	err = srv.service.ValidateNodeID(t.NodeID(req.GetNodeId()))
+	err = srv.identity.Validate(t.NodeID(req.GetNodeId()))
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
-	
+
 	chunkID := t.ChunkID(req.GetChunkId())
+	targets := utils.Map(req.GetTargets(), convert.NodeRefFromPB)
+	replCtx := context.WithoutCancel(ctx)	
+	go func() {
+		_ = srv.storage.ReplicateChunk(replCtx, chunkID, targets)
+	}()
 
-	pbNodes := req.GetCandidates()
-	nodes := make([]t.NodeRef, 0, len(pbNodes))
-	for _, pbNode := range pbNodes {
-		nodes = append(nodes, *convert.NodeRefFromPB(pbNode))
-	}
-
-	nodeID, err := srv.service.ReplicateChunk(ctx, chunkID, nodes)
-	rsp = &spb.ReplicateChunkResponse{NodeId: string(nodeID)}
+	rsp = &spb.ReplicateChunkResponse{}
 	return rsp, nil
 }
 
 func (srv *Server) DeleteChunk(
 	ctx context.Context, req *spb.DeleteChunkRequest,
 ) (rsp *spb.DeleteChunkResponse, err error) {
-	
+
 	defer func() {
 		if err != nil {
 			slog.ErrorContext(ctx, "delete chunk failed", "chunk_id", req.GetChunkId(), "error", err)
@@ -158,13 +163,13 @@ func (srv *Server) DeleteChunk(
 	}()
 	slog.WarnContext(ctx, "delete chunk requested", "chunk_id", req.GetChunkId())
 
-	err = srv.service.ValidateNodeID(t.NodeID(req.GetNodeId()))
+	err = srv.identity.Validate(t.NodeID(req.GetNodeId()))
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
-	
+
 	chunkID := t.ChunkID(req.GetChunkId())
-	err = srv.service.DeleteChunk(ctx, chunkID)
+	err = srv.storage.DeleteChunk(ctx, chunkID)
 	if err != nil {
 		return nil, err
 	}
@@ -172,14 +177,13 @@ func (srv *Server) DeleteChunk(
 	return rsp, nil
 }
 
-
 func (srv *Server) validatePutChunkHeader(header *spb.PutChunkHeader) error {
 	if header == nil {
 		return fmt.Errorf("missing header: %w", s.ErrInvalidHeader)
 	}
 	nodeID := t.NodeID(header.GetNodeId())
-	if err := srv.service.ValidateNodeID(nodeID); err != nil {
-		return err 
+	if err := srv.identity.Validate(nodeID); err != nil {
+		return err
 	}
 	return nil
 }

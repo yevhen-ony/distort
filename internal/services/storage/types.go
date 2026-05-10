@@ -16,6 +16,13 @@ type ChunkRecord struct{
 	State ChunkState
 }
 
+func NewChunkRecord(meta t.ChunkMeta) *ChunkRecord {
+	return &ChunkRecord{
+		Meta: meta,
+		State: ChunkStateStaged,
+	}
+}
+
 type ChunkCatalog map[t.ChunkID]*ChunkRecord
 
 

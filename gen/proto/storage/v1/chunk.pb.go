@@ -114,7 +114,7 @@ type ReplicateChunkRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	ChunkId       string                 `protobuf:"bytes,2,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
-	Candidates    []*v1.NodeRef          `protobuf:"bytes,3,rep,name=candidates,proto3" json:"candidates,omitempty"`
+	Targets       []*v1.NodeRef          `protobuf:"bytes,3,rep,name=targets,proto3" json:"targets,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -163,16 +163,15 @@ func (x *ReplicateChunkRequest) GetChunkId() string {
 	return ""
 }
 
-func (x *ReplicateChunkRequest) GetCandidates() []*v1.NodeRef {
+func (x *ReplicateChunkRequest) GetTargets() []*v1.NodeRef {
 	if x != nil {
-		return x.Candidates
+		return x.Targets
 	}
 	return nil
 }
 
 type ReplicateChunkResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
-	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -205,13 +204,6 @@ func (x *ReplicateChunkResponse) ProtoReflect() protoreflect.Message {
 // Deprecated: Use ReplicateChunkResponse.ProtoReflect.Descriptor instead.
 func (*ReplicateChunkResponse) Descriptor() ([]byte, []int) {
 	return file_storage_v1_chunk_proto_rawDescGZIP(), []int{3}
-}
-
-func (x *ReplicateChunkResponse) GetNodeId() string {
-	if x != nil {
-		return x.NodeId
-	}
-	return ""
 }
 
 type PutChunkRequest struct {
@@ -526,15 +518,12 @@ const file_storage_v1_chunk_proto_rawDesc = "" +
 	"\x12DeleteChunkRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x19\n" +
 	"\bchunk_id\x18\x02 \x01(\tR\achunkId\"\x15\n" +
-	"\x13DeleteChunkResponse\"\x7f\n" +
+	"\x13DeleteChunkResponse\"y\n" +
 	"\x15ReplicateChunkRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x19\n" +
-	"\bchunk_id\x18\x02 \x01(\tR\achunkId\x122\n" +
-	"\n" +
-	"candidates\x18\x03 \x03(\v2\x12.common.v1.NodeRefR\n" +
-	"candidates\"1\n" +
-	"\x16ReplicateChunkResponse\x12\x17\n" +
-	"\anode_id\x18\x01 \x01(\tR\x06nodeId\"W\n" +
+	"\bchunk_id\x18\x02 \x01(\tR\achunkId\x12,\n" +
+	"\atargets\x18\x03 \x03(\v2\x12.common.v1.NodeRefR\atargets\"\x18\n" +
+	"\x16ReplicateChunkResponse\"W\n" +
 	"\x0fPutChunkRequest\x120\n" +
 	"\x06header\x18\x01 \x01(\v2\x18.chunk.v1.PutChunkHeaderR\x06header\x12\x12\n" +
 	"\x04data\x18\x02 \x01(\fR\x04data\"o\n" +
@@ -586,7 +575,7 @@ var file_storage_v1_chunk_proto_goTypes = []any{
 	(*v1.Digest)(nil),              // 11: common.v1.Digest
 }
 var file_storage_v1_chunk_proto_depIdxs = []int32{
-	10, // 0: chunk.v1.ReplicateChunkRequest.candidates:type_name -> common.v1.NodeRef
+	10, // 0: chunk.v1.ReplicateChunkRequest.targets:type_name -> common.v1.NodeRef
 	5,  // 1: chunk.v1.PutChunkRequest.header:type_name -> chunk.v1.PutChunkHeader
 	11, // 2: chunk.v1.PutChunkHeader.digest:type_name -> common.v1.Digest
 	9,  // 3: chunk.v1.GetChunkResponse.header:type_name -> chunk.v1.GetChunkHeader

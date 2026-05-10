@@ -1,5 +1,7 @@
 package utils
 
+import "math/rand/v2"
+
 func SplitFrames(data []byte, size int64) [][]byte {
 	if size <= 0 {
 		panic("frame size must be positive")
@@ -25,3 +27,17 @@ func Map[X any, Y any](xs []X, fn func(X)Y) []Y {
 	return ys
 }
 
+func RandomSelect[T any](ts []T, n int) []T {
+	n = min(len(ts), n)
+	perm := rand.Perm(len(ts))
+
+	selected := make([]T, n)
+	for i := range n {
+		selected[i] = ts[perm[i]]
+	}
+	return selected
+}
+
+func RandomSelectOne[T any](ts []T) T {
+	return ts[rand.IntN(len(ts))]
+}

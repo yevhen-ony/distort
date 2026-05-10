@@ -7,8 +7,9 @@ import (
 )
 
 type Object struct {
-	ID     t.ObjectID
-	Chunks map[t.ChunkKey]t.ChunkID
+	ID                 t.ObjectID
+	Chunks             map[t.ChunkKey]t.ChunkID
+	DesiredReplication int
 }
 
 func (o *Object) Clone() *Object {
@@ -27,7 +28,8 @@ func (o *Object) Clone() *Object {
 
 type Chunk struct {
 	t.ChunkMeta
-	ReplicaCount int	
+	ReplicaCount int
+	ObjectID     t.ObjectID
 }
 
 func (c *Chunk) Clone() *Chunk {
@@ -36,8 +38,9 @@ func (c *Chunk) Clone() *Chunk {
 	}
 
 	return &Chunk{
-		ChunkMeta: *c.ChunkMeta.Clone(),
+		ChunkMeta:    *c.ChunkMeta.Clone(),
 		ReplicaCount: c.ReplicaCount,
+		ObjectID:     c.ObjectID,
 	}
 }
 

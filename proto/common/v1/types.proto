@@ -4,6 +4,11 @@ package common.v1;
 
 option go_package = "dos/gen/proto/common/v1;common";
 
+message ChunkMeta {
+  string chunk_id = 1;
+  common.v1.Digest digest = 2;
+}
+
 message NodeRef {
   string node_id = 1;
   string addr = 2;

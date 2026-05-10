@@ -100,12 +100,9 @@ func (s *StorageServer) ReportStorage(
 	}
 
 	nodeID := t.NodeID(req.GetNodeId())
+	reports := utils.Map(req.GetReports(), convert.ReplicaReportFromPB)
 
-	metas := utils.Map(req.GetChunkReports(), func(r *mpb.ChunkDesc) t.ChunkMeta {
-		return convert.ChunkMetaFromPB(r)
-	})
-
-	result, err := s.service.ReportChunkStorage(ctx, nodeID, metas)
+	result, err := s.service.ReportReplication(ctx, nodeID, reports)
 	if err != nil {
 		return nil, err
 	}

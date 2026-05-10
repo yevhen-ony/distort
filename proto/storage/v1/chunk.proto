@@ -23,11 +23,10 @@ message DeleteChunkResponse {}
 message ReplicateChunkRequest{
   string node_id = 1;
   string chunk_id = 2;
-  repeated common.v1.NodeRef candidates = 3;
+  repeated common.v1.NodeRef targets = 3;
 }
 
 message ReplicateChunkResponse {
-  string node_id = 1;
 }
 
 message PutChunkRequest {

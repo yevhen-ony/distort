@@ -15,21 +15,22 @@ type Service interface {
 	ListObjects(context.Context) ([]t.ObjectItem, error)
 
 	RegisterStorageNode(context.Context, string) (t.NodeRef, error)
-	ReportChunkStorage(context.Context, t.NodeID, []t.ChunkMeta) (t.ReportResult, error)
+	ReportReplication(context.Context, t.NodeID, []t.ReplicaReport) (t.ReportResult, error)
 	Heartbeat(context.Context, t.NodeID, t.NodeStats) error
 	EvictStorageNode(ctx context.Context, nodeID t.NodeID) error
 }
 
 type ObjectRepo interface {
-	Create(context.Context, t.ObjectID) error
+	Create(context.Context, t.ObjectID, int) error
 	Get(context.Context, t.ObjectID) (Object, error)
+	GetReplication(context.Context, t.ObjectID) (int, error)
 	List(context.Context) []t.ObjectItem
 	AddChunk(context.Context, t.ObjectID, t.ChunkKey, t.ChunkID) error
 }
 
 type ChunkRepo interface {
 	NewChunkID() t.ChunkID
-	Create(context.Context, t.ChunkID) error
+	Create(context.Context, t.ChunkID, t.ObjectID) error
 	Get(context.Context, t.ChunkID) (Chunk, error)
 	SetDigest(context.Context, t.ChunkID, *digest.Digest) error
 	IncReplication(context.Context, t.ChunkID) error
