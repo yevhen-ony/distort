@@ -29,9 +29,10 @@ type TransportConfig struct {
 
 type ServiceConfig struct {
 	HeartbeatInterval   time.Duration `yaml:"heartbeat_interval"`
-	ReportInterval      time.Duration `yaml:"report_interval"`
 	RegistrationTimeout time.Duration `yaml:"registration_timeout"`
 	ReplicationTimeout  time.Duration `yaml:"replication_timeout"`
+	ReportInterval      time.Duration `yaml:"report_interval"`
+	ReportQueueCapacity int           `yaml:"report_queue_capacity"`
 }
 
 func (cfg *Config) MaxStorage() int64 {
@@ -68,4 +69,8 @@ func (cfg *Config) RegistrationTimeout() time.Duration {
 
 func (cfg *Config) ReplicationTimeout() time.Duration {
 	return cfg.Service.ReplicationTimeout
+}
+
+func (cfg *Config) QueueCapacity() int {
+	return cfg.Service.ReportQueueCapacity
 }

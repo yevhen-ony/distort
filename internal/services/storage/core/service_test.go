@@ -24,8 +24,8 @@ func checksumHex(data []byte) string {
 func newTestService(test *testing.T) (*StorageService, *store.FSChunkStorage) {
   	test.Helper()
 
-	cfg := &store.ChunkStorageConfig{RootDir: test.TempDir()}
-  	store, err := store.New(cfg)
+	cfg := NewTestConfig(test) 
+  	store, err := store.NewChunkStorage(cfg)
   	require.NoError(test, err)
 
   	svc := &StorageService{
@@ -100,4 +100,16 @@ func TestService_CommitUploadSession(test *testing.T) {
 		assert.Equal(test, int64(0), record.Meta.Digest.Size)
 		assert.Equal(test, "", string(record.Meta.Digest.Checksum))
 	})
+}
+
+type TestConfig struct {
+	test *testing.T
+}
+
+func NewTestConfig(test *testing.T) *TestConfig {
+	return  &TestConfig{test: test} 
+}
+
+func (c *TestConfig) StorageRootDir() string {
+	return c.test.TempDir()
 }

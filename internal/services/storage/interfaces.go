@@ -28,6 +28,6 @@ type HeartbeatResult struct {
 
 type MasterTransport interface {
 	Heartbeat(context.Context,t.NodeID,t.NodeStats) (HeartbeatResult, error)
-	ReportChunks(context.Context, t.NodeID, []t.ChunkMeta) (t.ReportResult, error)
+	ReportChunks(context.Context, t.NodeID, []t.ReplicaReport) (t.ReportResult, error)
 	RegisterNode(ctx context.Context, addr string) (t.NodeID, error)
 }

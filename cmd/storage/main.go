@@ -4,27 +4,16 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log/slog"
 	"os"
 	"os/signal"
 
-	spb "dos/gen/proto/storage/v1"
 	"dos/internal/common/config"
-	"dos/internal/common/connect"
-	"dos/internal/common/listener"
 	"dos/internal/common/logger"
-	"dos/internal/common/transport/chunkrpc"
-	"dos/internal/services/storage/api"
-	"dos/internal/services/storage/core"
-	"dos/internal/services/storage/store"
-	"dos/internal/services/storage/transport"
-
-	"google.golang.org/grpc"
 )
 
 func main() {
 	if err := run(); err != nil {
-		slog.Error(err.Error())
+		fmt.Println(err.Error())
 		os.Exit(1)
 	}
 }
@@ -40,43 +29,21 @@ func run() error {
 	}
 	
 	logger.Init(&cfg.Logger)
-
-	slog.Info("config", "master_addr", cfg.MasterTransport.Addr)
 	
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
     defer stop()
 
-	storage, err := store.New(&cfg.Store)
+	app, err := NewApp(&cfg)
 	if err != nil {
-		return fmt.Errorf("construct storage: %w", err)
+		return err
 	}
 
-	conn := connect.NewConnCache()
-	defer conn.Close()
-
-	masterTransport, err := transport.NewMaster(conn, &cfg.MasterTransport)
-	if err != nil {
-		return fmt.Errorf("construct master transport: %w", err)
+	if err := app.Start(ctx); err != nil {
+		return err
 	}
 
-	chunkTransport, err := chunkrpc.NewTransport(conn, &cfg.ChunkTransport)	
+	<-ctx.Done()
 
-	svc, err := core.New(storage, masterTransport, chunkTransport, cfg.Service)
-	if err != nil {
-		return fmt.Errorf("construct service: %w", err)
-	}
-	
-	if err := svc.Start(ctx); err != nil {
-		return fmt.Errorf("start service: %w", err)
-	}
-
-	srv := api.New(svc, &cfg.API)
-	err = listener.RunGRPCServer(ctx, &cfg.Listen, func(s *grpc.Server) {
-		spb.RegisterChunkServiceServer(s, srv)
-	})
-	if err != nil {
-		return fmt.Errorf("run grpc server: %w", err)
-	}
-	return nil
+	return nil 
 }
 

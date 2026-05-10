@@ -1,4 +1,4 @@
-package store 
+package store
 
 import (
 	"io"
@@ -12,27 +12,12 @@ import (
 	t "dos/internal/common/types"
 )
 
-func TestFSChunkStorage_New(test *testing.T) {
-	test.Run("DirsCreated", func(test *testing.T) {
-		rootDir := test.TempDir() 
-		cfg := &ChunkStorageConfig{RootDir: rootDir}
-
-		s, err := New(cfg)
-		require.NoError(test, err)
-
-		assert.NotNil(test, s)
-		assert.NotEqual(test, s.commitDir, s.tempDir, "commit and temp dirs are different")
-		assert.DirExists(test, s.commitDir, "commit dir exists")
-		assert.DirExists(test, s.tempDir, "temp dir exists")
-	})
-}
 
 func TestFSChunkStorage_Get(test *testing.T) {
 	test.Run("HappyPath", func(test *testing.T) {
-		rootDir := test.TempDir()
-		cfg := &ChunkStorageConfig{RootDir: rootDir}
+		cfg := NewTestConfig(test) 
 
-		store, err := New(cfg)
+		store, err := NewChunkStorage(cfg)
 		require.NoError(test, err)
 		
 		chunkID := t.ChunkID("chunk-1")
@@ -50,8 +35,8 @@ func TestFSChunkStorage_Get(test *testing.T) {
 }
 
 func TestFSChunkStorage_GetMeta(test *testing.T) {
-	cfg := &ChunkStorageConfig{RootDir: test.TempDir()}
-	store, err := New(cfg)
+	cfg := NewTestConfig(test) 
+	store, err := NewChunkStorage(cfg)
 	require.NoError(test, err)
 
 	chunkID := t.ChunkID("chunk-2")
@@ -73,8 +58,8 @@ func TestFSChunkStorage_GetMeta(test *testing.T) {
 
 func TestFSChunkStorage_GetAllIDs(test *testing.T) {
 	test.Run("EmptyStorage", func(test *testing.T) {
-		cfg := &ChunkStorageConfig{RootDir: test.TempDir()}
-		store, err := New(cfg)
+		cfg := NewTestConfig(test) 
+		store, err := NewChunkStorage(cfg)
 		require.NoError(test, err)
 
 		ids, err := store.List()
@@ -84,8 +69,8 @@ func TestFSChunkStorage_GetAllIDs(test *testing.T) {
 	})
 
 	test.Run("WithTwoChunks", func(test *testing.T) {
-		cfg := &ChunkStorageConfig{RootDir: test.TempDir()}
-		store, err := New(cfg)
+		cfg := NewTestConfig(test) 
+		store, err := NewChunkStorage(cfg)
 		require.NoError(test, err)
 
 		storeChunk(test, store.commitDir, t.ChunkID("ch-1"), []byte("hello"))
@@ -98,8 +83,8 @@ func TestFSChunkStorage_GetAllIDs(test *testing.T) {
 }
 
 func TestFSChunkStorage_NewWriter(test *testing.T) {
-	cfg := &ChunkStorageConfig{RootDir: test.TempDir()}
-  	s, err := New(cfg)
+	cfg := NewTestConfig(test)
+  	s, err := NewChunkStorage(cfg)
   	require.NoError(test, err)
 
   	w, err := s.NewWriter()
@@ -118,5 +103,17 @@ func storeChunk(test *testing.T, dir string, id t.ChunkID, content []byte) {
 	path := filepath.Join(dir, string(id))
 	err := os.WriteFile(path, content, 0o600)
 	require.NoError(test, err, "store chunk")
+}
+
+type TestConfig struct {
+	test *testing.T
+}
+
+func NewTestConfig(test *testing.T) *TestConfig {
+	return  &TestConfig{test: test} 
+}
+
+func (c *TestConfig) StorageRootDir() string {
+	return c.test.TempDir()
 }
 

@@ -53,17 +53,8 @@ func validateReportStorageRequest(req *pb.ReportStorageRequest) error {
 	if req.GetNodeId() == "" {
 		return status.Error(codes.InvalidArgument, "missing node id")
 	}
-	if len(req.GetChunkReports()) == 0 {
+	if len(req.GetReports()) == 0 {
 		return status.Error(codes.InvalidArgument, "missing reports")
-	}
-	
-	for _, report := range req.GetChunkReports() {
-		if report.GetChunkId() == "" {
-			return status.Error(codes.InvalidArgument, "missing chunk id")
-		}
-		if report.GetDigest() == nil {
-			return status.Error(codes.InvalidArgument, "missing digest")
-		}
 	}
 	return nil
 }

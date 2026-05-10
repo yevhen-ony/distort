@@ -15,7 +15,7 @@ type Service interface {
 	ListObjects(context.Context) ([]t.ObjectItem, error)
 
 	RegisterStorageNode(context.Context, string) (t.NodeRef, error)
-	ReportReplication(context.Context, t.NodeID, []t.ReplicaReport) (t.ReportResult, error)
+	ReportReplicas(context.Context, t.NodeID, []t.ReplicaReport) (t.ReportResult, error)
 	Heartbeat(context.Context, t.NodeID, t.NodeStats) error
 	EvictStorageNode(ctx context.Context, nodeID t.NodeID) error
 }

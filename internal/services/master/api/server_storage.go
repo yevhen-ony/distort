@@ -102,7 +102,7 @@ func (s *StorageServer) ReportStorage(
 	nodeID := t.NodeID(req.GetNodeId())
 	reports := utils.Map(req.GetReports(), convert.ReplicaReportFromPB)
 
-	result, err := s.service.ReportReplication(ctx, nodeID, reports)
+	result, err := s.service.ReportReplicas(ctx, nodeID, reports)
 	if err != nil {
 		return nil, err
 	}

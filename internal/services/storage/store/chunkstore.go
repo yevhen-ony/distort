@@ -17,14 +17,18 @@ type FSChunkStorage struct {
 	tempDir   string
 }
 
-func New(config *ChunkStorageConfig) (*FSChunkStorage, error) {
+type ChunkStorageConfig interface {
+	StorageRootDir() string
+}
 
-	commitDir, err := config.GetCommitDir()
+func NewChunkStorage(config ChunkStorageConfig) (*FSChunkStorage, error) {
+
+	commitDir, err := getCommitDir(config.StorageRootDir())
 	if err != nil {
 		return nil, fmt.Errorf("get commit dir: %w", err)
 	}
 
-	tempDir, err := config.GetTempDir()
+	tempDir, err := getTempDir(config.StorageRootDir())
 	if err != nil {
 		return nil, fmt.Errorf("get temp dir: %w", err)
 	}

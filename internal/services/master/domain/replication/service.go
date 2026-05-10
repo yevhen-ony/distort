@@ -151,5 +151,7 @@ func (s *Service) Run(ctx context.Context) {
 	}
 }
 
-func (s *Service) Enqueue(ctx context.Context, chunkID)
+func (s *Service) Enqueue(ctx context.Context, chunkID t.ChunkID) {
+	s.queue.Enqueue(ctx, chunkID)
+}
 

@@ -24,10 +24,10 @@ type Server struct {
 
 	identity *core.IdentityService
 	storage  *core.StorageService
-	config   *ServerConfig
+	config   Config
 }
 
-func New(identity *core.IdentityService, storage *core.StorageService, config *ServerConfig) *Server {
+func New(identity *core.IdentityService, storage *core.StorageService, config Config) *Server {
 	return &Server{
 		identity: identity,
 		storage:  storage,
@@ -114,7 +114,7 @@ func (srv *Server) GetChunk(req *spb.GetChunkRequest, stream spb.ChunkService_Ge
 		return fmt.Errorf("send header: %w", err)
 	}
 
-	frames := utils.SplitFrames(chunk.Data, int64(srv.config.FrameSize))
+	frames := utils.SplitFrames(chunk.Data, srv.config.FrameSize())
 	for _, frame := range frames {
 		rsp := &spb.GetChunkResponse{Data: frame}
 		if err := stream.Send(rsp); err != nil {

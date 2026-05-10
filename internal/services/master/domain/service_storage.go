@@ -18,7 +18,7 @@ func (s *MasterService) RegisterStorageNode(ctx context.Context, addr string) (t
 	return nref, err
 }
 
-func (s *MasterService) ReportReplication(
+func (s *MasterService) ReportReplicas(
 	ctx context.Context, nodeID t.NodeID, reports []t.ReplicaReport,
 ) (t.ReportResult, error) {
 
@@ -27,19 +27,40 @@ func (s *MasterService) ReportReplication(
 	}
 
 	result := t.ReportResult{}
-	for _, chunk := range chunks {
-		if err := s.chunkRepo.SetDigest(ctx, chunk.ID, chunk.Digest); err != nil {
-			slog.WarnContext(ctx, "reject chunk report", "chunk_id", chunk.ID, "reason", err)
-			result.Rejected = append(result.Rejected, chunk.ID)
+
+	for _, report:= range reports {
+		if report.ReplicaStaged != nil {
+			err := s.reportStagedReplica(ctx, nodeID, report.ReplicaStaged)
+			if err != nil {
+				result.Rejected = append(result.Rejected, report.ReplicaStaged.Chunk.ID)
+			}
 			continue
 		}
-		
-		if s.index.AttachChunk(ctx, nodeID, chunk.ID) {
-			s.chunkRepo.IncReplication(ctx, chunk.ID)
+		if report.ReplicaChainFailed != nil {
+			r := report.ReplicaChainFailed
+			slog.WarnContext(ctx, "replica chain failed",
+				"chunk_id", r.ChunkID,
+				"targets", r.Targets,
+			)
+			s.reconcileSink.Enqueue(ctx, report.ReplicaChainFailed.ChunkID)
 		}
-		result.Accepted = append(result.Accepted, chunk.ID)
 	}
 	return result, nil
+}
+
+func (s *MasterService) reportStagedReplica(
+	ctx context.Context, nodeID t.NodeID, report *t.ReplicaStagedReport,
+) error {
+	meta := report.Chunk
+
+	if err := s.chunkRepo.SetDigest(ctx, meta.ID, meta.Digest); err != nil {
+		slog.WarnContext(ctx, "reject chunk report", "chunk_id", meta.ID, "reason", err)
+		return err
+	}
+	if s.index.AttachChunk(ctx, nodeID, meta.ID) {
+		s.chunkRepo.IncReplication(ctx, meta.ID)
+	}
+	return nil
 }
 
 func (s *MasterService) Heartbeat(ctx context.Context, nodeID t.NodeID, stats t.NodeStats) error {

@@ -44,7 +44,7 @@ type StorageService struct {
 	nodeID t.NodeID
 }
 
-func New(
+func NewStorageService(
 	diskStore s.ChunkStorage,
 	masterTransport s.MasterTransport,
 	chunkTransport *chunkrpc.Transport,

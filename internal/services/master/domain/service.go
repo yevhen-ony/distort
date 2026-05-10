@@ -45,7 +45,7 @@ func NewMasterService(
 	config *MasterServiceConfig,
 ) (*MasterService, error) {
 	if err := validateConfig(config); err != nil {
-		return nil, err 
+		return nil, err
 	}
 
 	service := &MasterService{
@@ -77,7 +77,7 @@ func (s *MasterService) EvictInactiveNodes(ctx context.Context) (int, error) {
 }
 
 func (s *MasterService) RunNodeCleanupLoop(ctx context.Context) {
-	
+
 	timer := time.NewTimer(s.config.NodeCleanupInterval)
 	defer timer.Stop()
 
@@ -97,7 +97,6 @@ func (s *MasterService) RunNodeCleanupLoop(ctx context.Context) {
 		timer.Reset(s.config.NodeCleanupInterval)
 	}
 }
-
 
 func validateConfig(config *MasterServiceConfig) error {
 	if config == nil {
@@ -119,5 +118,3 @@ func validateConfig(config *MasterServiceConfig) error {
 	}
 	return nil
 }
-
-

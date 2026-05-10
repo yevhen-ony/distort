@@ -1,4 +1,4 @@
-package store 
+package store
 
 import (
 	"errors"
@@ -7,20 +7,16 @@ import (
 	"path/filepath"
 )
 
-type ChunkStorageConfig struct {
-	RootDir string `yaml:"root_dir"`
-}
-
-func (c *ChunkStorageConfig) GetCommitDir() (string, error) {
-	commitDir := filepath.Join(c.RootDir, "chunks")
+func getCommitDir(rootDir string) (string, error) {
+	commitDir := filepath.Join(rootDir, "chunks")
 	if err := ensureDirExists(commitDir); err != nil {
 		return "", err
 	}
 	return commitDir, nil
 }
 
-func (c *ChunkStorageConfig) GetTempDir() (string, error) {
-	tempDir := filepath.Join(c.RootDir, "temp")
+func getTempDir(rootDir string) (string, error) {
+	tempDir := filepath.Join(rootDir, "temp")
 	if err := ensureDirExists(tempDir); err != nil {
 		return "", err
 	}
