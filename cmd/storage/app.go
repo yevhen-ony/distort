@@ -19,6 +19,7 @@ import (
 
 type App struct {
 	config *Config	
+	conn *connect.ConnCache
 
 	storageInfra s.ChunkStorage 
 	
@@ -64,7 +65,7 @@ func NewApp(cfg *Config) (*App, error) {
 
 	app := &App{
 		config: cfg,
-		
+		conn: conn,	
 		storageInfra: storageInfra,
 		masterTransport: masterTransport,
 		chunkTransport: chunkTransport,
@@ -95,4 +96,11 @@ func (app *App) runGrpcServer(ctx context.Context) {
 	_ = listener.RunGRPCServer(ctx, &app.config.Listen, func(s *grpc.Server) {
 		spb.RegisterChunkServiceServer(s, app.apiServer)
 	})
+}
+
+func (app *App) Close() error {
+	if app == nil || app.conn == nil {
+		return nil
+	}
+	return app.conn.Close()
 }

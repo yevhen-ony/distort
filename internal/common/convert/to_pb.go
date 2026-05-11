@@ -82,7 +82,7 @@ func ReplicaChainFailedReportToPB(r t.ReplicaChainFailedReport) *mpb.ReplicaChai
 	}
 }
 
-func ReplicaReportToPB(rr t.ReplicaReport) *mpb.ReplicaReport {
+func ReplicaReportToPB(rr t.StorageNodeReport) *mpb.ReplicaReport {
 	switch {
 	case rr.ReplicaStaged != nil:
 		return &mpb.ReplicaReport{

@@ -73,7 +73,7 @@ func (mt *Master) Heartbeat(
 
 
 func (mt *Master) ReportChunks(
-	ctx context.Context, nodeID t.NodeID, reports []t.ReplicaReport,
+	ctx context.Context, nodeID t.NodeID, reports []t.StorageNodeReport,
 ) (t.ReportResult, error) {
 
 	req := &mpb.ReportStorageRequest{

@@ -24,7 +24,7 @@ type StorageServiceConfig interface {
 }
 
 type ReportSink interface {
-	Enqueue(context.Context, t.ReplicaReport)
+	Enqueue(context.Context, t.StorageNodeReport)
 	Flush(context.Context)
 }
 

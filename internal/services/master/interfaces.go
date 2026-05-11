@@ -7,18 +7,36 @@ import (
 	"time"
 )
 
-
-type Service interface {
-	CreateObject(context.Context, t.ObjectID) error
-	AllocateChunk(context.Context, *AllocateChunkCommand) (t.ChunkPlacement, error)
-	GetObjectAccess(context.Context, t.ObjectID) (t.ObjectAccess, error)
-	ListObjects(context.Context) ([]t.ObjectItem, error)
-
-	RegisterStorageNode(context.Context, string) (t.NodeRef, error)
-	ReportReplicas(context.Context, t.NodeID, []t.ReplicaReport) (t.ReportResult, error)
-	Heartbeat(context.Context, t.NodeID, t.NodeStats) error
-	EvictStorageNode(ctx context.Context, nodeID t.NodeID) error
+type StorageNodeLifecycle interface {
+	Register(context.Context, string) (t.NodeRef, error)
+	UpdateStats(context.Context, t.NodeID, t.NodeStats) error
+	Remove(context.Context, t.NodeID) error
+	RemoveInactive(context.Context, time.Time) (int, error)
 }
+
+type StorageNodePlacement interface {
+	GetCandidates(context.Context, CandidateNodesQuery) ([]t.NodeRef, error)
+	GetChunkNodes(context.Context, t.ChunkID) ([]t.NodeRef, error)
+}
+
+type StorageNodeReport interface {
+	Report(context.Context, t.NodeID, []t.StorageNodeReport) (t.ReportResult, error)
+}
+
+type ClientFacade interface {
+	CreateObject(context.Context, t.ObjectID) error
+	AllocateChunk(context.Context, AllocateChunkCommand) (t.ChunkPlacement, error)
+	GetObjectAccess(context.Context, t.ObjectID) (t.ObjectAccess, error)
+	ListObjects(ctx context.Context) ([]t.ObjectItem, error)
+}
+
+type ObjectCatalog interface {
+	Create(context.Context, t.ObjectID, int) error
+	GetReplicaCount(context.Context, t.ObjectID) (int, error)
+	AllocateChunk(context.Context, t.ObjectID, t.ChunkKey, int64) (t.ChunkDesc, error)
+	GetChunks(ctx context.Context, objectID t.ObjectID) ([]t.ChunkDesc, error)
+}
+
 
 type ObjectRepo interface {
 	Create(context.Context, t.ObjectID, int) error
@@ -39,12 +57,12 @@ type ChunkRepo interface {
 
 type NodeQuery struct {
 	MinFreeBytes int64
-	ExcludeIDs []t.NodeID
+	ExcludeIDs   []t.NodeID
 }
 
 type NodeRegistry interface {
 	Register(context.Context, string) (t.NodeRef, error)
-	Unregister(context.Context, t.NodeID) error 
+	Unregister(context.Context, t.NodeID) error
 
 	Get(context.Context, t.NodeID) (Node, error)
 	GetMany(context.Context, ...t.NodeID) []Node
@@ -63,7 +81,8 @@ type ChunkNodeIndex interface {
 
 type CandidateNodesQuery struct {
 	MinFreeBytes int64
-	ExcludeChunk t.ChunkID
+	ExcludeChunk      t.ChunkID
+	MaxCount          int
 }
 
 type PlacementPolicy interface {
@@ -74,4 +93,8 @@ type AllocateChunkCommand struct {
 	ObjectID  t.ObjectID
 	ChunkKey  t.ChunkKey
 	ChunkSize int64
+}
+
+type ReconcileSink interface {
+	Enqueue(context.Context, t.ChunkID)
 }

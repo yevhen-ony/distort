@@ -3,40 +3,117 @@ package main
 import (
 	"context"
 	mpb "dos/gen/proto/master/v1"
+	"dos/internal/common/connect"
 	"dos/internal/common/listener"
 	"dos/internal/services/master/api"
 	"dos/internal/services/master/domain"
+	"dos/internal/services/master/domain/reconcile"
+	"dos/internal/services/master/domain/storagenode"
 	"dos/internal/services/master/repo"
-	"fmt"
+	"dos/internal/services/master/transport"
 
 	"google.golang.org/grpc"
 )
 
 type App struct {
-	objectRepo *repo.InMemObjectRepo
-	chunkRepo  *repo.InMemChunkRepo
-	nodeReg    *repo.InMemNodeRegistry
+	conn *connect.ConnCache
 
-	Service *domain.MasterService
-	Config  *Config
+	objectRepository *repo.InMemObjectRepo
+	chunkRepository  *repo.InMemChunkRepo
+	nodeRegistry     *repo.InMemNodeRegistry
+	chunkNodeIndex   *domain.InMemChunkNodeIndex
+
+	reconcile          *reconcile.ReconcileWorker
+	objectCatalog      *domain.ObjectCatalogService
+	storageLifecycle   *storagenode.LifecycleService
+	storagePlacement   *storagenode.PlacementService
+	storageReport      *storagenode.ReportService
+	storageCleanup *storagenode.CleanupWorker
+
+	clientFacade *domain.ClientFacadeService
+
+	clientAPI  *api.ClientServer
+	storageAPI *api.StorageServer
+
+	config *Config
 }
 
-func NewApp(cfg *Config) (*App, error) {
+func NewApp(config *Config) (*App, error) {
+	conn := connect.NewConnCache()
+
+	storageTransport := transport.NewStorage(conn)
+
 	objectRepo := repo.NewInMemObjectRepo()
 	chunkRepo := repo.NewInMemChunkRepo()
-	nodeReg := repo.NewInMemNodeRegistry()
+	nodeRegistry := repo.NewInMemNodeRegistry()
+	chunkNodeIndex := domain.NewInMemChunkNodeIndex()
 
-	service, err := domain.NewMasterService(chunkRepo, objectRepo, nodeReg, &cfg.Service)
-	if err != nil {
-		return nil, fmt.Errorf("init service: %w", err)
-	}
+	objectCatalog := domain.NewObjectCatalogService(
+		objectRepo,
+		chunkRepo,
+	)
+
+	storagePlacement := storagenode.NewPlacementService(
+		chunkNodeIndex,
+		nodeRegistry,
+		config,
+	)
+
+	reconcile := reconcile.NewReconcileWorker(
+		chunkRepo,
+		objectRepo,
+		storagePlacement,
+		storageTransport,
+		config,
+	)
+
+	storageLifecycle := storagenode.NewLifecycleService(
+		chunkNodeIndex,
+		chunkRepo,
+		nodeRegistry,
+		reconcile,
+	)
+
+	storageReport := storagenode.NewReportService(
+		chunkNodeIndex,
+		chunkRepo,
+		nodeRegistry,
+		reconcile,
+	)
+
+	storageCleanup := storagenode.NewCleanupWorker(
+		storageLifecycle,
+		config,
+	)
+
+	clientFacade := domain.NewClientFacadeService(
+		objectCatalog,
+		storagePlacement,
+		config,
+	)
+
+	clientAPI := api.NewClientServer(clientFacade)
+	storageAPI := api.NewStorageServer(storageLifecycle, storageReport)
 
 	app := &App{
-		objectRepo: objectRepo,
-		chunkRepo:  chunkRepo,
-		nodeReg:    nodeReg,
-		Service:    service,
-		Config:     cfg,
+		conn: conn,
+
+		objectRepository: objectRepo,
+		chunkRepository:  chunkRepo,
+		nodeRegistry:     nodeRegistry,
+		chunkNodeIndex:   chunkNodeIndex,
+
+		objectCatalog:    objectCatalog,
+		storageLifecycle: storageLifecycle,
+		storagePlacement: storagePlacement,
+		storageReport:    storageReport,
+		storageCleanup:   storageCleanup,
+		reconcile:        reconcile,
+
+		storageAPI: storageAPI,
+		clientAPI:  clientAPI,
+
+		config: config,
 	}
 	return app, nil
 }
@@ -45,14 +122,16 @@ func (app *App) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	go app.Service.RunNodeCleanupLoop(ctx)
+	go app.reconcile.RunLoop(ctx)
+	go app.storageCleanup.RunLoop(ctx)
 
-	storageSrv := api.NewStorageServer(app.Service)
-	clientSrv := api.NewClientServer(app.Service)
-	
-	err := listener.RunGRPCServer(ctx, &app.Config.Listen, func(s *grpc.Server) {
-		mpb.RegisterMasterStorageServiceServer(s, storageSrv)
-		mpb.RegisterMasterClientServiceServer(s, clientSrv)
+	err := listener.RunGRPCServer(ctx, &app.config.Listen, func(s *grpc.Server) {
+		mpb.RegisterMasterStorageServiceServer(s, app.storageAPI)
+		mpb.RegisterMasterClientServiceServer(s, app.clientAPI)
 	})
 	return err
+}
+
+func (app *App) Close() error {
+	return app.conn.Close()
 }

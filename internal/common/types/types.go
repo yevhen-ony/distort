@@ -77,7 +77,7 @@ type ReplicaChainFailedReport struct {
 	Targets []NodeRef
 }
 
-type ReplicaReport struct {
+type StorageNodeReport struct {
 	ReplicaStaged      *ReplicaStagedReport
 	ReplicaChainFailed *ReplicaChainFailedReport
 }

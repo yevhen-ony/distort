@@ -1,6 +1,6 @@
 logger:
   level: debug
-  service: master
+  component: master
 
 listen:
   host: "0.0.0.0"
@@ -11,3 +11,4 @@ service:
   chunk_allocation_margin_bytes: 512 
   node_inactivity_timeout: 30s
   node_cleanup_interval: 15s
+  reconcile_queue_length: 10

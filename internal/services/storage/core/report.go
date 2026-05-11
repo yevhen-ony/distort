@@ -11,25 +11,25 @@ import (
 
 
 type ReportQueue struct {
-	ch chan t.ReplicaReport
+	ch chan t.StorageNodeReport
 }
 
 func NewReportQueue(size int) *ReportQueue {
 	return &ReportQueue{
-		ch: make(chan t.ReplicaReport, size),
+		ch: make(chan t.StorageNodeReport, size),
 	}
 }
 
-func (rq *ReportQueue) Enqueue(ctx context.Context, rec t.ReplicaReport) {
+func (rq *ReportQueue) Enqueue(ctx context.Context, rec t.StorageNodeReport) {
 	select {
 	case <-ctx.Done():
 	case rq.ch <- rec:
 	}
 }
 
-func (rq *ReportQueue) Drain() []t.ReplicaReport {
+func (rq *ReportQueue) Drain() []t.StorageNodeReport {
 	n := len(rq.ch)
-	reports := make([]t.ReplicaReport, 0, n)
+	reports := make([]t.StorageNodeReport, 0, n)
 	for range n {
 		reports = append(reports, <-rq.ch)
 	}
@@ -64,7 +64,7 @@ func NewReportService(
 	}
 }
 
-func (rs *ReportService) Enqueue(ctx context.Context, report t.ReplicaReport) {
+func (rs *ReportService) Enqueue(ctx context.Context, report t.StorageNodeReport) {
 	rs.queue.Enqueue(ctx, report)
 }
 

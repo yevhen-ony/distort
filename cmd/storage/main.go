@@ -37,6 +37,7 @@ func run() error {
 	if err != nil {
 		return err
 	}
+	defer app.Close()
 
 	if err := app.Start(ctx); err != nil {
 		return err

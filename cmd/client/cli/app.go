@@ -37,7 +37,7 @@ func NewApp(cfg *Config) (*App, error) {
 		return nil, fmt.Errorf("init master transport: %w", err)
 	}
 
-	storage, err := chunkrpc.NewTransport(conn, &cfg.Storage)
+	storage, err := chunkrpc.NewTransport(conn, cfg)
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("init storage transport: %w", err)

@@ -143,9 +143,9 @@ func ReplicaChainFailedReportFromPB(pb *mpb.ReplicaChainFailed) *t.ReplicaChainF
 	}
 }
 
-func ReplicaReportFromPB(pb *mpb.ReplicaReport) t.ReplicaReport {
+func ReplicaReportFromPB(pb *mpb.ReplicaReport) t.StorageNodeReport {
 	if pb == nil {
-		return t.ReplicaReport{}
+		return t.StorageNodeReport{}
 	}
 
 	switch rec := pb.GetRecord().(type) {
@@ -156,6 +156,6 @@ func ReplicaReportFromPB(pb *mpb.ReplicaReport) t.ReplicaReport {
 		return ReplicaChainFailedReportFromPB(rec.ChainFailed).ToRecord()
 
 	default:
-		return t.ReplicaReport{}
+		return t.StorageNodeReport{}
 	}
 }

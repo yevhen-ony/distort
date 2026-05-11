@@ -40,8 +40,8 @@ func NewReplicaChainFailed(chunkID ChunkID, targets []NodeRef) *ReplicaChainFail
 	}
 }
 
-func (rcf *ReplicaChainFailedReport) ToRecord() ReplicaReport {
-	return ReplicaReport{ReplicaChainFailed: rcf}
+func (rcf *ReplicaChainFailedReport) ToRecord() StorageNodeReport {
+	return StorageNodeReport{ReplicaChainFailed: rcf}
 }
 
 func NewReplicaStaged(chunk ChunkMeta) *ReplicaStagedReport {
@@ -49,6 +49,6 @@ func NewReplicaStaged(chunk ChunkMeta) *ReplicaStagedReport {
 }
 
 
-func (rs *ReplicaStagedReport) ToRecord() ReplicaReport {
-	return ReplicaReport{ReplicaStaged: rs}
+func (rs *ReplicaStagedReport) ToRecord() StorageNodeReport {
+	return StorageNodeReport{ReplicaStaged: rs}
 }

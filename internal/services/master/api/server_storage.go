@@ -13,11 +13,19 @@ import (
 
 type StorageServer struct {
 	mpb.UnimplementedMasterStorageServiceServer
-	service m.Service
+	
+	lifecycle m.StorageNodeLifecycle
+	report m.StorageNodeReport
 }
 
-func NewStorageServer(service m.Service) *StorageServer {
-	return &StorageServer{service: service}
+func NewStorageServer(
+	lifecycle m.StorageNodeLifecycle,
+	report m.StorageNodeReport,
+) *StorageServer {
+	return &StorageServer{
+		lifecycle: lifecycle,
+		report: report,
+	}
 }
 
 func (s *StorageServer) RegisterStorageNode(
@@ -40,7 +48,7 @@ func (s *StorageServer) RegisterStorageNode(
 	}
 
 	addr := req.GetAddr()
-	nodeRef, err := s.service.RegisterStorageNode(ctx, addr)
+	nodeRef, err := s.lifecycle.Register(ctx, addr)
 	if err != nil {
 		return nil, fmt.Errorf("reg node: %w", err)
 	}
@@ -71,7 +79,7 @@ func (s *StorageServer) Heartbeat(
 	nodeID := t.NodeID(req.GetNodeId())
 	stats := convert.NodeStatsFromPB(req.GetStats())
 
-	if err = s.service.Heartbeat(ctx, nodeID, *stats); err != nil {
+	if err = s.lifecycle.UpdateStats(ctx, nodeID, *stats); err != nil {
 		return nil, err
 	}
 
@@ -102,7 +110,7 @@ func (s *StorageServer) ReportStorage(
 	nodeID := t.NodeID(req.GetNodeId())
 	reports := utils.Map(req.GetReports(), convert.ReplicaReportFromPB)
 
-	result, err := s.service.ReportReplicas(ctx, nodeID, reports)
+	result, err := s.report.Report(ctx, nodeID, reports)
 	if err != nil {
 		return nil, err
 	}

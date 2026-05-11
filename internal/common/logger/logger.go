@@ -10,7 +10,7 @@ import (
 
 type Config struct {
 	Level   string `yaml:"level"`
-	Service string `yaml:"service"`
+	Component string `yaml:"component"`
 }
 
 func (lc *Config) GetLevel() slog.Level {
@@ -41,6 +41,12 @@ func (h *ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 	if chunkID, ok := dosctx.ChunkID(ctx); ok {
 		r.AddAttrs(slog.String("chunk_id", string(chunkID)))
 	}
+	if service, ok := dosctx.Service(ctx); ok {
+		r.AddAttrs(slog.String("service", service))
+	}
+	if operation, ok := dosctx.Operation(ctx); ok {
+		r.AddAttrs(slog.String("operation", operation))
+	}
 	return h.Handler.Handle(ctx, r)
 }
 
@@ -59,7 +65,7 @@ func Init(cfg *Config) *slog.Logger {
 	handler := NewContextHandler(
 		slog.NewTextHandler(os.Stdout, handlerOpts),
 	)
-	l := slog.New(handler).With("service", cfg.Service)
+	l := slog.New(handler).With("component", cfg.Component)
 	slog.SetDefault(l)
 	return l
 }

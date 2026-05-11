@@ -1,6 +1,6 @@
 logger:
   level: debug
-  service: storage 
+  component: storage 
 
 listen:
   host: "0.0.0.0"
@@ -18,7 +18,7 @@ transport:
 service:
   heartbeat_interval: 5s
   registration_timeout: 1m
-  replication_timeout: 3m
+  replication_timeout: 30s
 
   report_interval: 5s
   report_queue_capacity: 10

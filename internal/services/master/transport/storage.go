@@ -1,4 +1,4 @@
-package replication
+package transport
 
 import (
 	"context"
@@ -11,11 +11,15 @@ import (
 	"dos/internal/common/utils"
 )
 
-type StorageTransport struct {
-	conn connect.ConnCache
+type Storage struct {
+	conn *connect.ConnCache
 }
 
-func (t *StorageTransport) ReplicateChunk(
+func NewStorage(conn *connect.ConnCache) *Storage {
+	return &Storage{conn: conn}
+}
+
+func (t *Storage) ReplicateChunk(
 	ctx context.Context, chunkID t.ChunkID, source t.NodeRef, targets []t.NodeRef,
 ) error {
 
@@ -37,7 +41,7 @@ func (t *StorageTransport) ReplicateChunk(
 	return nil
 }
 
-func (t *StorageTransport) DeleteChunk(ctx context.Context, chunkID t.ChunkID, node t.NodeRef) error {
+func (t *Storage) DeleteChunk(ctx context.Context, chunkID t.ChunkID, node t.NodeRef) error {
 
 	conn, err := t.conn.Get(node.Addr)
 	if err != nil {
@@ -54,6 +58,3 @@ func (t *StorageTransport) DeleteChunk(ctx context.Context, chunkID t.ChunkID, n
 	}
 	return nil
 }
-
-
-

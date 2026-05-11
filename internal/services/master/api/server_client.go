@@ -15,11 +15,12 @@ import (
 
 type ClientServer struct {
 pb.UnimplementedMasterClientServiceServer
-	service m.Service
+	facade m.ClientFacade
 }
 
-func NewClientServer(service m.Service) *ClientServer {
-	return &ClientServer{service: service}
+func NewClientServer(facade m.ClientFacade) *ClientServer {
+
+	return &ClientServer{facade: facade}
 }
 
 func (s *ClientServer) CreateObject(
@@ -40,7 +41,7 @@ func (s *ClientServer) CreateObject(
 		return nil, err
 	}
 
-	err = s.service.CreateObject(ctx, t.ObjectID(req.GetObjectId()))
+	err = s.facade.CreateObject(ctx, t.ObjectID(req.GetObjectId()))
 	if err != nil {
 		return nil, fmt.Errorf("create object %s: %w", req.GetObjectId(), err)
 	}
@@ -68,12 +69,11 @@ func (s *ClientServer) AllocateChunk(
 		return nil, err
 	}
 
-	cmd := &m.AllocateChunkCommand{
+	chunk, err := s.facade.AllocateChunk(ctx, m.AllocateChunkCommand{
 		ObjectID:  t.ObjectID(req.GetObjectId()),
 		ChunkKey:  t.ChunkKey(req.GetChunkKey()),
 		ChunkSize: req.GetChunkSize(),
-	}
-	chunk, err := s.service.AllocateChunk(ctx, cmd)
+	})
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,7 @@ func (s *ClientServer) GetObjectAccess(
 	if err = validateGetObjectAccessRequest(req); err != nil {
 		return nil, err
 	}
-	object, err := s.service.GetObjectAccess(ctx, t.ObjectID(req.GetObjectId()))
+	object, err := s.facade.GetObjectAccess(ctx, t.ObjectID(req.GetObjectId()))
 	if err != nil {
 		return nil, err
 	}
@@ -129,7 +129,7 @@ func (s *ClientServer) ListObjects(
 	}()
 	slog.DebugContext(ctx, "list objects requested")
 
-	objects, err := s.service.ListObjects(ctx)
+	objects, err := s.facade.ListObjects(ctx)
 	if err != nil {
 		return nil, err
 	}
