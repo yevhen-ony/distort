@@ -15,6 +15,7 @@ type ClientFacadeConfig interface {
 type ClientFacadeService struct {
 	catalog *CatalogService
 	placement *storagenode.PlacementService
+	lifecycle *storagenode.LifecycleService
 
 	config ClientFacadeConfig
 }
@@ -22,11 +23,13 @@ type ClientFacadeService struct {
 func NewClientFacadeService(
 	objectCatalog *CatalogService,
 	placement *storagenode.PlacementService,
+	lifecycle *storagenode.LifecycleService,
 	config ClientFacadeConfig,
 ) *ClientFacadeService {
 	return &ClientFacadeService{
 		catalog: objectCatalog,
 		placement: placement,
+		lifecycle: lifecycle,
 		config: config,
 	}
 }
@@ -106,4 +109,8 @@ func (s *ClientFacadeService) ListObjects(ctx context.Context) []t.ObjectInfo {
 
 func (s *ClientFacadeService) ListChunks(ctx context.Context) []t.ChunkInfo {
 	return s.catalog.ListChunks(ctx)
+}
+
+func (s *ClientFacadeService) ListNodes(ctx context.Context) []t.NodeInfo {
+	return s.lifecycle.ListNodes(ctx)
 }

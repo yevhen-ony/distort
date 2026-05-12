@@ -118,6 +118,7 @@ func MakeListCmd(cfg *Config) *cobra.Command {
 	listCmd.AddCommand(
 		MakeListObjectsCmd(cfg),
 		MakeListChunksCmd(cfg),
+		MakeListNodesCmd(cfg),
 	)
 
 	return listCmd
@@ -169,5 +170,29 @@ func MakeListChunksCmd(cfg *Config) *cobra.Command {
 		},
 	}
 	return listChunksCmd
+}
+
+func MakeListNodesCmd(cfg *Config) *cobra.Command {
+	listNodesCmd := &cobra.Command{
+		Use: "nodes",
+		Short: "list nodes",
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer stop()
+
+			if err := cfg.ApplyFlags(cmd); err != nil {
+				return fmt.Errorf("apply config flags: %w", err)
+			}
+			
+			app, err := NewApp(cfg)
+			if err != nil {
+				return fmt.Errorf("init app: %w", err)
+			}
+			defer app.Close()
+			return app.ListNodes(ctx)
+		},
+	}
+	return listNodesCmd
 }
 

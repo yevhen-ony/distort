@@ -9,6 +9,7 @@
 *.dll
 *.so
 *.dylib
+*.bin
 
 # Coverage
 *.out
@@ -18,3 +19,5 @@
 
 # Env
 .env
+
+/cmd/storage/storage_data/

@@ -64,6 +64,15 @@ func ChunkInfoToPB(info t.ChunkInfo) *mpb.ChunkInfo {
 	}
 }
 
+func NodeInfoToPB(info t.NodeInfo) *mpb.NodeInfo {
+	return &mpb.NodeInfo{
+		NodeId: string(info.ID),
+		Addr: info.Addr,
+		ChunkCount: int64(info.ChunkCount),
+		UsedBytes: info.UsedBytes,
+	}
+}
+
 func ReportResultToPB(res t.ReportResult) *mpb.ReportStorageResponse {
 	accepted := utils.Map(res.Accepted, func(cid t.ChunkID) string { return string(cid) })
 	rejected := utils.Map(res.Rejected, func(cid t.ChunkID) string { return string(cid) })

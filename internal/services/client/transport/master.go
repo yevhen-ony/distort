@@ -106,3 +106,12 @@ func (mt *MasterTransport) ListChunks(ctx context.Context) ([]t.ChunkInfo, error
 	return infos, nil
 }
 
+func (mt *MasterTransport) ListNodes(ctx context.Context) ([]t.NodeInfo, error) {
+
+	rsp, err := mt.client.ListNodes(ctx, &pb.ListNodesRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("transport: %w", err)
+	}
+	infos := utils.Map(rsp.GetNodes(), convert.NodeInfoFromPB)
+	return infos, nil
+}

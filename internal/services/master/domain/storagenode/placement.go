@@ -32,13 +32,10 @@ func (s *PlacementService) GetCandidates(
 ) ([]t.NodeRef, error) {
 
 	nodesToExclude := s.chunkNodeIndex.GetChunkNodes(ctx, query.ExcludeChunk)
-	nodes, err := s.nodeRegistry.Find(ctx, m.NodeQuery{
+	nodes := s.nodeRegistry.Find(ctx, m.NodeQuery{
 		MinFreeBytes: query.MinFreeBytes + s.config.ChunkAllocationMarginBytes(),
 		ExcludeIDs: nodesToExclude,
 	})
-	if err != nil {
-		return nil, err
-	}
 
 	count := query.MaxCount
 	if count == 0 {

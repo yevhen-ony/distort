@@ -117,7 +117,7 @@ func (r *InMemNodeRegistry) GetInactive(ctx context.Context, cutoff time.Time) [
 	return res
 }
 
-func (r *InMemNodeRegistry) Find(ctx context.Context, query m.NodeQuery) ([]m.Node, error) {
+func (r *InMemNodeRegistry) Find(ctx context.Context, query m.NodeQuery) []m.Node {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -131,7 +131,7 @@ func (r *InMemNodeRegistry) Find(ctx context.Context, query m.NodeQuery) ([]m.No
 		}
 		result = append(result, *node)
 	}
-	return result, nil
+	return result
 }
 
 func (r *InMemNodeRegistry) newNodeID() t.NodeID {

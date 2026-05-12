@@ -20,10 +20,11 @@ const _ = grpc.SupportPackageIsVersion9
 
 const (
 	MasterClientService_CreateObject_FullMethodName    = "/master.v1.MasterClientService/CreateObject"
-	MasterClientService_ListObjects_FullMethodName     = "/master.v1.MasterClientService/ListObjects"
-	MasterClientService_ListChunks_FullMethodName      = "/master.v1.MasterClientService/ListChunks"
 	MasterClientService_AllocateChunk_FullMethodName   = "/master.v1.MasterClientService/AllocateChunk"
 	MasterClientService_GetObjectAccess_FullMethodName = "/master.v1.MasterClientService/GetObjectAccess"
+	MasterClientService_ListObjects_FullMethodName     = "/master.v1.MasterClientService/ListObjects"
+	MasterClientService_ListChunks_FullMethodName      = "/master.v1.MasterClientService/ListChunks"
+	MasterClientService_ListNodes_FullMethodName       = "/master.v1.MasterClientService/ListNodes"
 )
 
 // MasterClientServiceClient is the client API for MasterClientService service.
@@ -31,10 +32,11 @@ const (
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type MasterClientServiceClient interface {
 	CreateObject(ctx context.Context, in *CreateObjectRequest, opts ...grpc.CallOption) (*CreateObjectResponse, error)
-	ListObjects(ctx context.Context, in *ListObjectsRequest, opts ...grpc.CallOption) (*ListObjectsResponse, error)
-	ListChunks(ctx context.Context, in *ListChunksRequest, opts ...grpc.CallOption) (*ListChunksResponse, error)
 	AllocateChunk(ctx context.Context, in *AllocateChunkRequest, opts ...grpc.CallOption) (*AllocateChunkResponse, error)
 	GetObjectAccess(ctx context.Context, in *GetObjectAccessRequest, opts ...grpc.CallOption) (*GetObjectAccessResponse, error)
+	ListObjects(ctx context.Context, in *ListObjectsRequest, opts ...grpc.CallOption) (*ListObjectsResponse, error)
+	ListChunks(ctx context.Context, in *ListChunksRequest, opts ...grpc.CallOption) (*ListChunksResponse, error)
+	ListNodes(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error)
 }
 
 type masterClientServiceClient struct {
@@ -49,26 +51,6 @@ func (c *masterClientServiceClient) CreateObject(ctx context.Context, in *Create
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(CreateObjectResponse)
 	err := c.cc.Invoke(ctx, MasterClientService_CreateObject_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *masterClientServiceClient) ListObjects(ctx context.Context, in *ListObjectsRequest, opts ...grpc.CallOption) (*ListObjectsResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListObjectsResponse)
-	err := c.cc.Invoke(ctx, MasterClientService_ListObjects_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *masterClientServiceClient) ListChunks(ctx context.Context, in *ListChunksRequest, opts ...grpc.CallOption) (*ListChunksResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(ListChunksResponse)
-	err := c.cc.Invoke(ctx, MasterClientService_ListChunks_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -95,15 +77,46 @@ func (c *masterClientServiceClient) GetObjectAccess(ctx context.Context, in *Get
 	return out, nil
 }
 
+func (c *masterClientServiceClient) ListObjects(ctx context.Context, in *ListObjectsRequest, opts ...grpc.CallOption) (*ListObjectsResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListObjectsResponse)
+	err := c.cc.Invoke(ctx, MasterClientService_ListObjects_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *masterClientServiceClient) ListChunks(ctx context.Context, in *ListChunksRequest, opts ...grpc.CallOption) (*ListChunksResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListChunksResponse)
+	err := c.cc.Invoke(ctx, MasterClientService_ListChunks_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *masterClientServiceClient) ListNodes(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(ListNodesResponse)
+	err := c.cc.Invoke(ctx, MasterClientService_ListNodes_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MasterClientServiceServer is the server API for MasterClientService service.
 // All implementations must embed UnimplementedMasterClientServiceServer
 // for forward compatibility.
 type MasterClientServiceServer interface {
 	CreateObject(context.Context, *CreateObjectRequest) (*CreateObjectResponse, error)
-	ListObjects(context.Context, *ListObjectsRequest) (*ListObjectsResponse, error)
-	ListChunks(context.Context, *ListChunksRequest) (*ListChunksResponse, error)
 	AllocateChunk(context.Context, *AllocateChunkRequest) (*AllocateChunkResponse, error)
 	GetObjectAccess(context.Context, *GetObjectAccessRequest) (*GetObjectAccessResponse, error)
+	ListObjects(context.Context, *ListObjectsRequest) (*ListObjectsResponse, error)
+	ListChunks(context.Context, *ListChunksRequest) (*ListChunksResponse, error)
+	ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error)
 	mustEmbedUnimplementedMasterClientServiceServer()
 }
 
@@ -117,17 +130,20 @@ type UnimplementedMasterClientServiceServer struct{}
 func (UnimplementedMasterClientServiceServer) CreateObject(context.Context, *CreateObjectRequest) (*CreateObjectResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method CreateObject not implemented")
 }
+func (UnimplementedMasterClientServiceServer) AllocateChunk(context.Context, *AllocateChunkRequest) (*AllocateChunkResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method AllocateChunk not implemented")
+}
+func (UnimplementedMasterClientServiceServer) GetObjectAccess(context.Context, *GetObjectAccessRequest) (*GetObjectAccessResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method GetObjectAccess not implemented")
+}
 func (UnimplementedMasterClientServiceServer) ListObjects(context.Context, *ListObjectsRequest) (*ListObjectsResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListObjects not implemented")
 }
 func (UnimplementedMasterClientServiceServer) ListChunks(context.Context, *ListChunksRequest) (*ListChunksResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListChunks not implemented")
 }
-func (UnimplementedMasterClientServiceServer) AllocateChunk(context.Context, *AllocateChunkRequest) (*AllocateChunkResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method AllocateChunk not implemented")
-}
-func (UnimplementedMasterClientServiceServer) GetObjectAccess(context.Context, *GetObjectAccessRequest) (*GetObjectAccessResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetObjectAccess not implemented")
+func (UnimplementedMasterClientServiceServer) ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ListNodes not implemented")
 }
 func (UnimplementedMasterClientServiceServer) mustEmbedUnimplementedMasterClientServiceServer() {}
 func (UnimplementedMasterClientServiceServer) testEmbeddedByValue()                             {}
@@ -168,42 +184,6 @@ func _MasterClientService_CreateObject_Handler(srv interface{}, ctx context.Cont
 	return interceptor(ctx, in, info, handler)
 }
 
-func _MasterClientService_ListObjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListObjectsRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MasterClientServiceServer).ListObjects(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MasterClientService_ListObjects_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MasterClientServiceServer).ListObjects(ctx, req.(*ListObjectsRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MasterClientService_ListChunks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(ListChunksRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MasterClientServiceServer).ListChunks(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MasterClientService_ListChunks_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MasterClientServiceServer).ListChunks(ctx, req.(*ListChunksRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
 func _MasterClientService_AllocateChunk_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(AllocateChunkRequest)
 	if err := dec(in); err != nil {
@@ -240,6 +220,60 @@ func _MasterClientService_GetObjectAccess_Handler(srv interface{}, ctx context.C
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MasterClientService_ListObjects_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListObjectsRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MasterClientServiceServer).ListObjects(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MasterClientService_ListObjects_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MasterClientServiceServer).ListObjects(ctx, req.(*ListObjectsRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MasterClientService_ListChunks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListChunksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MasterClientServiceServer).ListChunks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MasterClientService_ListChunks_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MasterClientServiceServer).ListChunks(ctx, req.(*ListChunksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _MasterClientService_ListNodes_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(ListNodesRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MasterClientServiceServer).ListNodes(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MasterClientService_ListNodes_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MasterClientServiceServer).ListNodes(ctx, req.(*ListNodesRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MasterClientService_ServiceDesc is the grpc.ServiceDesc for MasterClientService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -252,6 +286,14 @@ var MasterClientService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MasterClientService_CreateObject_Handler,
 		},
 		{
+			MethodName: "AllocateChunk",
+			Handler:    _MasterClientService_AllocateChunk_Handler,
+		},
+		{
+			MethodName: "GetObjectAccess",
+			Handler:    _MasterClientService_GetObjectAccess_Handler,
+		},
+		{
 			MethodName: "ListObjects",
 			Handler:    _MasterClientService_ListObjects_Handler,
 		},
@@ -260,12 +302,8 @@ var MasterClientService_ServiceDesc = grpc.ServiceDesc{
 			Handler:    _MasterClientService_ListChunks_Handler,
 		},
 		{
-			MethodName: "AllocateChunk",
-			Handler:    _MasterClientService_AllocateChunk_Handler,
-		},
-		{
-			MethodName: "GetObjectAccess",
-			Handler:    _MasterClientService_GetObjectAccess_Handler,
+			MethodName: "ListNodes",
+			Handler:    _MasterClientService_ListNodes_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

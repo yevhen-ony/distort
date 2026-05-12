@@ -89,6 +89,7 @@ func NewApp(config *Config) (*App, error) {
 	clientFacade := domain.NewClientFacadeService(
 		catalog,
 		storagePlacement,
+		storageLifecycle,
 		config,
 	)
 

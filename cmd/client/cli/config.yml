@@ -1,5 +1,5 @@
 client:
-  master_addr: localhost:10002
+  master_addr: localhost:10000
   frame_size: 1MB 
   chunk_size: 5MB
   

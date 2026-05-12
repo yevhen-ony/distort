@@ -29,6 +29,7 @@ type ClientFacade interface {
 	GetObjectAccess(context.Context, t.ObjectID) (t.ObjectAccess, error)
 	ListObjects(ctx context.Context) []t.ObjectInfo
 	ListChunks(ctx context.Context) []t.ChunkInfo
+	ListNodes(ctx context.Context) []t.NodeInfo
 }
 
 type ObjectCatalog interface {
@@ -68,7 +69,7 @@ type NodeRegistry interface {
 
 	Get(context.Context, t.NodeID) (Node, error)
 	GetMany(context.Context, ...t.NodeID) []Node
-	Find(context.Context, NodeQuery) ([]Node, error)
+	Find(context.Context, NodeQuery) []Node
 	UpdateStats(context.Context, t.NodeID, t.NodeStats) error
 	GetInactive(context.Context, time.Time) []t.NodeID
 }

@@ -132,6 +132,10 @@ func (s *Service) ListChunks(ctx context.Context) ([]t.ChunkInfo, error) {
 	return s.master.ListChunks(ctx)
 }
 
+func (s *Service) ListNodes(ctx context.Context) ([]t.NodeInfo, error) {
+	return s.master.ListNodes(ctx)
+}
+
 func WithProgressHandler(h func(*ObjectProgress)) ServiceOption {
 	return func(s *Service) {
 		s.onProgress = h

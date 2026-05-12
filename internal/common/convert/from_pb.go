@@ -125,6 +125,15 @@ func ChunkInfoFromPB(pbInfo *mpb.ChunkInfo) t.ChunkInfo {
 	}
 }
 
+func NodeInfoFromPB(pbInfo *mpb.NodeInfo) t.NodeInfo {
+	return t.NodeInfo{
+		ID: t.NodeID(pbInfo.GetNodeId()),
+		Addr: pbInfo.GetAddr(),
+		ChunkCount: int(pbInfo.GetChunkCount()),
+		UsedBytes: pbInfo.GetUsedBytes(),
+	}
+}
+
 func ReplicaStagedReportFromPB(pb *mpb.ReplicaStaged) *t.ReplicaStagedReport {
 	if pb == nil {
 		return nil

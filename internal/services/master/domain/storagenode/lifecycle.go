@@ -1,8 +1,9 @@
-package storagenode 
+package storagenode
 
 import (
 	"context"
 	t "dos/internal/common/types"
+	"dos/internal/common/utils"
 	m "dos/internal/services/master"
 	"errors"
 	"fmt"
@@ -90,5 +91,19 @@ func (s *LifecycleService) RemoveInactive(ctx context.Context, cutoff time.Time)
 		}
 	}
 	return count, errors.Join(errs...)
+}
+
+
+func (s *LifecycleService) ListNodes(ctx context.Context) []t.NodeInfo {
+	nodes := s.nodeRegistry.Find(ctx, m.NodeQuery{})
+	infos := utils.Map(nodes, func(n m.Node) t.NodeInfo {
+		return t.NodeInfo{
+			ID: n.ID,
+			Addr: n.Addr,
+			ChunkCount: n.Stats.ChunkCount,
+			UsedBytes: n.Stats.UsedBytes,
+		}
+	})
+	return infos
 }
 

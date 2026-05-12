@@ -1,0 +1,11 @@
+.git
+.gitignore
+
+**/.DS_Store
+ **/*.log
+
+storage_data/
+bin/
+
+cmd/storage/storage_data/
+cmd/client/*.bin

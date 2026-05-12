@@ -63,6 +63,13 @@ type ChunkInfo struct {
 	ObjectID     ObjectID
 }
 
+type NodeInfo struct {
+	ID         NodeID
+	Addr       string
+	ChunkCount int
+	UsedBytes  int64
+}
+
 type ReportResult struct {
 	Accepted []ChunkID
 	Rejected []ChunkID

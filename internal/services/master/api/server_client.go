@@ -143,3 +143,17 @@ func (s *ClientServer) ListChunks(
 	return rsp, nil
 }
 
+func (s *ClientServer) ListNodes(
+	ctx context.Context, req *pb.ListNodesRequest,
+) (*pb.ListNodesResponse, error) {
+
+	slog.DebugContext(ctx, "list objects requested")
+
+	nodes := s.facade.ListNodes(ctx)
+
+	rsp := &mpb.ListNodesResponse{
+		Nodes: utils.Map(nodes, convert.NodeInfoToPB),
+	}
+	return rsp, nil
+}
+
