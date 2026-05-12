@@ -33,38 +33,44 @@ type App struct {
 	apiServer *api.Server
 }
 
-func NewApp(cfg *Config) (*App, error) {
+func NewApp(config *Config) (*App, error) {
 	conn := connect.NewConnCache()
 
-	chunkTransport, err := chunkrpc.NewTransport(conn, cfg)
+	chunkTransport, err := chunkrpc.NewTransport(conn, config)
 	if err != nil {
 		return nil, fmt.Errorf("chunk transport init: %w", err)
 	}
 
-	masterTransport, err := transport.NewMaster(conn, cfg)
+	masterTransport, err := transport.NewMaster(conn, config)
 	if err != nil {
 		return nil, fmt.Errorf("master transport init: %w", err)
 	}
 
-	identityService := core.NewIdentityService(masterTransport, cfg)
+	identityService := core.NewIdentityService(masterTransport, config)
 
-	reportService := core.NewReportService(identityService, masterTransport, cfg)
+	reportService := core.NewReportService(identityService, masterTransport, config)
 
-	storageInfra, err := store.NewChunkStorage(cfg)
+	storageInfra, err := store.NewChunkStorage(config)
 	if err != nil {
 		return nil, fmt.Errorf("chunk store init: %w", err)
 	}
 
 	storageService, err := core.NewStorageService(
-		storageInfra, masterTransport, chunkTransport, reportService, cfg)
+		storageInfra,
+		masterTransport,
+		chunkTransport,
+		identityService,
+		reportService,
+		config,
+	)
 	if err != nil {
 		return nil, fmt.Errorf("storage service init: %w", err)
 	}
 
-	apiServer := api.New(identityService, storageService, cfg)
+	apiServer := api.New(identityService, storageService, config)
 
 	app := &App{
-		config: cfg,
+		config: config,
 		conn: conn,	
 		storageInfra: storageInfra,
 		masterTransport: masterTransport,

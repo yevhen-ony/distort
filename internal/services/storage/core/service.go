@@ -41,13 +41,13 @@ type StorageService struct {
 	reportSink ReportSink
 
 	config StorageServiceConfig
-	nodeID t.NodeID
 }
 
 func NewStorageService(
 	diskStore s.ChunkStorage,
 	masterTransport s.MasterTransport,
 	chunkTransport *chunkrpc.Transport,
+	identity *IdentityService,
 	reportSink ReportSink,
 	config StorageServiceConfig,
 ) (*StorageService, error) {
@@ -61,11 +61,15 @@ func NewStorageService(
 	if chunkTransport == nil {
 		return nil, errors.New("missing storage transport")
 	}
+	if identity == nil {
+		return nil, errors.New("missing identity service")
+	}
 
 	service := &StorageService{
 		diskStore:       diskStore,
 		masterTransport: masterTransport,
 		chunkTransport:  chunkTransport,
+		identity:        identity,
 		reportSink:      reportSink,
 		config:          config,
 	}
@@ -187,6 +191,8 @@ func (svc *StorageService) DeleteChunk(ctx context.Context, chunkID t.ChunkID) e
 }
 
 func (svc *StorageService) Heartbeat(ctx context.Context) error {
+	ctx = dosctx.WithOperation(ctx, "heartbeat")
+
 	svc.mu.RLock()
 	stats := t.NodeStats{
 		FreeBytes:  svc.config.MaxStorage() - svc.totalBytes,
@@ -195,7 +201,12 @@ func (svc *StorageService) Heartbeat(ctx context.Context) error {
 	}
 	svc.mu.RUnlock()
 
-	res, err := svc.masterTransport.Heartbeat(ctx, svc.nodeID, stats)
+	nodeID, err := svc.identity.GetID()
+	if err != nil {
+		return fmt.Errorf("read node id: %w", err)
+	}
+
+	res, err := svc.masterTransport.Heartbeat(ctx, nodeID, stats)
 	if err != nil {
 		return err
 	}
@@ -256,4 +267,3 @@ func (svc *StorageService) buildCatalog() error {
 	svc.totalBytes = totalBytes
 	return nil
 }
-

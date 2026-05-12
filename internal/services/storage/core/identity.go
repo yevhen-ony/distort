@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"dos/internal/common/dosctx"
 	"dos/internal/common/retry"
 	t "dos/internal/common/types"
 	"dos/internal/services/storage/transport"
@@ -54,7 +55,10 @@ func (is *IdentityService) getNewID(ctx context.Context) (t.NodeID, error) {
 }
 
 func (is *IdentityService) RequestNewID(ctx context.Context) error {
-	requestedAt := time.Now()	
+
+	ctx = dosctx.WithService(ctx, "identity")
+
+	requestedAt := time.Now()
 
 	is.mu.Lock() // intentionally blocking while long getNewID
 	defer is.mu.Unlock()
@@ -70,6 +74,9 @@ func (is *IdentityService) RequestNewID(ctx context.Context) error {
 	}
 	is.nodeID = nodeID
 	is.obtainedAt = time.Now()
+
+	slog.DebugContext(ctx, "received new id", "node_id", nodeID)
+
 	return nil
 }
 

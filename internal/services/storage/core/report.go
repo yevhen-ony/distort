@@ -2,6 +2,7 @@ package core
 
 import (
 	"context"
+	"dos/internal/common/dosctx"
 	t "dos/internal/common/types"
 	"dos/internal/services/storage/transport"
 	"log/slog"
@@ -75,13 +76,28 @@ func (rs *ReportService) Flush(ctx context.Context) {
 	}
 }
 
-func (rs *ReportService) SendReport(ctx context.Context) (t.ReportResult, error) {
+func (rs *ReportService) Report(ctx context.Context) {
+	reports := rs.queue.Drain()
+	if len(reports) == 0 {
+		return
+	}
+
+	result, err := rs.SendReport(ctx, reports)
+	if err != nil {
+		slog.ErrorContext(ctx, "report chunks failed", "error", err)
+		return
+	}
+	if len(result.Rejected) != 0 {
+		slog.WarnContext(ctx, "rejected chunks", "chunk_ids", result.Rejected)
+	}
+}
+
+func (rs *ReportService) SendReport(ctx context.Context, reports []t.StorageNodeReport ) (t.ReportResult, error) {
 	nodeID, err := rs.identity.GetID()
 	if err != nil {
 		return t.ReportResult{}, err
 	}
 
-	reports := rs.queue.Drain()
 	result, err := rs.master.ReportChunks(ctx, nodeID, reports)
 	if err != nil {
 		return t.ReportResult{}, err
@@ -92,6 +108,8 @@ func (rs *ReportService) SendReport(ctx context.Context) (t.ReportResult, error)
 func (rs *ReportService) RunReportLoop(ctx context.Context) {
 	timer := time.NewTimer(0)
 	defer timer.Stop()
+	
+	ctx = dosctx.WithService(ctx, "report")
 
 	for {
 		select {
@@ -102,11 +120,7 @@ func (rs *ReportService) RunReportLoop(ctx context.Context) {
 		}
 
 		slog.DebugContext(ctx, "exec report chunks")
-		res, err := rs.SendReport(ctx)
-		if err != nil {
-			slog.ErrorContext(ctx, "report chunks failed", "error", err)
-		}
-		slog.WarnContext(ctx, "rejected chunks", "chunk_ids", res.Rejected)
+		rs.Report(ctx)
 
 		timer.Reset(jitter(rs.config.ReportInterval(), 0.2))
 	}
