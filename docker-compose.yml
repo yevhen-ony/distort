@@ -21,5 +21,11 @@ services:
       - TRANSPORT__ADVERTISE_ADDR=storage:10001
       - STORE__ROOT_DIR=/data
 
+  client:
+    build:
+      context: .
+      dockerfile: deploy/docker/client.Dockerfile
+    volumes:
+
 volumes:
   storage_data:
