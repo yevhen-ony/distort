@@ -27,7 +27,8 @@ type ClientFacade interface {
 	CreateObject(context.Context, t.ObjectID) error
 	AllocateChunk(context.Context, AllocateChunkCommand) (t.ChunkPlacement, error)
 	GetObjectAccess(context.Context, t.ObjectID) (t.ObjectAccess, error)
-	ListObjects(ctx context.Context) ([]t.ObjectItem, error)
+	ListObjects(ctx context.Context) []t.ObjectInfo
+	ListChunks(ctx context.Context) []t.ChunkInfo
 }
 
 type ObjectCatalog interface {
@@ -42,7 +43,7 @@ type ObjectRepo interface {
 	Create(context.Context, t.ObjectID, int) error
 	Get(context.Context, t.ObjectID) (Object, error)
 	GetReplication(context.Context, t.ObjectID) (int, error)
-	List(context.Context) []t.ObjectItem
+	List(context.Context) []Object
 	AddChunk(context.Context, t.ObjectID, t.ChunkKey, t.ChunkID) error
 }
 
@@ -53,6 +54,7 @@ type ChunkRepo interface {
 	SetDigest(context.Context, t.ChunkID, *digest.Digest) error
 	IncReplication(context.Context, t.ChunkID) error
 	DecReplication(context.Context, t.ChunkID) error
+	List(context.Context) []Chunk
 }
 
 type NodeQuery struct {

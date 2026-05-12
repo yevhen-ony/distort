@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"sync"
 
 	"dos/internal/common/digest"
 	t "dos/internal/common/types"
@@ -13,6 +14,7 @@ import (
 
 type InMemChunkRepo struct { 
 	chunks map[t.ChunkID]*m.Chunk
+	mu sync.RWMutex
 }
 
 func NewInMemChunkRepo() *InMemChunkRepo {
@@ -22,15 +24,24 @@ func NewInMemChunkRepo() *InMemChunkRepo {
 }
 
 func (r *InMemChunkRepo) Create(_ context.Context, id t.ChunkID, objectID t.ObjectID) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	if _, ok := r.chunks[id]; ok {
 		return m.ErrChunkExists
 	}
 	chunkMeta := t.ChunkMeta{ID: id}
-	r.chunks[id] = &m.Chunk{ChunkMeta: chunkMeta}
+	r.chunks[id] = &m.Chunk{
+		ChunkMeta: chunkMeta,
+		ObjectID: objectID,
+	}
 	return nil
 }
 
 func (r *InMemChunkRepo) NewChunkID() t.ChunkID {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	for {
 		id := genChunkID()
 		if _, ok := r.chunks[id]; !ok {
@@ -46,6 +57,9 @@ func genChunkID() t.ChunkID {
 }
 
 func (r *InMemChunkRepo) SetDigest(_ context.Context, id t.ChunkID, digest *digest.Digest) error {
+	r.mu.Lock()
+	defer r.mu.Unlock() 
+
 	if digest == nil {
 		return fmt.Errorf("set nil digest")
 	}
@@ -64,6 +78,9 @@ func (r *InMemChunkRepo) SetDigest(_ context.Context, id t.ChunkID, digest *dige
 }
 
 func (r *InMemChunkRepo) Get(_ context.Context, id t.ChunkID) (m.Chunk, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	chunk, ok := r.chunks[id]
 	if !ok {
 		return m.Chunk{}, m.ErrChunkNotFound
@@ -72,6 +89,9 @@ func (r *InMemChunkRepo) Get(_ context.Context, id t.ChunkID) (m.Chunk, error) {
 }
 
 func (r *InMemChunkRepo) IncReplication(_ context.Context, id t.ChunkID) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	chunk, ok := r.chunks[id]	
 	if !ok {
 		return m.ErrChunkNotFound 
@@ -81,6 +101,9 @@ func (r *InMemChunkRepo) IncReplication(_ context.Context, id t.ChunkID) error {
 }
 
 func (r *InMemChunkRepo) DecReplication(_ context.Context, id t.ChunkID) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
 	chunk, ok := r.chunks[id]
 	if !ok {
 		return m.ErrChunkNotFound
@@ -92,3 +115,13 @@ func (r *InMemChunkRepo) DecReplication(_ context.Context, id t.ChunkID) error {
 	return nil
 }
 
+func (r *InMemChunkRepo) List(_ context.Context) []m.Chunk {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	result := make([]m.Chunk, 0, len(r.chunks))
+	for _, chunk := range r.chunks {
+		result = append(result, *chunk.Clone())
+	}
+	return result 
+}

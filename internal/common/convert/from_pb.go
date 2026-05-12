@@ -19,7 +19,7 @@ type ChunkPlacementLike interface {
 func NodeRefFromPB(pbNode *pb.NodeRef) t.NodeRef {
 
 	return t.NodeRef{
-		ID: t.NodeID(pbNode.GetNodeId()),
+		ID:   t.NodeID(pbNode.GetNodeId()),
 		Addr: pbNode.GetAddr(),
 	}
 }
@@ -32,8 +32,8 @@ func ChunkPlacementFromPB(pbObj ChunkPlacementLike) *t.ChunkPlacement {
 	}
 	return &t.ChunkPlacement{
 		ChunkDesc: t.ChunkDesc{
-			ChunkID: t.ChunkID(pbObj.GetChunkId()),
-			ChunkKey: t.ChunkKey(pbObj.GetChunkKey()),
+			ChunkID:   t.ChunkID(pbObj.GetChunkId()),
+			ChunkKey:  t.ChunkKey(pbObj.GetChunkKey()),
 			ChunkSize: pbObj.GetChunkSize(),
 		},
 		Nodes: nodes,
@@ -55,7 +55,7 @@ func ObjectAccessFromPB(pbObj ObjectAccessLike) *t.ObjectAccess {
 	}
 	return &t.ObjectAccess{
 		ObjectDesc: t.ObjectDesc{
-			ID: t.ObjectID(pbObj.GetObjectId()),
+			ID:        t.ObjectID(pbObj.GetObjectId()),
 			TotalSize: pbObj.GetTotalSize(),
 		},
 		Chunks: chunks,
@@ -71,8 +71,8 @@ type NodeStatsLike interface {
 func NodeStatsFromPB(pbObj NodeStatsLike) *t.NodeStats {
 
 	return &t.NodeStats{
-		FreeBytes: pbObj.GetFreeBytes(),
-		UsedBytes: pbObj.GetUsedBytes(),
+		FreeBytes:  pbObj.GetFreeBytes(),
+		UsedBytes:  pbObj.GetUsedBytes(),
 		ChunkCount: int(pbObj.GetChunkCount()),
 	}
 }
@@ -86,7 +86,7 @@ func DigestFromPB(pbObj DigestLike) digest.Digest {
 
 	return digest.Digest{
 		Checksum: digest.Checksum(pbObj.GetChecksum()),
-		Size: pbObj.GetSize(),
+		Size:     pbObj.GetSize(),
 	}
 }
 
@@ -98,7 +98,7 @@ type ChunkDescLike interface {
 func ChunkMetaFromPB(pbObj ChunkDescLike) t.ChunkMeta {
 	digest := DigestFromPB(pbObj.GetDigest())
 	return t.ChunkMeta{
-		ID: t.ChunkID(pbObj.GetChunkId()),
+		ID:     t.ChunkID(pbObj.GetChunkId()),
 		Digest: &digest,
 	}
 }
@@ -108,23 +108,26 @@ type ChunkStorageRejectLike interface {
 	GetReason() string
 }
 
-type ObjectItemLike interface {
-	GetObjectId() string
-	GetChunkCount() int64
-}
 
-func ObjectItemFromPB(pbObj ObjectItemLike) t.ObjectItem {
-	
-	return t.ObjectItem {
-		ID: t.ObjectID(pbObj.GetObjectId()),
-		ChunkCount: int(pbObj.GetChunkCount()),
+func ObjectInfoFromPB(pbInfo *mpb.ObjectInfo) t.ObjectInfo {
+	return t.ObjectInfo{
+		ID:         t.ObjectID(pbInfo.GetObjectId()),
+		ChunkCount: int(pbInfo.GetChunkCount()),
 	}
 }
 
+func ChunkInfoFromPB(pbInfo *mpb.ChunkInfo) t.ChunkInfo {
+	return t.ChunkInfo{
+		ID:           t.ChunkID(pbInfo.GetChunkId()),
+		Size:         pbInfo.GetChunkSize(),
+		ReplicaCount: int(pbInfo.GetReplicaCount()),
+		ObjectID:     t.ObjectID(pbInfo.GetObjectId()),
+	}
+}
 
 func ReplicaStagedReportFromPB(pb *mpb.ReplicaStaged) *t.ReplicaStagedReport {
 	if pb == nil {
-		return nil 
+		return nil
 	}
 
 	return &t.ReplicaStagedReport{
@@ -134,7 +137,7 @@ func ReplicaStagedReportFromPB(pb *mpb.ReplicaStaged) *t.ReplicaStagedReport {
 
 func ReplicaChainFailedReportFromPB(pb *mpb.ReplicaChainFailed) *t.ReplicaChainFailedReport {
 	if pb == nil {
-		return nil 
+		return nil
 	}
 
 	return &t.ReplicaChainFailedReport{

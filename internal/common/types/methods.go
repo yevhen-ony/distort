@@ -6,6 +6,13 @@ import (
 	"fmt"
 )
 
+func (meta *ChunkMeta) Clone() *ChunkMeta {
+	return &ChunkMeta{
+		ID:     meta.ID,
+		Digest: meta.Digest.Clone(),
+	}
+}
+
 func (m ChunkMeta) Match(other ChunkMeta) error {
 	if other.ID != m.ID {
 		return fmt.Errorf("id mismatch: %w", ErrChunkMetaMismatch)

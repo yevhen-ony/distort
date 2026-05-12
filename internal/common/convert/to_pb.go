@@ -48,15 +48,20 @@ func ChunkMetaToPB(meta t.ChunkMeta) *cpb.ChunkMeta {
 	}
 }
 
-func ObjectItemToPB(infos ...t.ObjectItem) []*mpb.ObjectItem {
-	pbInfos := make([]*mpb.ObjectItem, len(infos))
-	for i, info := range infos {
-		pbInfos[i] = &mpb.ObjectItem{
-			ObjectId:   string(info.ID),
-			ChunkCount: int64(info.ChunkCount),
-		}
+func ObjectInfoToPB(info t.ObjectInfo) *mpb.ObjectInfo {
+	return &mpb.ObjectInfo{
+		ObjectId:   string(info.ID),
+		ChunkCount: int64(info.ChunkCount),
 	}
-	return pbInfos
+}
+
+func ChunkInfoToPB(info t.ChunkInfo) *mpb.ChunkInfo {
+	return &mpb.ChunkInfo{
+		ChunkId: string(info.ID),
+		ChunkSize: info.Size,
+		ReplicaCount: int64(info.ReplicaCount),
+		ObjectId: string(info.ObjectID),
+	}
 }
 
 func ReportResultToPB(res t.ReportResult) *mpb.ReportStorageResponse {

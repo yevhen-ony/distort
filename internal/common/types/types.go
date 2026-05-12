@@ -30,7 +30,7 @@ type ObjectDesc struct {
 	TotalSize int64
 }
 
-type ObjectItem struct {
+type ObjectInfo struct {
 	ID         ObjectID
 	ChunkCount int
 }
@@ -51,16 +51,16 @@ type ChunkMeta struct {
 	Digest *digest.Digest
 }
 
-func (meta *ChunkMeta) Clone() *ChunkMeta {
-	return &ChunkMeta{
-		ID:     meta.ID,
-		Digest: meta.Digest.Clone(),
-	}
-}
-
 type Chunk struct {
 	Meta ChunkMeta
-	Data []byte 
+	Data []byte
+}
+
+type ChunkInfo struct {
+	ID           ChunkID
+	ReplicaCount int
+	Size         int64
+	ObjectID     ObjectID
 }
 
 type ReportResult struct {
@@ -81,6 +81,3 @@ type StorageNodeReport struct {
 	ReplicaStaged      *ReplicaStagedReport
 	ReplicaChainFailed *ReplicaChainFailedReport
 }
-
-
-

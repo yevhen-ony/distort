@@ -23,12 +23,12 @@ type App struct {
 	nodeRegistry     *repo.InMemNodeRegistry
 	chunkNodeIndex   *domain.InMemChunkNodeIndex
 
-	reconcile          *reconcile.ReconcileWorker
-	objectCatalog      *domain.ObjectCatalogService
-	storageLifecycle   *storagenode.LifecycleService
-	storagePlacement   *storagenode.PlacementService
-	storageReport      *storagenode.ReportService
-	storageCleanup *storagenode.CleanupWorker
+	reconcile        *reconcile.ReconcileWorker
+	catalog          *domain.CatalogService
+	storageLifecycle *storagenode.LifecycleService
+	storagePlacement *storagenode.PlacementService
+	storageReport    *storagenode.ReportService
+	storageCleanup   *storagenode.CleanupWorker
 
 	clientFacade *domain.ClientFacadeService
 
@@ -48,7 +48,7 @@ func NewApp(config *Config) (*App, error) {
 	nodeRegistry := repo.NewInMemNodeRegistry()
 	chunkNodeIndex := domain.NewInMemChunkNodeIndex()
 
-	objectCatalog := domain.NewObjectCatalogService(
+	catalog := domain.NewCatalogService(
 		objectRepo,
 		chunkRepo,
 	)
@@ -87,7 +87,7 @@ func NewApp(config *Config) (*App, error) {
 	)
 
 	clientFacade := domain.NewClientFacadeService(
-		objectCatalog,
+		catalog,
 		storagePlacement,
 		config,
 	)
@@ -103,7 +103,7 @@ func NewApp(config *Config) (*App, error) {
 		nodeRegistry:     nodeRegistry,
 		chunkNodeIndex:   chunkNodeIndex,
 
-		objectCatalog:    objectCatalog,
+		catalog:          catalog,
 		storageLifecycle: storageLifecycle,
 		storagePlacement: storagePlacement,
 		storageReport:    storageReport,

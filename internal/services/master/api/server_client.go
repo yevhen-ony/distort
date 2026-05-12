@@ -119,23 +119,27 @@ func (s *ClientServer) GetObjectAccess(
 
 func (s *ClientServer) ListObjects(
 	ctx context.Context, req *pb.ListObjectsRequest,
-) ( rsp *pb.ListObjectsResponse, err error) {
+) ( *pb.ListObjectsResponse, error) {
 
-	defer func() {
-		if err != nil {
-			slog.ErrorContext(ctx, "list objects failed", "error", err)
-			err = toStatus(err)
-		}
-	}()
 	slog.DebugContext(ctx, "list objects requested")
 
-	objects, err := s.facade.ListObjects(ctx)
-	if err != nil {
-		return nil, err
-	}
-	rsp = &mpb.ListObjectsResponse{
-		Objects: convert.ObjectItemToPB(objects...),
+	objects := s.facade.ListObjects(ctx)
+	rsp := &mpb.ListObjectsResponse{
+		Objects: utils.Map(objects, convert.ObjectInfoToPB),
 	}
 	return rsp, nil	
+}
+
+func (s *ClientServer) ListChunks(
+	ctx context.Context, req *pb.ListChunksRequest,
+) (*pb.ListChunksResponse, error) {
+
+	slog.DebugContext(ctx, "list chunks requested")
+
+	chunks := s.facade.ListChunks(ctx)
+	rsp := &mpb.ListChunksResponse{
+		Chunks: utils.Map(chunks, convert.ChunkInfoToPB),
+	}
+	return rsp, nil
 }
 

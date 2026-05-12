@@ -57,16 +57,13 @@ func (o *InMemObjectRepo) GetReplication(_ context.Context, oid t.ObjectID) (int
 	return obj.DesiredReplication, nil
 }
 
-func (o *InMemObjectRepo) List(_ context.Context) []t.ObjectItem {
+func (o *InMemObjectRepo) List(_ context.Context) []m.Object {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
-	res := make([]t.ObjectItem, 0, len(o.objects))
+	res := make([]m.Object, 0, len(o.objects))
 	for _, obj := range o.objects {
-		res = append(res, t.ObjectItem{
-			ID: obj.ID,
-			ChunkCount: len(obj.Chunks),
-		})
+		res = append(res, *obj.Clone())
 	}
 	return res
 }

@@ -5,11 +5,11 @@ import (
 	"errors"
 	"fmt"
 
-	
 	pb "dos/gen/proto/master/v1"
 	"dos/internal/common/connect"
 	"dos/internal/common/convert"
 	t "dos/internal/common/types"
+	"dos/internal/common/utils"
 )
 
 type MasterTransportConfig interface {
@@ -86,18 +86,23 @@ func (mt *MasterTransport) GetObjectAccess(
 	return objAccess, nil  
 }
 
-func (mt *MasterTransport) ListObjects( ctx context.Context) ([]t.ObjectItem, error) {
+func (mt *MasterTransport) ListObjects( ctx context.Context) ([]t.ObjectInfo, error) {
 
 	rsp, err :=  mt.client.ListObjects(ctx, &pb.ListObjectsRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("transport: %w", err)
 	}
+	infos := utils.Map(rsp.GetObjects(), convert.ObjectInfoFromPB) 	
+	return infos, nil
+}
 
-	pbItems := rsp.GetObjects()
-	items := make([]t.ObjectItem, len(pbItems))
-	for i, pbItem := range pbItems {
-		items[i] = convert.ObjectItemFromPB(pbItem)
+func (mt *MasterTransport) ListChunks(ctx context.Context) ([]t.ChunkInfo, error) {
+
+	rsp, err := mt.client.ListChunks(ctx, &pb.ListChunksRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("transport: %w", err)
 	}
-	return items, nil
+	infos := utils.Map(rsp.GetChunks(), convert.ChunkInfoFromPB)
+	return infos, nil
 }
 

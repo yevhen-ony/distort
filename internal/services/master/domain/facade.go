@@ -13,26 +13,26 @@ type ClientFacadeConfig interface {
 }
 
 type ClientFacadeService struct {
-	objectCatalog *ObjectCatalogService
+	catalog *CatalogService
 	placement *storagenode.PlacementService
 
 	config ClientFacadeConfig
 }
 
 func NewClientFacadeService(
-	objectCatalog *ObjectCatalogService,
+	objectCatalog *CatalogService,
 	placement *storagenode.PlacementService,
 	config ClientFacadeConfig,
 ) *ClientFacadeService {
 	return &ClientFacadeService{
-		objectCatalog: objectCatalog,
+		catalog: objectCatalog,
 		placement: placement,
 		config: config,
 	}
 }
 
 func (s *ClientFacadeService) CreateObject(ctx context.Context, oid t.ObjectID) error {
-	return s.objectCatalog.Create(ctx, oid, s.config.ReplicationCount())
+	return s.catalog.Create(ctx, oid, s.config.ReplicationCount())
 }
 
 func (s *ClientFacadeService) AllocateChunk(
@@ -40,7 +40,7 @@ func (s *ClientFacadeService) AllocateChunk(
 	cmd m.AllocateChunkCommand,
 ) (t.ChunkPlacement, error) {
 
-	replicaCount, err := s.objectCatalog.GetReplicaCount(ctx, cmd.ObjectID)
+	replicaCount, err := s.catalog.GetReplicaCount(ctx, cmd.ObjectID)
 	if err != nil {
 		return t.ChunkPlacement{}, err
 	}
@@ -53,7 +53,7 @@ func (s *ClientFacadeService) AllocateChunk(
 		return t.ChunkPlacement{}, fmt.Errorf("get candidate nodes: %w", err)
 	}
 
-	chunkDesc, err := s.objectCatalog.AllocateChunk(ctx, cmd.ObjectID, cmd.ChunkKey, cmd.ChunkSize)
+	chunkDesc, err := s.catalog.AllocateChunk(ctx, cmd.ObjectID, cmd.ChunkKey, cmd.ChunkSize)
 	if err != nil {
 		return t.ChunkPlacement{}, fmt.Errorf("allocate chunk: %w", err)
 	}
@@ -70,7 +70,7 @@ func (s *ClientFacadeService) GetObjectAccess(
 ) (t.ObjectAccess, error) {
 
 	var totalSize int64
-	chunks, err := s.objectCatalog.GetChunks(ctx, objectID)
+	chunks, err := s.catalog.GetChunks(ctx, objectID)
 	if err != nil {
 		return t.ObjectAccess{}, err
 	}
@@ -100,6 +100,10 @@ func (s *ClientFacadeService) GetObjectAccess(
 	return objectAccess, nil
 }
 
-func (s *ClientFacadeService) ListObjects(ctx context.Context) ([]t.ObjectItem, error) {
-	return s.objectCatalog.List(ctx), nil
+func (s *ClientFacadeService) ListObjects(ctx context.Context) []t.ObjectInfo {
+	return s.catalog.ListObjects(ctx)
+}
+
+func (s *ClientFacadeService) ListChunks(ctx context.Context) []t.ChunkInfo {
+	return s.catalog.ListChunks(ctx)
 }

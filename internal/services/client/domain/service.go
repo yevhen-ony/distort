@@ -124,12 +124,12 @@ func (s *Service) Pull(ctx context.Context, objectID t.ObjectID, asm *file.Objec
 	return nil
 }
 
-func (s *Service) List(ctx context.Context) ([]t.ObjectItem, error) {
-	items, err := s.master.ListObjects(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("list objects: %w", err) 
-	}
-	return items, nil
+func (s *Service) ListObjects(ctx context.Context) ([]t.ObjectInfo, error) {
+	return s.master.ListObjects(ctx)
+}
+
+func (s *Service) ListChunks(ctx context.Context) ([]t.ChunkInfo, error) {
+	return s.master.ListChunks(ctx)
 }
 
 func WithProgressHandler(h func(*ObjectProgress)) ServiceOption {

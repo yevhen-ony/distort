@@ -3,31 +3,32 @@ package domain
 import (
 	"context"
 	"fmt"
-	
+
 	t "dos/internal/common/types"
+	"dos/internal/common/utils"
 	m "dos/internal/services/master"
 )
 
-type ObjectCatalogService struct {
+type CatalogService struct {
 	objectRepo m.ObjectRepo
-	chunkRepo m.ChunkRepo
+	chunkRepo  m.ChunkRepo
 }
 
-func NewObjectCatalogService(objectRepo m.ObjectRepo, chunkRepo m.ChunkRepo) *ObjectCatalogService {
-	return &ObjectCatalogService{
+func NewCatalogService(objectRepo m.ObjectRepo, chunkRepo m.ChunkRepo) *CatalogService {
+	return &CatalogService{
 		objectRepo: objectRepo,
-		chunkRepo: chunkRepo,
+		chunkRepo:  chunkRepo,
 	}
 }
 
-func (s *ObjectCatalogService) Create(
+func (s *CatalogService) Create(
 	ctx context.Context, objectID t.ObjectID, replicaCount int,
 ) error {
-	
+
 	return s.objectRepo.Create(ctx, objectID, replicaCount)
 }
 
-func (s *ObjectCatalogService) GetReplicaCount(ctx context.Context, objectID t.ObjectID) (int, error) {
+func (s *CatalogService) GetReplicaCount(ctx context.Context, objectID t.ObjectID) (int, error) {
 	obj, err := s.objectRepo.Get(ctx, objectID)
 	if err != nil {
 		return 0, err
@@ -35,7 +36,7 @@ func (s *ObjectCatalogService) GetReplicaCount(ctx context.Context, objectID t.O
 	return obj.DesiredReplication, nil
 }
 
-func (s *ObjectCatalogService) AllocateChunk(
+func (s *CatalogService) AllocateChunk(
 	ctx context.Context, objectID t.ObjectID, chunkKey t.ChunkKey, chunkSize int64,
 ) (t.ChunkDesc, error) {
 
@@ -49,14 +50,14 @@ func (s *ObjectCatalogService) AllocateChunk(
 	}
 
 	desc := t.ChunkDesc{
-		ChunkID: chunkID,
-		ChunkKey: chunkKey,
-		ChunkSize: chunkSize, 
+		ChunkID:   chunkID,
+		ChunkKey:  chunkKey,
+		ChunkSize: chunkSize,
 	}
 	return desc, nil
 }
 
-func (s *ObjectCatalogService) GetChunks(ctx context.Context, objectID t.ObjectID) ([]t.ChunkDesc, error) {
+func (s *CatalogService) GetChunks(ctx context.Context, objectID t.ObjectID) ([]t.ChunkDesc, error) {
 
 	object, err := s.objectRepo.Get(ctx, objectID)
 	if err != nil {
@@ -65,7 +66,7 @@ func (s *ObjectCatalogService) GetChunks(ctx context.Context, objectID t.ObjectI
 
 	result := make([]t.ChunkDesc, 0, len(object.Chunks))
 	for chunkKey, chunkID := range object.Chunks {
-		chunk, err := s.chunkRepo.Get(ctx, chunkID)	
+		chunk, err := s.chunkRepo.Get(ctx, chunkID)
 		if err != nil {
 			return nil, fmt.Errorf("access chunk %s: %w", chunkID, err)
 		}
@@ -73,15 +74,34 @@ func (s *ObjectCatalogService) GetChunks(ctx context.Context, objectID t.ObjectI
 			return nil, fmt.Errorf("access chunk %s: %w", chunkID, m.ErrChunkNotAvailable)
 		}
 		result = append(result, t.ChunkDesc{
-			ChunkID: chunkID,
-			ChunkKey: chunkKey,
+			ChunkID:   chunkID,
+			ChunkKey:  chunkKey,
 			ChunkSize: chunk.Digest.Size,
 		})
 	}
 	return result, nil
 }
 
-func (s *ObjectCatalogService) List(ctx context.Context) []t.ObjectItem {
-	return s.objectRepo.List(ctx)
+func (s *CatalogService) ListObjects(ctx context.Context) []t.ObjectInfo {
+	return utils.Map(s.objectRepo.List(ctx), func(o m.Object) t.ObjectInfo {
+		return t.ObjectInfo {
+			ID: o.ID,
+			ChunkCount: len(o.Chunks),
+		}
+	})
 }
 
+func (s *CatalogService) ListChunks(ctx context.Context) []t.ChunkInfo {
+	return utils.Map(s.chunkRepo.List(ctx), func(c m.Chunk) t.ChunkInfo {
+		size := int64(0)
+		if c.ReplicaCount > 0 {
+			size = c.Digest.Size
+		}
+		return t.ChunkInfo{
+			ID:           c.ID,
+			Size:         size,
+			ReplicaCount: c.ReplicaCount,
+			ObjectID:     c.ObjectID,
+		}
+	})
+}
