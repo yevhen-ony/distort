@@ -1,9 +1,7 @@
 package main
 
 import (
-	"dos/internal/common/transport/chunkrpc"
-	"dos/internal/services/client/io/file"
-	"dos/internal/services/client/transport"
+	"dos/internal/common/config"
 
 	"github.com/spf13/cobra"
 )
@@ -13,9 +11,13 @@ var (
 )
 
 type Config struct {
-	Master  transport.MasterTransportConfig `yaml:"master"`
-	Storage chunkrpc.Config                 `yaml:"storage"`
-	Chunker file.ObjectChunkerConfig        `yaml:"chunker"`
+	Client ClientConfig `yaml:"client"`
+}
+
+type ClientConfig struct {
+	MasterAddr string `yaml:"master_addr"`
+	ChunkSize config.Size `yaml:"chunk_size"`
+	FrameSize config.Size `yaml:"frame_size"`
 }
 
 func (cfg *Config) BindFlags(cmd *cobra.Command) {
@@ -32,7 +34,19 @@ func (cfg *Config) ApplyFlags(cmd *cobra.Command) error {
 		if err != nil {
 			return err
 		}
-		cfg.Master.Addr = v
+		cfg.Client.MasterAddr = v
 	}
 	return nil
+}
+
+func (c *Config) MasterAddr() string {
+	return c.Client.MasterAddr
+}
+
+func (c *Config) ChunkSize() int64 {
+	return int64(c.Client.ChunkSize)
+}
+
+func (c *Config) FrameSize() int64 {
+	return int64(c.Client.FrameSize)
 }

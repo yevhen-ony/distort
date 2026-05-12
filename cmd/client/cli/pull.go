@@ -27,7 +27,7 @@ func (app *App) Pull(ctx context.Context, id string, destPath string) error {
 		return fmt.Errorf("create assembler: %w", err)
 	}
 
-	if err := app.Service.Pull(ctx, t.ObjectID(id), asm); err != nil {
+	if err := app.ClientService.Pull(ctx, t.ObjectID(id), asm); err != nil {
 		return fmt.Errorf("pull object %s: %w", id, err)
 	}
 	return nil

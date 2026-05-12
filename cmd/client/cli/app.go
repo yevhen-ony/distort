@@ -12,11 +12,12 @@ import (
 )
 
 type App struct {
-	Config  *Config
-	Conn    *connect.ConnCache
-	Master  *transport.MasterTransport
-	Storage *chunkrpc.Transport
-	Service *domain.Service
+	Config *Config
+
+	Conn             *connect.ConnCache
+	MasterTransport  *transport.MasterTransport
+	StorageTransport *chunkrpc.Transport
+	ClientService    *domain.Service
 
 	progressOutput *uilive.Writer
 }
@@ -31,13 +32,13 @@ func (app *App) Close() error {
 func NewApp(cfg *Config) (*App, error) {
 	conn := connect.NewConnCache()
 
-	master, err := transport.NewMasterTransport(conn, &cfg.Master)
+	masterTransport, err := transport.NewMasterTransport(conn, cfg)
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("init master transport: %w", err)
 	}
 
-	storage, err := chunkrpc.NewTransport(conn, cfg)
+	storageTransport, err := chunkrpc.NewTransport(conn, cfg)
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("init storage transport: %w", err)
@@ -46,21 +47,21 @@ func NewApp(cfg *Config) (*App, error) {
 	output := uilive.New()
 	opt := domain.WithProgressHandler(func(op *domain.ObjectProgress) {
 		fmt.Fprint(output, op.String())
-	 	_ = output.Flush()
+		_ = output.Flush()
 	})
 
-	service, err := domain.NewService(master, storage, opt)
+	service, err := domain.NewService(masterTransport, storageTransport, opt)
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("init service: %w", err)
 	}
 
 	app := &App{
-		Config:  cfg,
-		Conn:    conn,
-		Master:  master,
-		Storage: storage,
-		Service: service,
+		Config:           cfg,
+		Conn:             conn,
+		MasterTransport:  masterTransport,
+		StorageTransport: storageTransport,
+		ClientService:    service,
 
 		progressOutput: output,
 	}

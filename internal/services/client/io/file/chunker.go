@@ -6,26 +6,25 @@ import (
 	"io"
 	"os"
 
-	"dos/internal/common/config"
 	t "dos/internal/common/types"
 	c "dos/internal/services/client"
 )
 
+type ObjectChunkerConfig interface{
+	ChunkSize() int64
+}
+
 type ObjectChunker struct {
 	fd  *os.File
-	cfg *ObjectChunkerConfig
+	cfg ObjectChunkerConfig
 	key int
 }
 
-type ObjectChunkerConfig struct {
-	ChunkSize config.Size `yaml:"chunk_size"`
-}
-
-func NewObjectChunker(path string, cfg *ObjectChunkerConfig) (*ObjectChunker, error) {
+func NewObjectChunker(path string, cfg ObjectChunkerConfig) (*ObjectChunker, error) {
 	if cfg == nil {
 		return nil, errors.New("missing config") 
 	}
-	if cfg.ChunkSize <= 0 {
+	if cfg.ChunkSize() <= 0 {
 		return nil, c.ErrInvalidChunkSize
 	}
 	fd, err := os.Open(path)
@@ -40,7 +39,7 @@ func (fc *ObjectChunker) Next() (t.ChunkKey, []byte, error) {
 	chunkKey := t.ChunkKey(fmt.Sprintf("%06d", fc.key))
 	fc.key++
 
-	buf := make([]byte, fc.cfg.ChunkSize)
+	buf := make([]byte, fc.cfg.ChunkSize())
 	n, err := io.ReadFull(fc.fd, buf)
 
 	switch {

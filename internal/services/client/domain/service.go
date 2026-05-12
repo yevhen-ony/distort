@@ -12,11 +12,6 @@ import (
 	"dos/internal/services/client/io/file"
 )
 
-var (
-	ErrMissingMasterTransport  = errors.New("missing master transport")
-	ErrMissingStorageTransport = errors.New("missing storage transport")
-)
-
 type Service struct {
 	master  *transport.MasterTransport
 	storage *chunkrpc.Transport
@@ -33,10 +28,10 @@ func NewService(
 ) (*Service, error) {
 
 	if master == nil {
-		return nil, ErrMissingMasterTransport
+		return nil, errors.New("missing master transport")
 	}
 	if storage == nil {
-		return nil, ErrMissingStorageTransport
+		return nil, errors.New("missing storage transport")
 	}
 	svc := &Service{master: master, storage: storage}
 	svc.onProgress = func(*ObjectProgress) {} // nop by default

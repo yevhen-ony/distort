@@ -7,7 +7,7 @@ import (
 )
 
 func (app *App) List(ctx context.Context) error {
-	items, err := app.Service.List(ctx)
+	items, err := app.ClientService.List(ctx)
 	if err != nil {
 		return err
 	}

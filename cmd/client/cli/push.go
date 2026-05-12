@@ -11,11 +11,11 @@ func (app *App) Push(ctx context.Context, objectID string, path string) error {
 	app.progressOutput.Start()
 	defer app.progressOutput.Stop()
 
-	chunker, err := file.NewObjectChunker(path, &app.Config.Chunker)
+	chunker, err := file.NewObjectChunker(path, app.Config)
 	if err != nil {
 		return fmt.Errorf("init chunker: %w", err)
 	}
 	defer chunker.Close()
 
-	return app.Service.Push(ctx, t.ObjectID(objectID), chunker)
+	return app.ClientService.Push(ctx, t.ObjectID(objectID), chunker)
 }

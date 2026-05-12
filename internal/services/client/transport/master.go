@@ -12,12 +12,16 @@ import (
 	t "dos/internal/common/types"
 )
 
-type MasterTransport struct {
-	client pb.MasterClientServiceClient 
-	config *MasterTransportConfig
+type MasterTransportConfig interface {
+	MasterAddr() string 
 }
 
-func NewMasterTransport(conn *connect.ConnCache, config *MasterTransportConfig) (*MasterTransport, error) {
+type MasterTransport struct {
+	client pb.MasterClientServiceClient 
+	config MasterTransportConfig
+}
+
+func NewMasterTransport(conn *connect.ConnCache, config MasterTransportConfig) (*MasterTransport, error) {
 	if conn == nil {
 		return nil, errors.New("missing conn")
 	}
@@ -25,7 +29,7 @@ func NewMasterTransport(conn *connect.ConnCache, config *MasterTransportConfig) 
 		return nil, errors.New("missing config")
 	}
 
-	c, err := conn.Get(config.Addr)
+	c, err := conn.Get(config.MasterAddr())
 	if err != nil {
 		return nil, fmt.Errorf("get conn: %w", err)
 	}

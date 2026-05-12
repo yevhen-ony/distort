@@ -1,9 +1,5 @@
-master:
-  addr: localhost:10002
-
-storage:
+client:
+  master_addr: localhost:10002
   frame_size: 1MB 
-
-chunker:
-  chunk_size: 5MiB
+  chunk_size: 5MB
   
