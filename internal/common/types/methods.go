@@ -59,3 +59,4 @@ func NewReplicaStaged(chunk ChunkMeta) *ReplicaStagedReport {
 func (rs *ReplicaStagedReport) ToRecord() StorageNodeReport {
 	return StorageNodeReport{ReplicaStaged: rs}
 }
+

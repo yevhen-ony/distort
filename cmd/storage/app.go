@@ -9,6 +9,7 @@ import (
 	s "dos/internal/services/storage"
 	"dos/internal/services/storage/api"
 	"dos/internal/services/storage/core"
+	"dos/internal/services/storage/core/report"
 	"dos/internal/services/storage/store"
 	"dos/internal/services/storage/transport"
 
@@ -24,7 +25,7 @@ type App struct {
 	storageInfra s.ChunkStorage 
 	
 	identityService *core.IdentityService
-	reportService *core.ReportService
+	reportService *report.ReportService
 	storageService *core.StorageService
 
 	chunkTransport *chunkrpc.Transport
@@ -48,7 +49,7 @@ func NewApp(config *Config) (*App, error) {
 
 	identityService := core.NewIdentityService(masterTransport, config)
 
-	reportService := core.NewReportService(identityService, masterTransport, config)
+	reportService := report.NewReportService(identityService, masterTransport, config)
 
 	storageInfra, err := store.NewChunkStorage(config)
 	if err != nil {
@@ -60,12 +61,12 @@ func NewApp(config *Config) (*App, error) {
 		masterTransport,
 		chunkTransport,
 		identityService,
-		reportService,
 		config,
 	)
 	if err != nil {
 		return nil, fmt.Errorf("storage service init: %w", err)
 	}
+	storageService.SetReporter(reportService)
 
 	apiServer := api.New(identityService, storageService, config)
 
@@ -87,7 +88,10 @@ func NewApp(config *Config) (*App, error) {
 
 func (app *App) Start(ctx context.Context) error {
 	if err := app.identityService.RequestNewID(ctx); err != nil {
-		return err
+		return fmt.Errorf("request id: %w", err)
+	}
+	if err := app.storageService.Start(ctx); err != nil {
+		return fmt.Errorf("start storage service: %w", err) 
 	}
 
 	go app.reportService.RunReportLoop(ctx)

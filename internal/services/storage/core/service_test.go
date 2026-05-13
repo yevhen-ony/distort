@@ -12,7 +12,6 @@ import (
 
 	"dos/internal/common/digest"
 	t "dos/internal/common/types"
-	s "dos/internal/services/storage"
 	"dos/internal/services/storage/store"
 )
 
@@ -30,7 +29,7 @@ func newTestService(test *testing.T) (*StorageService, *store.FSChunkStorage) {
 
   	svc := &StorageService{
   		diskStore:   store,
-  		catalog: make(s.ChunkCatalog),
+  		state: *NewChunkCatalogState(),
   	}
   	return svc, store
 }
@@ -55,7 +54,7 @@ func TestService_CommitUploadSession(test *testing.T) {
 
 		require.NoError(test, svc.CommitUploadSession(context.Background(), writer, desc))
 
-		record, ok := svc.catalog[desc.ID]
+		record, ok := svc.state.Catalog[desc.ID]
 		require.True(test, ok)
 		assert.NoError(test, desc.Digest.Match(record.Meta.Digest))
 
@@ -90,13 +89,13 @@ func TestService_CommitUploadSession(test *testing.T) {
 		require.NoError(test, err)
 
   		// Simulate race: ID becomes taken after session start but before commit.
-		svc.catalog[desc.ID] = &s.ChunkRecord{}
+		svc.state.Catalog[desc.ID] = &ChunkRecord{}
 
 		err = svc.CommitUploadSession(context.Background(), session, desc)
 		require.Error(test, err)
 
 		// Existing entry must stay untouched.
-		record := svc.catalog[desc.ID]
+		record := svc.state.Catalog[desc.ID]
 		assert.Equal(test, int64(0), record.Meta.Digest.Size)
 		assert.Equal(test, "", string(record.Meta.Digest.Checksum))
 	})
