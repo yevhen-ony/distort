@@ -1,31 +1,36 @@
 services:
   master:
-    build:
-      context: .
-      dockerfile: deploy/docker/master.Dockerfile
+    profiles: [main]
+    image: dos-master:latest
     ports:
       - "10000:10000"
 
-  storage:
-    build:
-      context: .
-      dockerfile: deploy/docker/storage.Dockerfile
+  storage1:
+    profiles: [main]
+    image: dos-storage:latest
     depends_on:
       - master
-    ports:
-      - "10001:10001"
-    volumes:
-      - storage_data:/data
     environment:
       - TRANSPORT__MASTER_ADDR=master:10000
-      - TRANSPORT__ADVERTISE_ADDR=storage:10001
+      - TRANSPORT__ADVERTISE_ADDR=storage1:10001
+      - STORE__ROOT_DIR=/data
+
+  storage2:
+    profiles: [main]
+    image: dos-storage:latest
+    depends_on:
+      - master
+    environment:
+      - TRANSPORT__MASTER_ADDR=master:10000
+      - TRANSPORT__ADVERTISE_ADDR=storage2:10001
       - STORE__ROOT_DIR=/data
 
   client:
-    build:
-      context: .
-      dockerfile: deploy/docker/client.Dockerfile
+    profiles: [manual] 
+    image: dos-client:latest
     volumes:
+      - ./sandbox:/work/in
+    command: ["sleep", "infinity"]
+    environment:
+      - CLIENT__MASTER_ADDR=master:10000
 
-volumes:
-  storage_data:

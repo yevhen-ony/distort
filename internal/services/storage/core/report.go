@@ -62,6 +62,7 @@ func NewReportService(
 		master: master,
 		config: cfg,
 		queue: NewReportQueue(cfg.QueueCapacity()),
+		wake: make(chan struct{}, 1),
 	}
 }
 
@@ -78,6 +79,7 @@ func (rs *ReportService) Flush(ctx context.Context) {
 
 func (rs *ReportService) Report(ctx context.Context) {
 	reports := rs.queue.Drain()
+	slog.InfoContext(ctx, "*** Report ***", "size", len(reports))
 	if len(reports) == 0 {
 		return
 	}

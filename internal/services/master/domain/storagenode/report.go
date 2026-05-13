@@ -45,7 +45,8 @@ func (s *ReportService) Report(
 
 	for _, report := range reports {
 		if report.ReplicaStaged != nil {
-			err := s.reportStagedReplica(ctx, nodeID, report.ReplicaStaged)
+			r := report.ReplicaStaged
+			err := s.reportStagedReplica(ctx, nodeID, r)
 			if err != nil {
 				result.Rejected = append(result.Rejected, report.ReplicaStaged.Chunk.ID)
 			}

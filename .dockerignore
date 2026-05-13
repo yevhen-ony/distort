@@ -4,7 +4,7 @@
 **/.DS_Store
  **/*.log
 
-storage_data/
+sendbox/
 bin/
 
 cmd/storage/storage_data/

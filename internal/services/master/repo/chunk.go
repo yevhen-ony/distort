@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"dos/internal/common/digest"
@@ -65,6 +66,7 @@ func (r *InMemChunkRepo) SetDigest(_ context.Context, id t.ChunkID, digest *dige
 	}
 	chunk, ok := r.chunks[id]	
 	if !ok {
+		slog.Error("*** HELLLO ***")
 		return m.ErrChunkNotFound 
 	}
 	if chunk.Digest == nil {

@@ -1,10 +1,10 @@
 PROTO_DIR := proto
 GEN_DIR := gen
 MODULE := dos 
-BIN_DIR := bin
-PROJECT_NAME := dos
+PROJECT := dos
 
 PROTO_FILES := $(shell find $(PROTO_DIR) -name "*.proto")
+COMPOSE = docker compose -f docker-compose.yml -p $(PROJECT)
 
 .PHONY: gen build up down down-clean clean build-client
 
@@ -17,22 +17,18 @@ gen:
 		$(PROTO_FILES)
 
 build:
-	docker build -f deploy/docker/master.Dockerfile -t dos-master:latest .
-	docker build -f deploy/docker/storage.Dockerfile -t dos-storage:latest .
+	docker build --no-cache -f deploy/docker/master.Dockerfile -t dos-master:latest .
+	docker build --no-cache -f deploy/docker/storage.Dockerfile -t dos-storage:latest .
+	docker build --no-cache -f deploy/docker/client.Dockerfile -t dos-client:latest .
 
 up:
-	docker compose up
+	$(COMPOSE) --profile main up
 
 down:
-	docker compose down
+	$(COMPOSE) --profile main down --remove-orphans
 
 down-clean:
-	docker compose down -v
+	$(COMPOSE) --profile main down -v
 
-clean:
-	rm -rf $(BIN_DIR)
-
-build-client:
-	mkdir -p $(BIN_DIR)
-	go build -o $(BIN_DIR)/$(PROJECT_NAME) ./cmd/client/cli/
-	cp cmd/client/cli/config.yml $(BIN_DIR)/config.yml
+client:
+	docker compose run --rm client /bin/bash

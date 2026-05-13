@@ -101,7 +101,11 @@ func (s *StorageServer) ReportStorage(
 			err = toStatus(err)
 		}
 	}()
-	slog.DebugContext(ctx, "report storage requested", "node_id", req.GetNodeId())
+	slog.DebugContext(
+		ctx, "report storage requested",
+		"node_id", req.GetNodeId(),
+		"count", len(req.GetReports()),
+	)
 
 	if err = validateReportStorageRequest(req); err != nil {
 		return nil, err

@@ -2,6 +2,7 @@
 /bin/
 /build/
 /dist/
+/sandbox/
 
 # Go build artifacts
 *.exe

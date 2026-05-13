@@ -13,6 +13,6 @@ FROM ubuntu:24.04
 WORKDIR /work
 
 COPY --from=builder /out/dos /usr/local/bin/dos
-COPY cmd/client/config.yml /work/config.yml
+COPY cmd/client/cli/config.yml /work/config.yml
 
-ENTRYPOINT ["/bin/bash"]
+ENTRYPOINT ["/bin/bash", "-c"]

@@ -76,6 +76,7 @@ func NewStorageService(
 	if err := service.buildCatalog(); err != nil {
 		return nil, fmt.Errorf("build catalog: %w", err)
 	}
+	slog.Debug("catalog built", "chunks", len(service.catalog))
 	return service, nil
 }
 
@@ -113,6 +114,8 @@ func (svc *StorageService) CommitUploadSession(
 		return fmt.Errorf("session commit: %w", err)
 	}
 	svc.catalog[meta.ID] = s.NewChunkRecord(*meta)
+	svc.totalBytes += meta.Digest.Size
+
 	svc.reportSink.Enqueue(ctx, t.NewReplicaStaged(*meta).ToRecord())
 	return nil
 }
@@ -225,16 +228,15 @@ func (svc *StorageService) RunHearbeatLoop(ctx context.Context) {
 	defer timer.Stop()
 
 	for {
-
-		slog.DebugContext(ctx, "exec heartbeat")
-		if err := svc.Heartbeat(ctx); err != nil {
-			slog.ErrorContext(ctx, "heartbeat failed", "error", err)
-		}
-
 		select {
 		case <-ctx.Done():
 			return
 		case <-timer.C:
+		}
+
+		slog.DebugContext(ctx, "exec heartbeat")
+		if err := svc.Heartbeat(ctx); err != nil {
+			slog.ErrorContext(ctx, "heartbeat failed", "error", err)
 		}
 
 		timer.Reset(jitter(svc.config.HeartbeatInterval(), 0.2))
