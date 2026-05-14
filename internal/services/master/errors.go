@@ -4,6 +4,7 @@ import "errors"
 
 var (
 	ErrArgNil = errors.New("argument is nil")
+	ErrInvalidArgument = errors.New("invalid argument")
 
 	ErrObjectExists   = errors.New("object already exists")
 	ErrObjectNotFound = errors.New("object not found")

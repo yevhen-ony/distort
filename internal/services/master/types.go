@@ -30,6 +30,7 @@ type Chunk struct {
 	t.ChunkMeta
 	ReplicaCount int
 	ObjectID     t.ObjectID
+	ChunkKey     t.ChunkKey
 }
 
 func (c *Chunk) Clone() *Chunk {

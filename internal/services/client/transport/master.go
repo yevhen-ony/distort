@@ -50,14 +50,14 @@ func (mt *MasterTransport) CreateObject(ctx context.Context, oid t.ObjectID) err
 	return nil
 }
 
-type AllocateChunkQuery struct {
+type AllocateChunkCommand struct {
 	ObjectID t.ObjectID
 	ChunkKey t.ChunkKey
 	ChunkSize int64
 }
 
 func (mt *MasterTransport) AllocateChunk(
-	ctx context.Context, query *AllocateChunkQuery,
+	ctx context.Context, query *AllocateChunkCommand,
 ) (t.ChunkPlacement, error)  {
 
 	req := &pb.AllocateChunkRequest{
@@ -114,4 +114,17 @@ func (mt *MasterTransport) ListNodes(ctx context.Context) ([]t.NodeInfo, error) 
 	}
 	infos := utils.Map(rsp.GetNodes(), convert.NodeInfoFromPB)
 	return infos, nil
+}
+
+func (mt *MasterTransport) SetReplication(ctx context.Context, objectID t.ObjectID, count int) error {
+	req := &pb.SetReplicationRequest{
+		ObjectId: string(objectID),
+		Count: int64(count),
+	}
+
+	_, err := mt.client.SetReplication(ctx, req)
+	if err != nil {
+		return fmt.Errorf("transport: %w", err)
+	}
+	return nil
 }

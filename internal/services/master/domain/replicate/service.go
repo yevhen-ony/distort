@@ -1,4 +1,4 @@
-package reconcile
+package replicate 
 
 import (
 	"context"
@@ -17,11 +17,11 @@ var (
 	ErrReplicationAttemptsExhausted = errors.New("all replication attempts exhausted")
 )
 
-type ReconcileConfig interface {
-	ReconcileQueueLength() int
+type ReplicationConfig interface {
+	ReplicationQueueLength() int
 }
 
-type ReconcileWorker struct {
+type ReplicationWorker struct {
 	chunkRepo  m.ChunkRepo
 	objectRepo m.ObjectRepo
 	placement m.StorageNodePlacement
@@ -31,26 +31,25 @@ type ReconcileWorker struct {
 	queue *Queue
 }
 
-func NewReconcileWorker(
+func NewReplicationWorker(
 	chunkRepo m.ChunkRepo,
 	objectRepo m.ObjectRepo,
 	placement m.StorageNodePlacement,
 	transport *transport.Storage,
-	config ReconcileConfig,
-) *ReconcileWorker {
-	return &ReconcileWorker{
+	config ReplicationConfig,
+) *ReplicationWorker {
+	return &ReplicationWorker{
 		chunkRepo: chunkRepo,
 		objectRepo: objectRepo,
 		placement: placement,
 		transport: transport,
-		queue: NewQueue(config.ReconcileQueueLength()),
+		queue: NewQueue(config.ReplicationQueueLength()),
 	}
 }
 
-func (s *ReconcileWorker) ReconcileChunk(ctx context.Context, chunkID t.ChunkID) error {
+func (s *ReplicationWorker) ReplicateChunk(ctx context.Context, chunkID t.ChunkID) error {
 
 	ctx = dosctx.WithChunkID(ctx, chunkID)
-	ctx = dosctx.WithService(ctx, "reconcile")
 
 	chunk, err := s.chunkRepo.Get(ctx, chunkID)
 	if err != nil {
@@ -72,8 +71,9 @@ func (s *ReconcileWorker) ReconcileChunk(ctx context.Context, chunkID t.ChunkID)
 	}
 
 	if count > 0 {
-		_, err = s.ReplicateChunk(ctx, chunk.ChunkMeta, count)
+		_, err = s.AddReplica(ctx, chunk.ChunkMeta, count)
 		if err != nil {
+
 			return fmt.Errorf("replicate chunk %s: %w", chunkID, err)
 		}
 		return nil
@@ -87,15 +87,19 @@ func (s *ReconcileWorker) ReconcileChunk(ctx context.Context, chunkID t.ChunkID)
 	return nil
 }
 
-func (s *ReconcileWorker) ReplicateChunk(ctx context.Context, meta t.ChunkMeta, count int) (t.NodeID, error) {
+func (s *ReplicationWorker) AddReplica(ctx context.Context, meta t.ChunkMeta, count int) (t.NodeID, error) {
 
-	ctx = dosctx.WithOperation(ctx, "replicate")
+	ctx = dosctx.WithChunkID(ctx, meta.ID)
+	ctx = dosctx.WithOperation(ctx, "add")
 
 	sources, err := s.placement.GetChunkNodes(ctx, meta.ID)
 	if err != nil {
+		slog.ErrorContext(ctx, "list chunk's nodes failed")
+		return "", fmt.Errorf("list chunk's nodes: %w", err) 
 	}
 	if len(sources) == 0 {
-		return "", fmt.Errorf("no replication sources found for %s", meta.ID)
+		slog.ErrorContext(ctx, "no replication sources found")
+		return "", errors.New("no replication sources found")
 	}
 
 	targets, err := s.placement.GetCandidates(ctx, m.CandidateNodesQuery{
@@ -106,6 +110,10 @@ func (s *ReconcileWorker) ReplicateChunk(ctx context.Context, meta t.ChunkMeta, 
 	if err != nil {
 		slog.ErrorContext(ctx, "find candidate nodes failed", "error", err)
 		return "", fmt.Errorf("find candidate nodes: %w", err)
+	}
+	if len(targets) == 0 {
+		slog.ErrorContext(ctx, "no candidate nodes found")
+		return "", fmt.Errorf("no candidate nodes found for %s", meta.ID)
 	}
 
 	for _, source := range utils.RandomSelect(sources, len(sources)) {
@@ -120,7 +128,7 @@ func (s *ReconcileWorker) ReplicateChunk(ctx context.Context, meta t.ChunkMeta, 
 	return "", ErrReplicationAttemptsExhausted
 }
 
-func (s *ReconcileWorker) DeleteReplica(ctx context.Context, meta t.ChunkMeta, count int) error {
+func (s *ReplicationWorker) DeleteReplica(ctx context.Context, meta t.ChunkMeta, count int) error {
 	
 	ctx = dosctx.WithOperation(ctx, "delete")
 
@@ -145,16 +153,17 @@ func (s *ReconcileWorker) DeleteReplica(ctx context.Context, meta t.ChunkMeta, c
 	return errors.Join(errs...)
 }
 
-func (s *ReconcileWorker) RunLoop(ctx context.Context) {
+func (s *ReplicationWorker) RunLoop(ctx context.Context) {
+	ctx = dosctx.WithService(ctx, "replication")
 	for {
 		chunkID, err := s.queue.Pop(ctx)
 		if err != nil {
 			return
 		}
-		_ = s.ReconcileChunk(ctx, chunkID)
+		_ = s.ReplicateChunk(ctx, chunkID)
 	}
 }
 
-func (s *ReconcileWorker) Enqueue(ctx context.Context, chunkID t.ChunkID) {
+func (s *ReplicationWorker) Schedule(ctx context.Context, chunkID t.ChunkID) {
 	s.queue.Enqueue(ctx, chunkID)
 }

@@ -29,11 +29,11 @@ func (s *CatalogService) Create(
 }
 
 func (s *CatalogService) GetReplicaCount(ctx context.Context, objectID t.ObjectID) (int, error) {
-	obj, err := s.objectRepo.Get(ctx, objectID)
-	if err != nil {
-		return 0, err
-	}
-	return obj.DesiredReplication, nil
+	return s.objectRepo.GetReplication(ctx, objectID)
+}
+
+func (s *CatalogService) SetReplicaCount(ctx context.Context, objectID t.ObjectID, count int) error {
+	return s.objectRepo.SetReplication(ctx, objectID, count)
 }
 
 func (s *CatalogService) AllocateChunk(
@@ -41,7 +41,7 @@ func (s *CatalogService) AllocateChunk(
 ) (t.ChunkDesc, error) {
 
 	chunkID := s.chunkRepo.NewChunkID()
-	if err := s.chunkRepo.Create(ctx, chunkID, objectID); err != nil {
+	if err := s.chunkRepo.Create(ctx, chunkID, objectID, chunkKey); err != nil {
 		return t.ChunkDesc{}, fmt.Errorf("create chunk: %w", err)
 	}
 
@@ -57,29 +57,36 @@ func (s *CatalogService) AllocateChunk(
 	return desc, nil
 }
 
-func (s *CatalogService) GetChunks(ctx context.Context, objectID t.ObjectID) ([]t.ChunkDesc, error) {
+func (s *CatalogService) GetObjectChunks(ctx context.Context, objectID t.ObjectID) ([]t.ChunkID, error) {
 
 	object, err := s.objectRepo.Get(ctx, objectID)
 	if err != nil {
 		return nil, err
 	}
 
-	result := make([]t.ChunkDesc, 0, len(object.Chunks))
-	for chunkKey, chunkID := range object.Chunks {
-		chunk, err := s.chunkRepo.Get(ctx, chunkID)
-		if err != nil {
-			return nil, fmt.Errorf("access chunk %s: %w", chunkID, err)
-		}
-		if chunk.ReplicaCount == 0 {
-			return nil, fmt.Errorf("access chunk %s: %w", chunkID, m.ErrChunkNotAvailable)
-		}
-		result = append(result, t.ChunkDesc{
-			ChunkID:   chunkID,
-			ChunkKey:  chunkKey,
-			ChunkSize: chunk.Digest.Size,
-		})
+	result := make([]t.ChunkID, 0, len(object.Chunks))
+	for _, chunkID := range object.Chunks {
+		result = append(result, chunkID)
 	}
 	return result, nil
+}
+
+func (s *CatalogService) DescribeChunk(ctx context.Context, chunkID t.ChunkID) (t.ChunkDesc, error) {
+		chunk, err := s.chunkRepo.Get(ctx, chunkID)
+		if err != nil {
+			return t.ChunkDesc{}, fmt.Errorf("access chunk %s: %w", chunkID, err)
+		}
+		
+		size := int64(0)
+		if chunk.ReplicaCount > 0 {
+			size = chunk.Digest.Size
+		}
+		desc := t.ChunkDesc{
+			ChunkID:   chunk.ID,
+			ChunkKey:  chunk.ChunkKey,
+			ChunkSize: size,
+		}
+		return desc, nil 
 }
 
 func (s *CatalogService) ListObjects(ctx context.Context) []t.ObjectInfo {

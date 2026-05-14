@@ -57,6 +57,21 @@ func (o *InMemObjectRepo) GetReplication(_ context.Context, oid t.ObjectID) (int
 	return obj.DesiredReplication, nil
 }
 
+func (o *InMemObjectRepo) SetReplication(_ context.Context, oid t.ObjectID, count int) error {
+	o.mu.RLock()
+	defer o.mu.RUnlock()
+	if count < 0 {
+		return m.ErrInvalidArgument
+	}
+
+	obj, ok := o.objects[oid]
+	if !ok {
+		return m.ErrObjectNotFound
+	}
+	obj.DesiredReplication = count
+	return nil
+}
+
 func (o *InMemObjectRepo) List(_ context.Context) []m.Object {
 	o.mu.RLock()
 	defer o.mu.RUnlock()

@@ -14,20 +14,20 @@ type ReportService struct {
 	chunkRepository m.ChunkRepo
 	nodeRegistry    m.NodeRegistry
 
-	reconcileSink m.ReconcileSink
+	replication m.ReplicaScheduler
 }
 
 func NewReportService(
 	chunkNodeIndex m.ChunkNodeIndex,
 	chunkRepository m.ChunkRepo,
 	nodeRegistry m.NodeRegistry,
-	reconcileSink m.ReconcileSink,
+	replication m.ReplicaScheduler,
 ) *ReportService {
 	return &ReportService{
-		chunkNodeIndex: chunkNodeIndex,
+		chunkNodeIndex:  chunkNodeIndex,
 		chunkRepository: chunkRepository,
-		nodeRegistry: nodeRegistry,
-		reconcileSink: reconcileSink, 
+		nodeRegistry:    nodeRegistry,
+		replication:     replication,
 	}
 }
 
@@ -58,7 +58,7 @@ func (s *ReportService) Report(
 				"chunk_id", r.ChunkID,
 				"targets", r.Targets,
 			)
-			s.reconcileSink.Enqueue(ctx, r.ChunkID)
+			s.replication.Schedule(ctx, r.ChunkID)
 		}
 	}
 	return result, nil

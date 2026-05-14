@@ -23,7 +23,10 @@ func NewInMemChunkRepo() *InMemChunkRepo {
 	}
 }
 
-func (r *InMemChunkRepo) Create(_ context.Context, id t.ChunkID, objectID t.ObjectID) error {
+func (r *InMemChunkRepo) Create(
+	_ context.Context, id t.ChunkID, objectID t.ObjectID, chunkKey t.ChunkKey,
+) error {
+
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -34,6 +37,7 @@ func (r *InMemChunkRepo) Create(_ context.Context, id t.ChunkID, objectID t.Obje
 	r.chunks[id] = &m.Chunk{
 		ChunkMeta: chunkMeta,
 		ObjectID: objectID,
+		ChunkKey: chunkKey,
 	}
 	return nil
 }

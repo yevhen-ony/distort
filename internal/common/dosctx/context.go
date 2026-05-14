@@ -8,6 +8,7 @@ import (
 
 type objectIDKey struct{}
 type chunkIDKey struct{}
+type nodeIDKey struct{}
 type serviceKey struct{}
 type operationKey struct{}
 
@@ -27,6 +28,15 @@ func WithChunkID(ctx context.Context, chunkID t.ChunkID) context.Context {
 func ChunkID(ctx context.Context) (t.ChunkID, bool) {
 	chunkID, ok := ctx.Value(chunkIDKey{}).(t.ChunkID)
 	return chunkID, ok
+}
+
+func WithNodeID(ctx context.Context, nodeID t.NodeID) context.Context {
+	return context.WithValue(ctx, nodeIDKey{}, nodeID)
+}
+
+func NodeID(ctx context.Context) (t.NodeID, bool) {
+	nodeID, ok := ctx.Value(nodeIDKey{}).(t.NodeID)
+	return nodeID, ok
 }
 
 func WithService(ctx context.Context, service string)  context.Context {

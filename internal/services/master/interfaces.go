@@ -10,8 +10,7 @@ import (
 type StorageNodeLifecycle interface {
 	Register(context.Context, string) (t.NodeRef, error)
 	UpdateStats(context.Context, t.NodeID, t.NodeStats) error
-	Remove(context.Context, t.NodeID) error
-	RemoveInactive(context.Context, time.Time) (int, error)
+	Remove(context.Context, t.NodeID) ([]t.ChunkID, error)
 }
 
 type StorageNodePlacement interface {
@@ -27,9 +26,11 @@ type ClientFacade interface {
 	CreateObject(context.Context, t.ObjectID) error
 	AllocateChunk(context.Context, AllocateChunkCommand) (t.ChunkPlacement, error)
 	GetObjectAccess(context.Context, t.ObjectID) (t.ObjectAccess, error)
-	ListObjects(ctx context.Context) []t.ObjectInfo
-	ListChunks(ctx context.Context) []t.ChunkInfo
-	ListNodes(ctx context.Context) []t.NodeInfo
+
+	ListObjects(context.Context) []t.ObjectInfo
+	ListChunks(context.Context) []t.ChunkInfo
+	ListNodes(context.Context) []t.NodeInfo
+	SetReplication(context.Context, t.ObjectID, int) error
 }
 
 type ObjectCatalog interface {
@@ -44,13 +45,14 @@ type ObjectRepo interface {
 	Create(context.Context, t.ObjectID, int) error
 	Get(context.Context, t.ObjectID) (Object, error)
 	GetReplication(context.Context, t.ObjectID) (int, error)
+	SetReplication(context.Context, t.ObjectID, int) error
 	List(context.Context) []Object
 	AddChunk(context.Context, t.ObjectID, t.ChunkKey, t.ChunkID) error
 }
 
 type ChunkRepo interface {
 	NewChunkID() t.ChunkID
-	Create(context.Context, t.ChunkID, t.ObjectID) error
+	Create(context.Context, t.ChunkID, t.ObjectID, t.ChunkKey) error
 	Get(context.Context, t.ChunkID) (Chunk, error)
 	SetDigest(context.Context, t.ChunkID, *digest.Digest) error
 	IncReplication(context.Context, t.ChunkID) error
@@ -65,12 +67,14 @@ type NodeQuery struct {
 
 type NodeRegistry interface {
 	Register(context.Context, string) (t.NodeRef, error)
-	Unregister(context.Context, t.NodeID) error
+	Unregister(context.Context, t.NodeID)
 
 	Get(context.Context, t.NodeID) (Node, error)
 	GetMany(context.Context, ...t.NodeID) []Node
 	Find(context.Context, NodeQuery) []Node
 	UpdateStats(context.Context, t.NodeID, t.NodeStats) error
+
+	Count(context.Context) int 
 	GetInactive(context.Context, time.Time) []t.NodeID
 }
 
@@ -98,6 +102,6 @@ type AllocateChunkCommand struct {
 	ChunkSize int64
 }
 
-type ReconcileSink interface {
-	Enqueue(context.Context, t.ChunkID)
+type ReplicaScheduler interface {
+	Schedule(context.Context, t.ChunkID)
 }

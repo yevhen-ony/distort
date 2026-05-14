@@ -157,3 +157,26 @@ func (s *ClientServer) ListNodes(
 	return rsp, nil
 }
 
+func (s *ClientServer) SetReplication(
+	ctx context.Context, req *pb.SetReplicationRequest,
+) (rsp *pb.SetReplicationResponse, err error) {
+	
+	defer func() {
+		if err != nil {
+			slog.ErrorContext(ctx, "set replication failed",
+				"object_id", req.GetObjectId(), "error", err,
+			)
+			err = toStatus(err)
+		}
+	}()
+
+	slog.DebugContext(ctx, "set replication requested", "object_id", req.GetObjectId())
+	err = s.facade.SetReplication(ctx, t.ObjectID(req.GetObjectId()), int(req.GetCount()))
+	if err != nil {
+		return nil, err
+	}
+	rsp = &pb.SetReplicationResponse{}
+	return rsp, nil
+}
+
+

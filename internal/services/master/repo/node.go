@@ -48,19 +48,17 @@ func (r *InMemNodeRegistry) Register(_ context.Context, addr string) (t.NodeRef,
 	return nodeRef, nil 
 }
 
-func (r *InMemNodeRegistry) Unregister(_ context.Context, nid t.NodeID) error {
+func (r *InMemNodeRegistry) Unregister(_ context.Context, nid t.NodeID) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	node := r.nodes[nid]
 	if node == nil {
-		return nil
+		return 
 	}
 
 	delete(r.nodes, nid)
 	delete(r.addrs, node.Addr)
-	
-	return nil
 }
 
 func (r *InMemNodeRegistry) UpdateStats(_ context.Context, nid t.NodeID, stats t.NodeStats) error {
@@ -132,6 +130,10 @@ func (r *InMemNodeRegistry) Find(ctx context.Context, query m.NodeQuery) []m.Nod
 		result = append(result, *node)
 	}
 	return result
+}
+
+func (r *InMemNodeRegistry) Count(_ context.Context) int {
+	return len(r.nodes)
 }
 
 func (r *InMemNodeRegistry) newNodeID() t.NodeID {

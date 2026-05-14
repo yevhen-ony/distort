@@ -7,7 +7,7 @@ import (
 	"dos/internal/common/listener"
 	"dos/internal/services/master/api"
 	"dos/internal/services/master/domain"
-	"dos/internal/services/master/domain/reconcile"
+	"dos/internal/services/master/domain/replicate"
 	"dos/internal/services/master/domain/storagenode"
 	"dos/internal/services/master/repo"
 	"dos/internal/services/master/transport"
@@ -23,7 +23,7 @@ type App struct {
 	nodeRegistry     *repo.InMemNodeRegistry
 	chunkNodeIndex   *domain.InMemChunkNodeIndex
 
-	reconcile        *reconcile.ReconcileWorker
+	replicate        *replicate.ReplicationWorker
 	catalog          *domain.CatalogService
 	storageLifecycle *storagenode.LifecycleService
 	storagePlacement *storagenode.PlacementService
@@ -59,7 +59,7 @@ func NewApp(config *Config) (*App, error) {
 		config,
 	)
 
-	reconcile := reconcile.NewReconcileWorker(
+	replicate := replicate.NewReplicationWorker(
 		chunkRepo,
 		objectRepo,
 		storagePlacement,
@@ -71,18 +71,18 @@ func NewApp(config *Config) (*App, error) {
 		chunkNodeIndex,
 		chunkRepo,
 		nodeRegistry,
-		reconcile,
 	)
 
 	storageReport := storagenode.NewReportService(
 		chunkNodeIndex,
 		chunkRepo,
 		nodeRegistry,
-		reconcile,
+		replicate,
 	)
 
 	storageCleanup := storagenode.NewCleanupWorker(
 		storageLifecycle,
+		replicate,
 		config,
 	)
 
@@ -90,6 +90,7 @@ func NewApp(config *Config) (*App, error) {
 		catalog,
 		storagePlacement,
 		storageLifecycle,
+		replicate,
 		config,
 	)
 
@@ -109,7 +110,7 @@ func NewApp(config *Config) (*App, error) {
 		storagePlacement: storagePlacement,
 		storageReport:    storageReport,
 		storageCleanup:   storageCleanup,
-		reconcile:        reconcile,
+		replicate:        replicate,
 
 		storageAPI: storageAPI,
 		clientAPI:  clientAPI,
@@ -123,7 +124,7 @@ func (app *App) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	go app.reconcile.RunLoop(ctx)
+	go app.replicate.RunLoop(ctx)
 	go app.storageCleanup.RunLoop(ctx)
 
 	err := listener.RunGRPCServer(ctx, &app.config.Listen, func(s *grpc.Server) {

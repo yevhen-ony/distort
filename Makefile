@@ -17,9 +17,9 @@ gen:
 		$(PROTO_FILES)
 
 build:
-	docker build --no-cache -f deploy/docker/master.Dockerfile -t dos-master:latest .
-	docker build --no-cache -f deploy/docker/storage.Dockerfile -t dos-storage:latest .
-	docker build --no-cache -f deploy/docker/client.Dockerfile -t dos-client:latest .
+	docker build -f deploy/docker/master.Dockerfile -t dos-master:latest .
+	docker build -f deploy/docker/storage.Dockerfile -t dos-storage:latest .
+	docker build -f deploy/docker/client.Dockerfile -t dos-client:latest .
 
 up:
 	$(COMPOSE) --profile main up

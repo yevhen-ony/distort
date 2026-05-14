@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -33,7 +34,7 @@ func run() error {
 	root.AddCommand(MakePushCmd(cfg))
 	root.AddCommand(MakePullCmd(cfg))
 	root.AddCommand(MakeListCmd(cfg))
-
+	root.AddCommand(MakeScaleObjectCmd(cfg))
 
 	if err := root.Execute(); err != nil {
 		return fmt.Errorf("execute: %w")
@@ -90,7 +91,7 @@ func MakePullCmd(cfg *Config) *cobra.Command {
 			objectID := args[0]
 			destPath, err := cmd.Flags().GetString("dest")
 			if err != nil {
-				return fmt.Errorf("read dest flag: %w", err)
+				return fmt.Errorf("dest flag: %w", err)
 			}
 			
 			if err := cfg.ApplyFlags(cmd); err != nil {
@@ -194,5 +195,42 @@ func MakeListNodesCmd(cfg *Config) *cobra.Command {
 		},
 	}
 	return listNodesCmd
+}
+
+func MakeScaleObjectCmd(cfg *Config) *cobra.Command {
+	scaleObjectCmd := &cobra.Command{
+		Use: "scale [object-id] --replicas [N]",
+		Short: "scale replication object",
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer stop()
+
+			if err := cfg.ApplyFlags(cmd); err != nil {
+				return fmt.Errorf("apply config flags: %w", err)
+			}
+			
+			objectID := args[0]
+			if objectID == "" {
+				return errors.New("missing object id")
+			}
+			replicaCount, err := cmd.Flags().GetInt("replicas")
+			if err != nil {
+				return fmt.Errorf("replicas flag: %w", err)
+			}
+			if replicaCount < 0 {
+				return fmt.Errorf("missing or invalid replica count")
+			}
+			
+			app, err := NewApp(cfg)
+			if err != nil {
+				return fmt.Errorf("init app: %w", err)
+			}
+			defer app.Close()
+			return app.ScaleObjects(ctx, objectID, replicaCount)
+		},
+	}
+	scaleObjectCmd.Flags().Int("replicas", -1, "desired replication count")
+	return scaleObjectCmd
 }
 

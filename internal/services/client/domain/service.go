@@ -58,12 +58,11 @@ func (s *Service) Push(ctx context.Context, objectID t.ObjectID, source *file.Ob
 		if err != nil {
 			return fmt.Errorf("read chunk: %w", err)
 		}
-		allocQuery := &transport.AllocateChunkQuery{
+		loc, err := s.master.AllocateChunk(ctx, &transport.AllocateChunkCommand{
 			ObjectID:  objectID,
 			ChunkKey:  key,
 			ChunkSize: int64(len(data)),
-		}
-		loc, err := s.master.AllocateChunk(ctx, allocQuery)
+		})
 		if err != nil {
 			return fmt.Errorf("alloc chunk: %w", err)
 		}
@@ -134,6 +133,10 @@ func (s *Service) ListChunks(ctx context.Context) ([]t.ChunkInfo, error) {
 
 func (s *Service) ListNodes(ctx context.Context) ([]t.NodeInfo, error) {
 	return s.master.ListNodes(ctx)
+}
+
+func (s *Service) SetReplication(ctx context.Context, objectID t.ObjectID, count int) error {
+	return s.master.SetReplication(ctx, objectID, count)
 }
 
 func WithProgressHandler(h func(*ObjectProgress)) ServiceOption {

@@ -2,11 +2,12 @@ package storagenode
 
 import (
 	"context"
+	"dos/internal/common/dosctx"
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
 	m "dos/internal/services/master"
-	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 )
 
@@ -18,21 +19,18 @@ type LifecycleService struct {
 	nodeRegistry m.NodeRegistry
 	chunkRepository m.ChunkRepo
 	chunkNodeIndex  m.ChunkNodeIndex
-
-	reconcileSink m.ReconcileSink
 }
+
 
 func NewLifecycleService(
 	chunkNodeIndex  m.ChunkNodeIndex,
 	chunkRepository m.ChunkRepo,
 	nodeRegistry m.NodeRegistry,
-	reconcileSink m.ReconcileSink,
 ) *LifecycleService {
 	return &LifecycleService{
 		nodeRegistry: nodeRegistry,
 		chunkRepository: chunkRepository,
 		chunkNodeIndex: chunkNodeIndex,
-		reconcileSink: reconcileSink,
 	}
 }
 
@@ -57,42 +55,33 @@ func (s *LifecycleService) UpdateStats(ctx context.Context, nodeID t.NodeID, sta
 }
 
 
-func (s *LifecycleService) Remove(ctx context.Context, nodeID t.NodeID) error {
+func (s *LifecycleService) Remove(ctx context.Context, nodeID t.NodeID) ([]t.ChunkID, error) {
+
+	ctx = dosctx.WithService(ctx, "lifecycle")
+	ctx = dosctx.WithOperation(ctx, "remove node")
+	ctx = dosctx.WithNodeID(ctx, nodeID)
+
 	if _, err := s.nodeRegistry.Get(ctx, nodeID); err != nil {
-		return fmt.Errorf("get node %s: %w", nodeID, err)
+		return nil, fmt.Errorf("get node %s: %w", nodeID, err)
 	}
 	
-	var errs []error
 	chunks := s.chunkNodeIndex.GetNodeChunks(ctx, nodeID)
-	for _, chunk := range chunks {
-		if err := s.chunkRepository.DecReplication(ctx, chunk); err != nil {
-			errs = append(errs, fmt.Errorf("dec replica for chunk %s: %w", chunk, err))
+	for _, chunkID := range chunks {
+
+		if err := s.chunkRepository.DecReplication(ctx, chunkID); err != nil {
+			slog.ErrorContext(ctx, "failed to dec chunk replication", "chunk_id", chunkID, "error", err)
 		}
 	}
 
 	s.chunkNodeIndex.DetachNode(ctx, nodeID)
+	s.nodeRegistry.Unregister(ctx, nodeID)
 
-	if err := s.nodeRegistry.Unregister(ctx, nodeID); err != nil {
-		errs = append(errs, fmt.Errorf("unregister node %s: %w", nodeID, err))
-	}
-	return errors.Join(errs...)
+	return chunks, nil 
 }
 
-func (s *LifecycleService) RemoveInactive(ctx context.Context, cutoff time.Time) (int, error) {
-	var errs []error
-	nodes := s.nodeRegistry.GetInactive(ctx, cutoff)
-
-	var count int
-	for _, node := range nodes {
-		if err := s.Remove(ctx, node); err != nil {
-			errs = append(errs, err)
-		} else {
-			count++
-		}
-	}
-	return count, errors.Join(errs...)
+func (s *LifecycleService) GetInactive(ctx context.Context, cutoff time.Time) []t.NodeID {
+	return s.nodeRegistry.GetInactive(ctx, cutoff)
 }
-
 
 func (s *LifecycleService) ListNodes(ctx context.Context) []t.NodeInfo {
 	nodes := s.nodeRegistry.Find(ctx, m.NodeQuery{})
@@ -105,5 +94,9 @@ func (s *LifecycleService) ListNodes(ctx context.Context) []t.NodeInfo {
 		}
 	})
 	return infos
+}
+
+func (s *LifecycleService) GetNodeCount(ctx context.Context) int {
+	return s.nodeRegistry.Count(ctx)
 }
 

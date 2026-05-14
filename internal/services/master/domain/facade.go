@@ -12,10 +12,15 @@ type ClientFacadeConfig interface {
 	ReplicationCount() int
 }
 
+type ReplicationScheduler interface {
+	Schedule(context.Context, t.ChunkID)
+}
+
 type ClientFacadeService struct {
-	catalog *CatalogService
+	catalog   *CatalogService
 	placement *storagenode.PlacementService
 	lifecycle *storagenode.LifecycleService
+	replicate ReplicationScheduler
 
 	config ClientFacadeConfig
 }
@@ -24,13 +29,15 @@ func NewClientFacadeService(
 	objectCatalog *CatalogService,
 	placement *storagenode.PlacementService,
 	lifecycle *storagenode.LifecycleService,
+	replicate ReplicationScheduler,
 	config ClientFacadeConfig,
 ) *ClientFacadeService {
 	return &ClientFacadeService{
-		catalog: objectCatalog,
+		catalog:   objectCatalog,
 		placement: placement,
 		lifecycle: lifecycle,
-		config: config,
+		replicate: replicate,
+		config:    config,
 	}
 }
 
@@ -50,7 +57,7 @@ func (s *ClientFacadeService) AllocateChunk(
 
 	candidates, err := s.placement.GetCandidates(ctx, m.CandidateNodesQuery{
 		MinFreeBytes: cmd.ChunkSize,
-		MaxCount:          replicaCount,
+		MaxCount:     replicaCount,
 	})
 	if err != nil {
 		return t.ChunkPlacement{}, fmt.Errorf("get candidate nodes: %w", err)
@@ -73,17 +80,21 @@ func (s *ClientFacadeService) GetObjectAccess(
 ) (t.ObjectAccess, error) {
 
 	var totalSize int64
-	chunks, err := s.catalog.GetChunks(ctx, objectID)
+	chunkIDs, err := s.catalog.GetObjectChunks(ctx, objectID)
 	if err != nil {
 		return t.ObjectAccess{}, err
 	}
 
 	placements := []t.ChunkPlacement{}
-	for _, chunk := range chunks {
+	for _, chunkID := range chunkIDs {
 
-		nodes, err := s.placement.GetChunkNodes(ctx, chunk.ChunkID)
+		chunk, err := s.catalog.DescribeChunk(ctx, chunkID)
 		if err != nil {
-			return t.ObjectAccess{}, fmt.Errorf("get chunk %s nodes: %w", chunk.ChunkID, err)
+			return t.ObjectAccess{}, fmt.Errorf("describe chunk %s: %w", chunkID, err)
+		}
+		nodes, err := s.placement.GetChunkNodes(ctx, chunkID)
+		if err != nil {
+			return t.ObjectAccess{}, fmt.Errorf("get chunk %s nodes: %w", chunkID, err)
 		}
 
 		totalSize += chunk.ChunkSize
@@ -113,4 +124,23 @@ func (s *ClientFacadeService) ListChunks(ctx context.Context) []t.ChunkInfo {
 
 func (s *ClientFacadeService) ListNodes(ctx context.Context) []t.NodeInfo {
 	return s.lifecycle.ListNodes(ctx)
+}
+
+func (s *ClientFacadeService) SetReplication(ctx context.Context, objectID t.ObjectID, count int) error {
+	nodesCount := s.lifecycle.GetNodeCount(ctx)
+	if count > nodesCount{
+		return fmt.Errorf("requested replica count %d exceeds number of nodes %d", count, nodesCount)
+	}
+	if err := s.catalog.SetReplicaCount(ctx, objectID, count); err != nil {
+		return fmt.Errorf("set replication count: %w", err)
+	}
+
+	chunkIDs, err := s.catalog.GetObjectChunks(ctx, objectID)
+	if err != nil {
+		return fmt.Errorf("get object chunk ids: %w", err)
+	}
+	for _, chunkID := range chunkIDs {
+		s.replicate.Schedule(ctx, chunkID)
+	}
+	return nil
 }

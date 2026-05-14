@@ -27,6 +27,9 @@ func (h *ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 	if chunkID, ok := dosctx.ChunkID(ctx); ok {
 		r.AddAttrs(slog.String("chunk_id", string(chunkID)))
 	}
+	if nodeID, ok := dosctx.NodeID(ctx); ok {
+		r.AddAttrs(slog.String("node_id", string(nodeID)))
+	}
 	if service, ok := dosctx.Service(ctx); ok {
 		r.AddAttrs(slog.String("service", service))
 	}
