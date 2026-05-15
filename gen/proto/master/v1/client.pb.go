@@ -490,6 +490,7 @@ type ObjectInfo struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ObjectId      string                 `protobuf:"bytes,1,opt,name=object_id,json=objectId,proto3" json:"object_id,omitempty"`
 	ChunkCount    int64                  `protobuf:"varint,2,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
+	Replication   int64                  `protobuf:"varint,3,opt,name=replication,proto3" json:"replication,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -534,6 +535,13 @@ func (x *ObjectInfo) GetObjectId() string {
 func (x *ObjectInfo) GetChunkCount() int64 {
 	if x != nil {
 		return x.ChunkCount
+	}
+	return 0
+}
+
+func (x *ObjectInfo) GetReplication() int64 {
+	if x != nil {
+		return x.Replication
 	}
 	return 0
 }
@@ -924,12 +932,13 @@ const file_master_v1_client_proto_rawDesc = "" +
 	"\n" +
 	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\x12#\n" +
 	"\rreplica_count\x18\x02 \x01(\x03R\freplicaCount\x12\x1b\n" +
-	"\tobject_id\x18\x04 \x01(\tR\bobjectId\"J\n" +
+	"\tobject_id\x18\x04 \x01(\tR\bobjectId\"l\n" +
 	"\n" +
 	"ObjectInfo\x12\x1b\n" +
 	"\tobject_id\x18\x01 \x01(\tR\bobjectId\x12\x1f\n" +
 	"\vchunk_count\x18\x02 \x01(\x03R\n" +
-	"chunkCount\"2\n" +
+	"chunkCount\x12 \n" +
+	"\vreplication\x18\x03 \x01(\x03R\vreplication\"2\n" +
 	"\x13CreateObjectRequest\x12\x1b\n" +
 	"\tobject_id\x18\x01 \x01(\tR\bobjectId\"\x16\n" +
 	"\x14CreateObjectResponse\"o\n" +

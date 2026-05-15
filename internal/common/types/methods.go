@@ -55,8 +55,15 @@ func NewReplicaStaged(chunk ChunkMeta) *ReplicaStagedReport {
 	return &ReplicaStagedReport{Chunk: chunk}
 }
 
-
 func (rs *ReplicaStagedReport) ToRecord() StorageNodeReport {
 	return StorageNodeReport{ReplicaStaged: rs}
+}
+
+func NewReplicaDeleted(chunkID ChunkID) *ReplicaDeletedReport {
+	return &ReplicaDeletedReport{ChunkID: chunkID}
+}
+
+func (rd *ReplicaDeletedReport) ToRecord() StorageNodeReport {
+	return StorageNodeReport{ReplicaDeleted: rd}
 }
 

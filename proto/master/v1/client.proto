@@ -60,6 +60,7 @@ message ChunkInfo {
 message ObjectInfo {
   string object_id = 1;
   int64 chunk_count = 2;
+  int64 replication = 3;
 }
 
 message CreateObjectRequest {

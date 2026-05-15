@@ -6,6 +6,7 @@ import (
 	m "dos/internal/services/master"
 	"dos/internal/services/master/domain/storagenode"
 	"fmt"
+	"log/slog"
 )
 
 type ClientFacadeConfig interface {
@@ -141,6 +142,7 @@ func (s *ClientFacadeService) SetReplication(ctx context.Context, objectID t.Obj
 	}
 	for _, chunkID := range chunkIDs {
 		s.replicate.Schedule(ctx, chunkID)
+		slog.DebugContext(ctx, "replication scheduled", "chunk_id", chunkID)
 	}
 	return nil
 }

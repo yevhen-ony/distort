@@ -164,11 +164,12 @@ func (x *ReportStorageRequest) GetReports() []*ReplicaReport {
 
 type ReplicaReport struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Types that are valid to be assigned to Record:
+	// Types that are valid to be assigned to Report:
 	//
 	//	*ReplicaReport_Staged
+	//	*ReplicaReport_Deleted
 	//	*ReplicaReport_ChainFailed
-	Record        isReplicaReport_Record `protobuf_oneof:"record"`
+	Report        isReplicaReport_Report `protobuf_oneof:"report"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -203,17 +204,26 @@ func (*ReplicaReport) Descriptor() ([]byte, []int) {
 	return file_master_v1_storage_proto_rawDescGZIP(), []int{3}
 }
 
-func (x *ReplicaReport) GetRecord() isReplicaReport_Record {
+func (x *ReplicaReport) GetReport() isReplicaReport_Report {
 	if x != nil {
-		return x.Record
+		return x.Report
 	}
 	return nil
 }
 
 func (x *ReplicaReport) GetStaged() *ReplicaStaged {
 	if x != nil {
-		if x, ok := x.Record.(*ReplicaReport_Staged); ok {
+		if x, ok := x.Report.(*ReplicaReport_Staged); ok {
 			return x.Staged
+		}
+	}
+	return nil
+}
+
+func (x *ReplicaReport) GetDeleted() *ReplicaDeleted {
+	if x != nil {
+		if x, ok := x.Report.(*ReplicaReport_Deleted); ok {
+			return x.Deleted
 		}
 	}
 	return nil
@@ -221,28 +231,34 @@ func (x *ReplicaReport) GetStaged() *ReplicaStaged {
 
 func (x *ReplicaReport) GetChainFailed() *ReplicaChainFailed {
 	if x != nil {
-		if x, ok := x.Record.(*ReplicaReport_ChainFailed); ok {
+		if x, ok := x.Report.(*ReplicaReport_ChainFailed); ok {
 			return x.ChainFailed
 		}
 	}
 	return nil
 }
 
-type isReplicaReport_Record interface {
-	isReplicaReport_Record()
+type isReplicaReport_Report interface {
+	isReplicaReport_Report()
 }
 
 type ReplicaReport_Staged struct {
 	Staged *ReplicaStaged `protobuf:"bytes,1,opt,name=staged,proto3,oneof"`
 }
 
-type ReplicaReport_ChainFailed struct {
-	ChainFailed *ReplicaChainFailed `protobuf:"bytes,2,opt,name=chain_failed,json=chainFailed,proto3,oneof"`
+type ReplicaReport_Deleted struct {
+	Deleted *ReplicaDeleted `protobuf:"bytes,2,opt,name=deleted,proto3,oneof"`
 }
 
-func (*ReplicaReport_Staged) isReplicaReport_Record() {}
+type ReplicaReport_ChainFailed struct {
+	ChainFailed *ReplicaChainFailed `protobuf:"bytes,3,opt,name=chain_failed,json=chainFailed,proto3,oneof"`
+}
 
-func (*ReplicaReport_ChainFailed) isReplicaReport_Record() {}
+func (*ReplicaReport_Staged) isReplicaReport_Report() {}
+
+func (*ReplicaReport_Deleted) isReplicaReport_Report() {}
+
+func (*ReplicaReport_ChainFailed) isReplicaReport_Report() {}
 
 type ReplicaStaged struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -288,6 +304,50 @@ func (x *ReplicaStaged) GetChunk() *v1.ChunkMeta {
 	return nil
 }
 
+type ReplicaDeleted struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ReplicaDeleted) Reset() {
+	*x = ReplicaDeleted{}
+	mi := &file_master_v1_storage_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ReplicaDeleted) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ReplicaDeleted) ProtoMessage() {}
+
+func (x *ReplicaDeleted) ProtoReflect() protoreflect.Message {
+	mi := &file_master_v1_storage_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ReplicaDeleted.ProtoReflect.Descriptor instead.
+func (*ReplicaDeleted) Descriptor() ([]byte, []int) {
+	return file_master_v1_storage_proto_rawDescGZIP(), []int{5}
+}
+
+func (x *ReplicaDeleted) GetChunkId() string {
+	if x != nil {
+		return x.ChunkId
+	}
+	return ""
+}
+
 type ReplicaChainFailed struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
@@ -298,7 +358,7 @@ type ReplicaChainFailed struct {
 
 func (x *ReplicaChainFailed) Reset() {
 	*x = ReplicaChainFailed{}
-	mi := &file_master_v1_storage_proto_msgTypes[5]
+	mi := &file_master_v1_storage_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -310,7 +370,7 @@ func (x *ReplicaChainFailed) String() string {
 func (*ReplicaChainFailed) ProtoMessage() {}
 
 func (x *ReplicaChainFailed) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_storage_proto_msgTypes[5]
+	mi := &file_master_v1_storage_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -323,7 +383,7 @@ func (x *ReplicaChainFailed) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReplicaChainFailed.ProtoReflect.Descriptor instead.
 func (*ReplicaChainFailed) Descriptor() ([]byte, []int) {
-	return file_master_v1_storage_proto_rawDescGZIP(), []int{5}
+	return file_master_v1_storage_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *ReplicaChainFailed) GetChunkId() string {
@@ -350,7 +410,7 @@ type ReportStorageResponse struct {
 
 func (x *ReportStorageResponse) Reset() {
 	*x = ReportStorageResponse{}
-	mi := &file_master_v1_storage_proto_msgTypes[6]
+	mi := &file_master_v1_storage_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -362,7 +422,7 @@ func (x *ReportStorageResponse) String() string {
 func (*ReportStorageResponse) ProtoMessage() {}
 
 func (x *ReportStorageResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_storage_proto_msgTypes[6]
+	mi := &file_master_v1_storage_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -375,7 +435,7 @@ func (x *ReportStorageResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ReportStorageResponse.ProtoReflect.Descriptor instead.
 func (*ReportStorageResponse) Descriptor() ([]byte, []int) {
-	return file_master_v1_storage_proto_rawDescGZIP(), []int{6}
+	return file_master_v1_storage_proto_rawDescGZIP(), []int{7}
 }
 
 func (x *ReportStorageResponse) GetAccepted() []string {
@@ -401,7 +461,7 @@ type RegisterStorageNodeRequest struct {
 
 func (x *RegisterStorageNodeRequest) Reset() {
 	*x = RegisterStorageNodeRequest{}
-	mi := &file_master_v1_storage_proto_msgTypes[7]
+	mi := &file_master_v1_storage_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -413,7 +473,7 @@ func (x *RegisterStorageNodeRequest) String() string {
 func (*RegisterStorageNodeRequest) ProtoMessage() {}
 
 func (x *RegisterStorageNodeRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_storage_proto_msgTypes[7]
+	mi := &file_master_v1_storage_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -426,7 +486,7 @@ func (x *RegisterStorageNodeRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterStorageNodeRequest.ProtoReflect.Descriptor instead.
 func (*RegisterStorageNodeRequest) Descriptor() ([]byte, []int) {
-	return file_master_v1_storage_proto_rawDescGZIP(), []int{7}
+	return file_master_v1_storage_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *RegisterStorageNodeRequest) GetAddr() string {
@@ -445,7 +505,7 @@ type RegisterStorageNodeResponse struct {
 
 func (x *RegisterStorageNodeResponse) Reset() {
 	*x = RegisterStorageNodeResponse{}
-	mi := &file_master_v1_storage_proto_msgTypes[8]
+	mi := &file_master_v1_storage_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -457,7 +517,7 @@ func (x *RegisterStorageNodeResponse) String() string {
 func (*RegisterStorageNodeResponse) ProtoMessage() {}
 
 func (x *RegisterStorageNodeResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_storage_proto_msgTypes[8]
+	mi := &file_master_v1_storage_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -470,7 +530,7 @@ func (x *RegisterStorageNodeResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use RegisterStorageNodeResponse.ProtoReflect.Descriptor instead.
 func (*RegisterStorageNodeResponse) Descriptor() ([]byte, []int) {
-	return file_master_v1_storage_proto_rawDescGZIP(), []int{8}
+	return file_master_v1_storage_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *RegisterStorageNodeResponse) GetNodeId() string {
@@ -491,13 +551,16 @@ const file_master_v1_storage_proto_rawDesc = "" +
 	"\x11HeartbeatResponse\"c\n" +
 	"\x14ReportStorageRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x122\n" +
-	"\areports\x18\x02 \x03(\v2\x18.master.v1.ReplicaReportR\areports\"\x91\x01\n" +
+	"\areports\x18\x02 \x03(\v2\x18.master.v1.ReplicaReportR\areports\"\xc8\x01\n" +
 	"\rReplicaReport\x122\n" +
-	"\x06staged\x18\x01 \x01(\v2\x18.master.v1.ReplicaStagedH\x00R\x06staged\x12B\n" +
-	"\fchain_failed\x18\x02 \x01(\v2\x1d.master.v1.ReplicaChainFailedH\x00R\vchainFailedB\b\n" +
-	"\x06record\";\n" +
+	"\x06staged\x18\x01 \x01(\v2\x18.master.v1.ReplicaStagedH\x00R\x06staged\x125\n" +
+	"\adeleted\x18\x02 \x01(\v2\x19.master.v1.ReplicaDeletedH\x00R\adeleted\x12B\n" +
+	"\fchain_failed\x18\x03 \x01(\v2\x1d.master.v1.ReplicaChainFailedH\x00R\vchainFailedB\b\n" +
+	"\x06report\";\n" +
 	"\rReplicaStaged\x12*\n" +
-	"\x05chunk\x18\x01 \x01(\v2\x14.common.v1.ChunkMetaR\x05chunk\"]\n" +
+	"\x05chunk\x18\x01 \x01(\v2\x14.common.v1.ChunkMetaR\x05chunk\"+\n" +
+	"\x0eReplicaDeleted\x12\x19\n" +
+	"\bchunk_id\x18\x01 \x01(\tR\achunkId\"]\n" +
 	"\x12ReplicaChainFailed\x12\x19\n" +
 	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12,\n" +
 	"\atargets\x18\x02 \x03(\v2\x12.common.v1.NodeRefR\atargets\"O\n" +
@@ -525,39 +588,41 @@ func file_master_v1_storage_proto_rawDescGZIP() []byte {
 	return file_master_v1_storage_proto_rawDescData
 }
 
-var file_master_v1_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 9)
+var file_master_v1_storage_proto_msgTypes = make([]protoimpl.MessageInfo, 10)
 var file_master_v1_storage_proto_goTypes = []any{
 	(*HeartbeatRequest)(nil),            // 0: master.v1.HeartbeatRequest
 	(*HeartbeatResponse)(nil),           // 1: master.v1.HeartbeatResponse
 	(*ReportStorageRequest)(nil),        // 2: master.v1.ReportStorageRequest
 	(*ReplicaReport)(nil),               // 3: master.v1.ReplicaReport
 	(*ReplicaStaged)(nil),               // 4: master.v1.ReplicaStaged
-	(*ReplicaChainFailed)(nil),          // 5: master.v1.ReplicaChainFailed
-	(*ReportStorageResponse)(nil),       // 6: master.v1.ReportStorageResponse
-	(*RegisterStorageNodeRequest)(nil),  // 7: master.v1.RegisterStorageNodeRequest
-	(*RegisterStorageNodeResponse)(nil), // 8: master.v1.RegisterStorageNodeResponse
-	(*v1.NodeStats)(nil),                // 9: common.v1.NodeStats
-	(*v1.ChunkMeta)(nil),                // 10: common.v1.ChunkMeta
-	(*v1.NodeRef)(nil),                  // 11: common.v1.NodeRef
+	(*ReplicaDeleted)(nil),              // 5: master.v1.ReplicaDeleted
+	(*ReplicaChainFailed)(nil),          // 6: master.v1.ReplicaChainFailed
+	(*ReportStorageResponse)(nil),       // 7: master.v1.ReportStorageResponse
+	(*RegisterStorageNodeRequest)(nil),  // 8: master.v1.RegisterStorageNodeRequest
+	(*RegisterStorageNodeResponse)(nil), // 9: master.v1.RegisterStorageNodeResponse
+	(*v1.NodeStats)(nil),                // 10: common.v1.NodeStats
+	(*v1.ChunkMeta)(nil),                // 11: common.v1.ChunkMeta
+	(*v1.NodeRef)(nil),                  // 12: common.v1.NodeRef
 }
 var file_master_v1_storage_proto_depIdxs = []int32{
-	9,  // 0: master.v1.HeartbeatRequest.stats:type_name -> common.v1.NodeStats
+	10, // 0: master.v1.HeartbeatRequest.stats:type_name -> common.v1.NodeStats
 	3,  // 1: master.v1.ReportStorageRequest.reports:type_name -> master.v1.ReplicaReport
 	4,  // 2: master.v1.ReplicaReport.staged:type_name -> master.v1.ReplicaStaged
-	5,  // 3: master.v1.ReplicaReport.chain_failed:type_name -> master.v1.ReplicaChainFailed
-	10, // 4: master.v1.ReplicaStaged.chunk:type_name -> common.v1.ChunkMeta
-	11, // 5: master.v1.ReplicaChainFailed.targets:type_name -> common.v1.NodeRef
-	7,  // 6: master.v1.MasterStorageService.RegisterStorageNode:input_type -> master.v1.RegisterStorageNodeRequest
-	0,  // 7: master.v1.MasterStorageService.Heartbeat:input_type -> master.v1.HeartbeatRequest
-	2,  // 8: master.v1.MasterStorageService.ReportStorage:input_type -> master.v1.ReportStorageRequest
-	8,  // 9: master.v1.MasterStorageService.RegisterStorageNode:output_type -> master.v1.RegisterStorageNodeResponse
-	1,  // 10: master.v1.MasterStorageService.Heartbeat:output_type -> master.v1.HeartbeatResponse
-	6,  // 11: master.v1.MasterStorageService.ReportStorage:output_type -> master.v1.ReportStorageResponse
-	9,  // [9:12] is the sub-list for method output_type
-	6,  // [6:9] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	5,  // 3: master.v1.ReplicaReport.deleted:type_name -> master.v1.ReplicaDeleted
+	6,  // 4: master.v1.ReplicaReport.chain_failed:type_name -> master.v1.ReplicaChainFailed
+	11, // 5: master.v1.ReplicaStaged.chunk:type_name -> common.v1.ChunkMeta
+	12, // 6: master.v1.ReplicaChainFailed.targets:type_name -> common.v1.NodeRef
+	8,  // 7: master.v1.MasterStorageService.RegisterStorageNode:input_type -> master.v1.RegisterStorageNodeRequest
+	0,  // 8: master.v1.MasterStorageService.Heartbeat:input_type -> master.v1.HeartbeatRequest
+	2,  // 9: master.v1.MasterStorageService.ReportStorage:input_type -> master.v1.ReportStorageRequest
+	9,  // 10: master.v1.MasterStorageService.RegisterStorageNode:output_type -> master.v1.RegisterStorageNodeResponse
+	1,  // 11: master.v1.MasterStorageService.Heartbeat:output_type -> master.v1.HeartbeatResponse
+	7,  // 12: master.v1.MasterStorageService.ReportStorage:output_type -> master.v1.ReportStorageResponse
+	10, // [10:13] is the sub-list for method output_type
+	7,  // [7:10] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_master_v1_storage_proto_init() }
@@ -567,6 +632,7 @@ func file_master_v1_storage_proto_init() {
 	}
 	file_master_v1_storage_proto_msgTypes[3].OneofWrappers = []any{
 		(*ReplicaReport_Staged)(nil),
+		(*ReplicaReport_Deleted)(nil),
 		(*ReplicaReport_ChainFailed)(nil),
 	}
 	type x struct{}
@@ -575,7 +641,7 @@ func file_master_v1_storage_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_master_v1_storage_proto_rawDesc), len(file_master_v1_storage_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   9,
+			NumMessages:   10,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

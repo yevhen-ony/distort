@@ -51,10 +51,14 @@ func (s *ReplicationWorker) ReplicateChunk(ctx context.Context, chunkID t.ChunkI
 
 	ctx = dosctx.WithChunkID(ctx, chunkID)
 
+	slog.DebugContext(ctx, "do replication")
+
 	chunk, err := s.chunkRepo.Get(ctx, chunkID)
 	if err != nil {
 		return fmt.Errorf("read chunk %s: %w", chunkID, err)
 	}
+
+
 
 	wantedReplicaCount, err := s.objectRepo.GetReplication(ctx, chunk.ObjectID)
 	if err != nil {
@@ -65,6 +69,11 @@ func (s *ReplicationWorker) ReplicateChunk(ctx context.Context, chunkID t.ChunkI
 	if count == 0 {
 		return nil
 	}
+	slog.DebugContext(ctx, "replication decision",
+		"wanted", wantedReplicaCount,
+		"actual", chunk.ReplicaCount,
+		"delta", count,
+  	)
 
 	if chunk.ReplicaCount == 0 {
 		return nil
@@ -89,8 +98,9 @@ func (s *ReplicationWorker) ReplicateChunk(ctx context.Context, chunkID t.ChunkI
 
 func (s *ReplicationWorker) AddReplica(ctx context.Context, meta t.ChunkMeta, count int) (t.NodeID, error) {
 
-	ctx = dosctx.WithChunkID(ctx, meta.ID)
 	ctx = dosctx.WithOperation(ctx, "add")
+
+	slog.DebugContext(ctx, "add replica")
 
 	sources, err := s.placement.GetChunkNodes(ctx, meta.ID)
 	if err != nil {
@@ -132,6 +142,8 @@ func (s *ReplicationWorker) DeleteReplica(ctx context.Context, meta t.ChunkMeta,
 	
 	ctx = dosctx.WithOperation(ctx, "delete")
 
+	slog.DebugContext(ctx, "delete replica")
+
 	nodeRefs, err := s.placement.GetChunkNodes(ctx, meta.ID)
 	if err != nil {
 		slog.ErrorContext(ctx, "get chunk nodes while deleting replica", "error", err )
@@ -158,6 +170,7 @@ func (s *ReplicationWorker) RunLoop(ctx context.Context) {
 	for {
 		chunkID, err := s.queue.Pop(ctx)
 		if err != nil {
+			slog.ErrorContext(ctx, "replication loop failed", "error", err)
 			return
 		}
 		_ = s.ReplicateChunk(ctx, chunkID)

@@ -94,6 +94,7 @@ func (s *CatalogService) ListObjects(ctx context.Context) []t.ObjectInfo {
 		return t.ObjectInfo {
 			ID: o.ID,
 			ChunkCount: len(o.Chunks),
+			Replication: o.Replication,
 		}
 	})
 }

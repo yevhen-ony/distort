@@ -191,13 +191,16 @@ func (svc *StorageService) DeleteChunk(ctx context.Context, chunkID t.ChunkID) e
 		return nil
 	}
 
+	if err := svc.diskStore.Delete(chunkID); err != nil {
+		return fmt.Errorf("delete data from disk: %w", err)
+	}
+
 	svc.state.Mu.Lock()
 	delete(svc.state.Catalog, chunkID)
 	svc.state.Mu.Unlock()
 
-	if err := svc.diskStore.Delete(chunkID); err != nil {
-		return fmt.Errorf("delete data from disk: %w", err)
-	}
+	svc.reporter.Report(ctx, t.NewReplicaDeleted(chunkID).ToRecord())
+
 	return nil
 }
 

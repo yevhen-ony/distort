@@ -113,6 +113,7 @@ func ObjectInfoFromPB(pbInfo *mpb.ObjectInfo) t.ObjectInfo {
 	return t.ObjectInfo{
 		ID:         t.ObjectID(pbInfo.GetObjectId()),
 		ChunkCount: int(pbInfo.GetChunkCount()),
+		Replication: int(pbInfo.GetReplication()),
 	}
 }
 
@@ -155,17 +156,29 @@ func ReplicaChainFailedReportFromPB(pb *mpb.ReplicaChainFailed) *t.ReplicaChainF
 	}
 }
 
+func ReplicaDeletedReportFromPB(pb *mpb.ReplicaDeleted) *t.ReplicaDeletedReport {
+	if pb == nil {
+		return nil
+	}
+	return &t.ReplicaDeletedReport{
+		ChunkID: t.ChunkID(pb.GetChunkId()),
+	}
+}
+
 func ReplicaReportFromPB(pb *mpb.ReplicaReport) t.StorageNodeReport {
 	if pb == nil {
 		return t.StorageNodeReport{}
 	}
 
-	switch rec := pb.GetRecord().(type) {
+	switch rec := pb.GetReport().(type) {
 	case *mpb.ReplicaReport_Staged:
 		return ReplicaStagedReportFromPB(rec.Staged).ToRecord()
 
 	case *mpb.ReplicaReport_ChainFailed:
 		return ReplicaChainFailedReportFromPB(rec.ChainFailed).ToRecord()
+	
+	case *mpb.ReplicaReport_Deleted:
+		return ReplicaDeletedReportFromPB(rec.Deleted).ToRecord()
 
 	default:
 		return t.StorageNodeReport{}

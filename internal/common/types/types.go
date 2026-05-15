@@ -31,8 +31,9 @@ type ObjectDesc struct {
 }
 
 type ObjectInfo struct {
-	ID         ObjectID
-	ChunkCount int
+	ID          ObjectID
+	ChunkCount  int
+	Replication int
 }
 
 type ObjectAccess struct {
@@ -84,7 +85,12 @@ type ReplicaChainFailedReport struct {
 	Targets []NodeRef
 }
 
+type ReplicaDeletedReport struct {
+	ChunkID ChunkID
+}
+
 type StorageNodeReport struct {
 	ReplicaStaged      *ReplicaStagedReport
 	ReplicaChainFailed *ReplicaChainFailedReport
+	ReplicaDeleted     *ReplicaDeletedReport
 }

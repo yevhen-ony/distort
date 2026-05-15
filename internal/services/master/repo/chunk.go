@@ -5,6 +5,7 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"fmt"
+	"log/slog"
 	"sync"
 
 	"dos/internal/common/digest"
@@ -92,31 +93,29 @@ func (r *InMemChunkRepo) Get(_ context.Context, id t.ChunkID) (m.Chunk, error) {
 	return *chunk.Clone(), nil
 }
 
-func (r *InMemChunkRepo) IncReplication(_ context.Context, id t.ChunkID) error {
+func (r *InMemChunkRepo) IncReplication(ctx context.Context, chunkID t.ChunkID) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	chunk, ok := r.chunks[id]	
+	chunk, ok := r.chunks[chunkID]	
 	if !ok {
-		return m.ErrChunkNotFound 
+		slog.WarnContext(ctx, "try increment replication of non-existing chunk", "chunk_id", chunkID)
 	}
 	chunk.ReplicaCount++
-	return nil
 }
 
-func (r *InMemChunkRepo) DecReplication(_ context.Context, id t.ChunkID) error {
+func (r *InMemChunkRepo) DecReplication(ctx context.Context, chunkID t.ChunkID) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	chunk, ok := r.chunks[id]
+	chunk, ok := r.chunks[chunkID]
 	if !ok {
-		return m.ErrChunkNotFound
+		slog.WarnContext(ctx, "try decrement replication of non-existing chunk", "chunk_id", chunkID)
 	}
 	if chunk.ReplicaCount == 0 {
-		return m.ErrChunkReplicaUnderflow
+		slog.WarnContext(ctx, "try decrement replication below zero", "chunk_id", chunkID)
 	}
 	chunk.ReplicaCount--
-	return nil
 }
 
 func (r *InMemChunkRepo) List(_ context.Context) []m.Chunk {

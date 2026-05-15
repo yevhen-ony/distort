@@ -26,14 +26,19 @@ message ReportStorageRequest {
 }
 
 message ReplicaReport {
-  oneof record {
+  oneof report {
     ReplicaStaged staged = 1;
-    ReplicaChainFailed chain_failed = 2;
+    ReplicaDeleted deleted = 2;
+    ReplicaChainFailed chain_failed = 3;
   }
 }
 
 message ReplicaStaged {
   common.v1.ChunkMeta chunk = 1;
+}
+
+message ReplicaDeleted {
+  string chunk_id = 1;
 }
 
 message ReplicaChainFailed {

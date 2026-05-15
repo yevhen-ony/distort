@@ -7,9 +7,9 @@ import (
 )
 
 type Object struct {
-	ID                 t.ObjectID
-	Chunks             map[t.ChunkKey]t.ChunkID
-	DesiredReplication int
+	ID          t.ObjectID
+	Chunks      map[t.ChunkKey]t.ChunkID
+	Replication int
 }
 
 func (o *Object) Clone() *Object {
@@ -23,6 +23,7 @@ func (o *Object) Clone() *Object {
 	return &Object{
 		ID:     o.ID,
 		Chunks: chunks,
+		Replication: o.Replication,
 	}
 }
 

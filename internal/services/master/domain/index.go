@@ -79,11 +79,31 @@ func (i *InMemChunkNodeIndex) DetachNode(_ context.Context, nodeID t.NodeID) {
 	i.mu.Lock()	
 	defer i.mu.Unlock()
 
-	for chunkID := range i.nodeChunks[nodeID] {
-		delete(i.chunkNodes[chunkID], nodeID)
-		if len(i.chunkNodes[chunkID]) == 0 {
-			delete(i.chunkNodes, chunkID)
-		}
+	chunks := slices.Collect(maps.Keys(i.nodeChunks[nodeID]))
+	for _, chunkID := range chunks {
+		i.detachChunk(nodeID, chunkID)
 	}
-	delete(i.nodeChunks, nodeID)
+}
+
+func (i *InMemChunkNodeIndex) DetachChunk(_ context.Context, nodeID t.NodeID, chunkID t.ChunkID) bool {
+	i.mu.Lock()
+	defer i.mu.Unlock()
+	
+	if _, ok := i.chunkNodes[chunkID][nodeID]; !ok {
+		return false
+	}
+
+	i.detachChunk(nodeID, chunkID)
+	return true
+}
+
+func (i *InMemChunkNodeIndex) detachChunk(nodeID t.NodeID, chunkID t.ChunkID) {
+	delete(i.chunkNodes[chunkID], nodeID)
+	if len(i.chunkNodes[chunkID]) == 0 {
+		delete(i.chunkNodes, chunkID)
+	}
+	delete(i.nodeChunks[nodeID], chunkID)
+	if len(i.nodeChunks[nodeID]) == 0 {
+		delete(i.nodeChunks, nodeID) 
+	}
 }

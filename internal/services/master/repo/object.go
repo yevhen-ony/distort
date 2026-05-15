@@ -30,7 +30,7 @@ func (o *InMemObjectRepo) Create(_ context.Context, oid t.ObjectID, desiredRepli
 	o.objects[oid] = &m.Object{
 		ID: oid,
 		Chunks: map[t.ChunkKey]t.ChunkID{},
-		DesiredReplication: desiredReplication,
+		Replication: desiredReplication,
 	}
 	return nil
 }
@@ -54,7 +54,7 @@ func (o *InMemObjectRepo) GetReplication(_ context.Context, oid t.ObjectID) (int
 	if !ok {
 		return 0, m.ErrObjectNotFound
 	}
-	return obj.DesiredReplication, nil
+	return obj.Replication, nil
 }
 
 func (o *InMemObjectRepo) SetReplication(_ context.Context, oid t.ObjectID, count int) error {
@@ -68,7 +68,7 @@ func (o *InMemObjectRepo) SetReplication(_ context.Context, oid t.ObjectID, coun
 	if !ok {
 		return m.ErrObjectNotFound
 	}
-	obj.DesiredReplication = count
+	obj.Replication = count
 	return nil
 }
 

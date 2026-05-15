@@ -36,6 +36,7 @@ func (s *ReportService) Report(
 ) (t.ReportResult, error) {
 
 	ctx = dosctx.WithService(ctx, "report")
+	ctx = dosctx.WithNodeID(ctx, nodeID)
 
 	if _, err := s.nodeRegistry.Get(ctx, nodeID); err != nil {
 		return t.ReportResult{}, fmt.Errorf("get node %s: %w", nodeID, err)
@@ -59,6 +60,11 @@ func (s *ReportService) Report(
 				"targets", r.Targets,
 			)
 			s.replication.Schedule(ctx, r.ChunkID)
+			continue
+		}
+		if report.ReplicaDeleted != nil {
+			r := report.ReplicaDeleted
+			s.reportDeletedReplica(ctx, nodeID, r)
 		}
 	}
 	return result, nil
@@ -68,6 +74,7 @@ func (s *ReportService) reportStagedReplica(
 	ctx context.Context, nodeID t.NodeID, report *t.ReplicaStagedReport,
 ) error {
 	meta := report.Chunk
+	slog.DebugContext(ctx, "staged replica reported", "chunk_id", meta.ID)
 
 	if err := s.chunkRepository.SetDigest(ctx, meta.ID, meta.Digest); err != nil {
 		slog.WarnContext(ctx, "reject chunk report", "chunk_id", meta.ID, "reason", err)
@@ -77,4 +84,15 @@ func (s *ReportService) reportStagedReplica(
 		s.chunkRepository.IncReplication(ctx, meta.ID)
 	}
 	return nil
+}
+
+func (s *ReportService) reportDeletedReplica(
+	ctx context.Context, nodeID t.NodeID, report *t.ReplicaDeletedReport,
+) {
+	chunkID := report.ChunkID 
+	slog.DebugContext(ctx, "deleted replica reported", "chunk_id", chunkID)
+
+	if s.chunkNodeIndex.DetachChunk(ctx, nodeID, chunkID) {
+		s.chunkRepository.DecReplication(ctx, chunkID)
+	}
 }

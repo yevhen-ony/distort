@@ -170,7 +170,10 @@ func (s *ClientServer) SetReplication(
 		}
 	}()
 
-	slog.DebugContext(ctx, "set replication requested", "object_id", req.GetObjectId())
+	slog.DebugContext(ctx, "set replication requested",
+		"object_id", req.GetObjectId(),
+		"count", req.GetCount(),
+	)
 	err = s.facade.SetReplication(ctx, t.ObjectID(req.GetObjectId()), int(req.GetCount()))
 	if err != nil {
 		return nil, err

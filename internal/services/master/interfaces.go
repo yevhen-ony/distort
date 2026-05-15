@@ -55,8 +55,8 @@ type ChunkRepo interface {
 	Create(context.Context, t.ChunkID, t.ObjectID, t.ChunkKey) error
 	Get(context.Context, t.ChunkID) (Chunk, error)
 	SetDigest(context.Context, t.ChunkID, *digest.Digest) error
-	IncReplication(context.Context, t.ChunkID) error
-	DecReplication(context.Context, t.ChunkID) error
+	IncReplication(context.Context, t.ChunkID)
+	DecReplication(context.Context, t.ChunkID)
 	List(context.Context) []Chunk
 }
 
@@ -80,6 +80,7 @@ type NodeRegistry interface {
 
 type ChunkNodeIndex interface {
 	AttachChunk(ctx context.Context, nodeID t.NodeID, chunkID t.ChunkID) bool
+	DetachChunk(ctx context.Context, nodeID t.NodeID, chunkID t.ChunkID) bool
 	DetachNode(ctx context.Context, nodeID t.NodeID)
 
 	GetChunkNodes(ctx context.Context, chunkID t.ChunkID) []t.NodeID

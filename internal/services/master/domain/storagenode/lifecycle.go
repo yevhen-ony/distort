@@ -7,7 +7,6 @@ import (
 	"dos/internal/common/utils"
 	m "dos/internal/services/master"
 	"fmt"
-	"log/slog"
 	"time"
 )
 
@@ -66,15 +65,11 @@ func (s *LifecycleService) Remove(ctx context.Context, nodeID t.NodeID) ([]t.Chu
 	}
 	
 	chunks := s.chunkNodeIndex.GetNodeChunks(ctx, nodeID)
-	for _, chunkID := range chunks {
-
-		if err := s.chunkRepository.DecReplication(ctx, chunkID); err != nil {
-			slog.ErrorContext(ctx, "failed to dec chunk replication", "chunk_id", chunkID, "error", err)
-		}
-	}
-
 	s.chunkNodeIndex.DetachNode(ctx, nodeID)
 	s.nodeRegistry.Unregister(ctx, nodeID)
+	for _, chunkID := range chunks {
+		s.chunkRepository.DecReplication(ctx, chunkID)
+	}
 
 	return chunks, nil 
 }

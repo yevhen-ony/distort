@@ -52,6 +52,7 @@ func ObjectInfoToPB(info t.ObjectInfo) *mpb.ObjectInfo {
 	return &mpb.ObjectInfo{
 		ObjectId:   string(info.ID),
 		ChunkCount: int64(info.ChunkCount),
+		Replication: int64(info.Replication),
 	}
 }
 
@@ -96,18 +97,30 @@ func ReplicaChainFailedReportToPB(r t.ReplicaChainFailedReport) *mpb.ReplicaChai
 	}
 }
 
+func ReplicaDeletedReportToPB(r t.ReplicaDeletedReport) *mpb.ReplicaDeleted {
+	return &mpb.ReplicaDeleted{
+		ChunkId: string(r.ChunkID),
+	}
+}
+
+
 func ReplicaReportToPB(rr t.StorageNodeReport) *mpb.ReplicaReport {
 	switch {
 	case rr.ReplicaStaged != nil:
 		return &mpb.ReplicaReport{
-			Record: &mpb.ReplicaReport_Staged{
+			Report: &mpb.ReplicaReport_Staged{
 				Staged: ReplicaStagedReportToPB(*rr.ReplicaStaged),
 			},
 		}
-
+	case rr.ReplicaDeleted != nil:
+		return &mpb.ReplicaReport{
+			Report: &mpb.ReplicaReport_Deleted{
+				Deleted: ReplicaDeletedReportToPB(*rr.ReplicaDeleted),
+			},
+		}
 	case rr.ReplicaChainFailed != nil:
 		return &mpb.ReplicaReport{
-			Record: &mpb.ReplicaReport_ChainFailed{
+			Report: &mpb.ReplicaReport_ChainFailed{
 				ChainFailed: ReplicaChainFailedReportToPB(*rr.ReplicaChainFailed),
 			},
 		}

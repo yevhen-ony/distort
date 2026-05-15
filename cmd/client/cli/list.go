@@ -13,9 +13,9 @@ func (app *App) ListObjects(ctx context.Context) error {
 	}
 
 	b := &strings.Builder{}
-	fmt.Fprintf(b, "%-20s %10s\n", "OBJECT_ID", "CHUNK_COUNT")
+	fmt.Fprintf(b, "%-20s %11s %11s\n", "OBJECT_ID", "CHUNK_COUNT", "REPLICATION")
 	for _, info := range infos {
-		fmt.Fprintf(b, "%-20s %10d\n", info.ID, info.ChunkCount)
+		fmt.Fprintf(b, "%-20s %11d %11d\n", info.ID, info.ChunkCount, info.Replication)
 	}
 
 	fmt.Print(b.String())
