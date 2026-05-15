@@ -182,21 +182,27 @@ func (svc *StorageService) ReplicateChunk(
 
 func (svc *StorageService) DeleteChunk(ctx context.Context, chunkID t.ChunkID) error {
 
-	svc.state.Mu.RLock()
+	ctx = dosctx.WithChunkID(ctx, chunkID)
+	ctx = dosctx.WithOperation(ctx, "delete")
+
+	svc.state.Mu.Lock()
 	_, ok := svc.state.Catalog[chunkID]
-	svc.state.Mu.RUnlock()
+	svc.state.Mu.Unlock()
 
 	if !ok {
-		slog.WarnContext(ctx, "delete non-existing chunk", "chunk_id", chunkID)
+		slog.WarnContext(ctx, "delete non-existing chunk")
 		return nil
 	}
-
+	
 	if err := svc.diskStore.Delete(chunkID); err != nil {
 		return fmt.Errorf("delete data from disk: %w", err)
 	}
 
 	svc.state.Mu.Lock()
-	delete(svc.state.Catalog, chunkID)
+	if chunk, ok := svc.state.Catalog[chunkID]; ok {
+		delete(svc.state.Catalog, chunkID)
+		svc.state.TotalBytes -= chunk.Meta.Digest.Size
+	}
 	svc.state.Mu.Unlock()
 
 	svc.reporter.Report(ctx, t.NewReplicaDeleted(chunkID).ToRecord())
