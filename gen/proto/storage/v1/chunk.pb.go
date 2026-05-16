@@ -263,6 +263,7 @@ type PutChunkHeader struct {
 	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
 	ChunkId       string                 `protobuf:"bytes,2,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
 	Digest        *v1.Digest             `protobuf:"bytes,3,opt,name=digest,proto3" json:"digest,omitempty"`
+	Targets       []*v1.NodeRef          `protobuf:"bytes,4,rep,name=targets,proto3" json:"targets,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -314,6 +315,13 @@ func (x *PutChunkHeader) GetChunkId() string {
 func (x *PutChunkHeader) GetDigest() *v1.Digest {
 	if x != nil {
 		return x.Digest
+	}
+	return nil
+}
+
+func (x *PutChunkHeader) GetTargets() []*v1.NodeRef {
+	if x != nil {
+		return x.Targets
 	}
 	return nil
 }
@@ -526,11 +534,12 @@ const file_storage_v1_chunk_proto_rawDesc = "" +
 	"\x16ReplicateChunkResponse\"W\n" +
 	"\x0fPutChunkRequest\x120\n" +
 	"\x06header\x18\x01 \x01(\v2\x18.chunk.v1.PutChunkHeaderR\x06header\x12\x12\n" +
-	"\x04data\x18\x02 \x01(\fR\x04data\"o\n" +
+	"\x04data\x18\x02 \x01(\fR\x04data\"\x9d\x01\n" +
 	"\x0ePutChunkHeader\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x19\n" +
 	"\bchunk_id\x18\x02 \x01(\tR\achunkId\x12)\n" +
-	"\x06digest\x18\x03 \x01(\v2\x11.common.v1.DigestR\x06digest\"\x12\n" +
+	"\x06digest\x18\x03 \x01(\v2\x11.common.v1.DigestR\x06digest\x12,\n" +
+	"\atargets\x18\x04 \x03(\v2\x12.common.v1.NodeRefR\atargets\"\x12\n" +
 	"\x10PutChunkResponse\"E\n" +
 	"\x0fGetChunkRequest\x12\x17\n" +
 	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x19\n" +
@@ -578,21 +587,22 @@ var file_storage_v1_chunk_proto_depIdxs = []int32{
 	10, // 0: chunk.v1.ReplicateChunkRequest.targets:type_name -> common.v1.NodeRef
 	5,  // 1: chunk.v1.PutChunkRequest.header:type_name -> chunk.v1.PutChunkHeader
 	11, // 2: chunk.v1.PutChunkHeader.digest:type_name -> common.v1.Digest
-	9,  // 3: chunk.v1.GetChunkResponse.header:type_name -> chunk.v1.GetChunkHeader
-	11, // 4: chunk.v1.GetChunkHeader.digest:type_name -> common.v1.Digest
-	4,  // 5: chunk.v1.ChunkService.PutChunk:input_type -> chunk.v1.PutChunkRequest
-	7,  // 6: chunk.v1.ChunkService.GetChunk:input_type -> chunk.v1.GetChunkRequest
-	2,  // 7: chunk.v1.ChunkService.ReplicateChunk:input_type -> chunk.v1.ReplicateChunkRequest
-	0,  // 8: chunk.v1.ChunkService.DeleteChunk:input_type -> chunk.v1.DeleteChunkRequest
-	6,  // 9: chunk.v1.ChunkService.PutChunk:output_type -> chunk.v1.PutChunkResponse
-	8,  // 10: chunk.v1.ChunkService.GetChunk:output_type -> chunk.v1.GetChunkResponse
-	3,  // 11: chunk.v1.ChunkService.ReplicateChunk:output_type -> chunk.v1.ReplicateChunkResponse
-	1,  // 12: chunk.v1.ChunkService.DeleteChunk:output_type -> chunk.v1.DeleteChunkResponse
-	9,  // [9:13] is the sub-list for method output_type
-	5,  // [5:9] is the sub-list for method input_type
-	5,  // [5:5] is the sub-list for extension type_name
-	5,  // [5:5] is the sub-list for extension extendee
-	0,  // [0:5] is the sub-list for field type_name
+	10, // 3: chunk.v1.PutChunkHeader.targets:type_name -> common.v1.NodeRef
+	9,  // 4: chunk.v1.GetChunkResponse.header:type_name -> chunk.v1.GetChunkHeader
+	11, // 5: chunk.v1.GetChunkHeader.digest:type_name -> common.v1.Digest
+	4,  // 6: chunk.v1.ChunkService.PutChunk:input_type -> chunk.v1.PutChunkRequest
+	7,  // 7: chunk.v1.ChunkService.GetChunk:input_type -> chunk.v1.GetChunkRequest
+	2,  // 8: chunk.v1.ChunkService.ReplicateChunk:input_type -> chunk.v1.ReplicateChunkRequest
+	0,  // 9: chunk.v1.ChunkService.DeleteChunk:input_type -> chunk.v1.DeleteChunkRequest
+	6,  // 10: chunk.v1.ChunkService.PutChunk:output_type -> chunk.v1.PutChunkResponse
+	8,  // 11: chunk.v1.ChunkService.GetChunk:output_type -> chunk.v1.GetChunkResponse
+	3,  // 12: chunk.v1.ChunkService.ReplicateChunk:output_type -> chunk.v1.ReplicateChunkResponse
+	1,  // 13: chunk.v1.ChunkService.DeleteChunk:output_type -> chunk.v1.DeleteChunkResponse
+	10, // [10:14] is the sub-list for method output_type
+	6,  // [6:10] is the sub-list for method input_type
+	6,  // [6:6] is the sub-list for extension type_name
+	6,  // [6:6] is the sub-list for extension extendee
+	0,  // [0:6] is the sub-list for field type_name
 }
 
 func init() { file_storage_v1_chunk_proto_init() }

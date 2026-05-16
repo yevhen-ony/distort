@@ -39,7 +39,7 @@ func (st *Transport) NewTransferSession(nodes []t.NodeRef, opts ...SessionOption
 	session := &Session{
 		config: st.config,
 		conn: st.conn,
-		nodes: nodes,
+		targets: nodes,
 	}
 	for _, opt := range opts {
 		opt(session)

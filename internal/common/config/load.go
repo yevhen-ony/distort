@@ -37,6 +37,7 @@ func LoadConfig[TConfig any](path string, config *TConfig) error {
 	conf := koanf.UnmarshalConf{
 		Tag: "yaml",
 		DecoderConfig: &mapstructure.DecoderConfig{
+			WeaklyTypedInput: true,
 			DecodeHook: mapstructure.ComposeDecodeHookFunc(
 				mapstructure.StringToTimeDurationHookFunc(),
 				mapstructure.TextUnmarshallerHookFunc(),

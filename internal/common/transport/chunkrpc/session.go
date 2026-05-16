@@ -1,4 +1,4 @@
-package chunkrpc 
+package chunkrpc
 
 import (
 	"bytes"
@@ -8,6 +8,7 @@ import (
 	"dos/internal/common/connect"
 	"dos/internal/common/convert"
 	t "dos/internal/common/types"
+	"dos/internal/common/utils"
 	"errors"
 	"fmt"
 	"io"
@@ -17,7 +18,7 @@ import (
 type Session struct {
 	config     Config
 	conn       *connect.ConnCache
-	nodes      []t.NodeRef
+	targets      []t.NodeRef
 
 	onProgress ProgressHandler
 	progress   Progress
@@ -25,20 +26,27 @@ type Session struct {
 
 func (s *Session) Upload(ctx context.Context, chunk *t.Chunk) (t.NodeID, error) {
 	var errs []error
-	for _, node := range s.nodes {
-		err := s.uploadToNode(ctx, node, chunk)
+	others := make([]t.NodeRef, 0, len(s.targets))
+	for i, target := range s.targets {
+		others = others[:0]
+		others = append(others, s.targets[:i]...)
+		others = append(others, s.targets[i+1:]...)
+
+		err := s.uploadToNode(ctx, target, chunk, others)
 		if err == nil {
-			return node.ID, nil
+			return target.ID, nil
 		}
-		slog.WarnContext(ctx, "send chunk failed", "addr", node.Addr, "chunk", chunk.Meta.ID, "error", err)
-		errs = append(errs, fmt.Errorf("send chunk %s to %s failed: %w", chunk.Meta.ID, node.Addr, err))
+		slog.WarnContext(ctx, "send chunk failed", "addr", target.Addr, "chunk", chunk.Meta.ID, "error", err)
+		errs = append(errs, fmt.Errorf("send chunk %s to %s failed: %w", chunk.Meta.ID, target.Addr, err))
 	}
 	return "", fmt.Errorf("all candidate nodes failed: %w", errors.Join(errs...))
 }
 
+func (s *Session) uploadToNode(
+	ctx context.Context, target t.NodeRef, chunk *t.Chunk, others []t.NodeRef,
+) error {
 
-func (s *Session) uploadToNode(ctx context.Context, nodeRef t.NodeRef, chunk *t.Chunk) error {
-	conn, err := s.conn.Get(nodeRef.Addr)
+	conn, err := s.conn.Get(target.Addr)
 	if err != nil {
 		return fmt.Errorf("get conn: %w", err)
 	}
@@ -50,15 +58,16 @@ func (s *Session) uploadToNode(ctx context.Context, nodeRef t.NodeRef, chunk *t.
 		return fmt.Errorf("open put stream: %w", err)
 	}
 	header := &spb.PutChunkHeader{
-		NodeId:  string(nodeRef.ID),
+		NodeId:  string(target.ID),
 		ChunkId: string(chunk.Meta.ID),
 		Digest: &pb.Digest{
 			Size:     int64(chunk.Meta.Digest.Size),
 			Checksum: string(chunk.Meta.Digest.Checksum),
 		},
+		Targets: utils.Map(others, convert.NodeRefToPB),
 	}
 
-	s.progress = NewProgress(chunk.Meta, nodeRef)
+	s.progress = NewProgress(chunk.Meta, target)
 	s.emitProgress()
 
 	err = stream.Send(&spb.PutChunkRequest{Header: header})
@@ -98,7 +107,7 @@ func (s *Session) uploadData(stream spb.ChunkService_PutChunkClient, data []byte
 
 func (s *Session) Download(ctx context.Context, chunkID t.ChunkID) (t.Chunk, error) {
 	var errs []error
-	for _, node := range s.nodes {
+	for _, node := range s.targets {
 		chunk, err := s.downloadFromNode(ctx, node, chunkID)
 		if err == nil {
 			return chunk, nil

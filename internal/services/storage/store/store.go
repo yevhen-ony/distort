@@ -9,12 +9,10 @@ import (
 
 	"dos/internal/common/digest"
 	t "dos/internal/common/types"
-	s "dos/internal/services/storage"
 )
 
 type FSChunkStorage struct {
 	commitDir string
-	tempDir   string
 }
 
 type ChunkStorageConfig interface {
@@ -28,14 +26,8 @@ func NewChunkStorage(config ChunkStorageConfig) (*FSChunkStorage, error) {
 		return nil, fmt.Errorf("get commit dir: %w", err)
 	}
 
-	tempDir, err := getTempDir(config.StorageRootDir())
-	if err != nil {
-		return nil, fmt.Errorf("get temp dir: %w", err)
-	}
-
 	s := &FSChunkStorage{
 		commitDir: commitDir,
-		tempDir:   tempDir,
 	}
 	return s, nil
 }
@@ -98,17 +90,54 @@ func (stg *FSChunkStorage) List() ([]t.ChunkID, error) {
 	return chunks, nil
 }
 
-func (stg *FSChunkStorage) NewWriter() (s.ChunkWriter, error) {
+func (stg *FSChunkStorage) Store(chunk t.Chunk) (err error) {
+	
+	chunkPath := filepath.Join(stg.commitDir, string(chunk.Meta.ID))
+	defer func() {
+		if err != nil {
+			_ = os.Remove(chunkPath)	
+		}
+	}()
 
-	fd, err := os.CreateTemp(stg.tempDir, "chunk-*")
+	f, err := os.OpenFile(chunkPath, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o644)
 	if err != nil {
-		return nil, fmt.Errorf("create temp: %w", err)
+		return fmt.Errorf("new chunk file: %w", err)
+	}
+	defer func() {
+		syncErr := f.Sync()
+		closeErr := f.Close() 
+  		if err == nil {
+  			if syncErr != nil {
+  				err = fmt.Errorf("sync chunk file: %w", syncErr)
+  			} else if closeErr != nil {
+  				err = fmt.Errorf("close chunk file: %w", closeErr)
+  			}
+  		}
+  	}()
+
+	n, err := f.Write(chunk.Data)
+	if err != nil {
+		return fmt.Errorf("write chunk file: %w", err) 
+	}
+	if n != len(chunk.Data) {
+		return fmt.Errorf("write chunk file: %w", io.ErrShortWrite)
 	}
 
-	w := &FSChunkWriter{
-		fd:        fd,
-		commitDir: stg.commitDir,
-		dg:        digest.New(),
+	return nil
+}
+
+func getCommitDir(rootDir string) (string, error) {
+	commitDir := filepath.Join(rootDir, "chunks")
+	if err := ensureDirExists(commitDir); err != nil {
+		return "", err
 	}
-	return w, nil
+	return commitDir, nil
+}
+
+func ensureDirExists(path string) error {
+	err := os.MkdirAll(path, 0o755)
+	if err != nil && !errors.Is(err, os.ErrExist) {
+		return fmt.Errorf("create dir: %w", err)
+	}
+	return nil
 }

@@ -4,6 +4,8 @@ services:
     image: dos-master:latest
     ports:
       - "10000:10000"
+    environment:
+      - SERVICE__REPLICATION_COUNT=2
 
   storage1:
     profiles: [main]

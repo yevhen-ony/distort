@@ -4,22 +4,15 @@ import (
 	"context"
 	"io"
 
-	"dos/internal/common/digest"
 	t "dos/internal/common/types"
 )
-
-type ChunkWriter interface {
-	io.WriteCloser
-	Digest() *digest.Digest
-	Commit(t.ChunkID) error
-}
 
 type ChunkStorage interface {
 	Get(t.ChunkID) (io.ReadCloser, error)
 	GetMeta(t.ChunkID) (t.ChunkMeta, error)
-	NewWriter() (ChunkWriter, error)
 	List() ([]t.ChunkID, error)
 	Delete(t.ChunkID) error
+	Store(chunk t.Chunk) error
 }
 
 type HeartbeatResult struct {
