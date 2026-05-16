@@ -48,6 +48,8 @@ type ObjectRepo interface {
 	SetReplication(context.Context, t.ObjectID, int) error
 	List(context.Context) []Object
 	AddChunk(context.Context, t.ObjectID, t.ChunkKey, t.ChunkID) error
+	RemoveChunk(context.Context, t.ObjectID, t.ChunkKey)
+	DeleteObject(context.Context, t.ObjectID) error
 }
 
 type ChunkRepo interface {
@@ -58,6 +60,7 @@ type ChunkRepo interface {
 	IncReplication(context.Context, t.ChunkID)
 	DecReplication(context.Context, t.ChunkID)
 	List(context.Context) []Chunk
+	DeleteWithNoReplicas(context.Context, t.ChunkID) bool
 }
 
 type NodeQuery struct {

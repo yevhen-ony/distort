@@ -7,6 +7,7 @@ import (
 	"dos/internal/common/listener"
 	"dos/internal/services/master/api"
 	"dos/internal/services/master/domain"
+	"dos/internal/services/master/domain/catalog"
 	"dos/internal/services/master/domain/replicate"
 	"dos/internal/services/master/domain/storagenode"
 	"dos/internal/services/master/repo"
@@ -23,8 +24,9 @@ type App struct {
 	nodeRegistry     *repo.InMemNodeRegistry
 	chunkNodeIndex   *domain.InMemChunkNodeIndex
 
-	replicate        *replicate.ReplicationWorker
-	catalog          *domain.CatalogService
+	replicateService *replicate.ReplicationExecutor
+	catalogService   *catalog.CatalogService
+	catalogCleanup   *catalog.CatalogCleanup
 	storageLifecycle *storagenode.LifecycleService
 	storagePlacement *storagenode.PlacementService
 	storageReport    *storagenode.ReportService
@@ -48,10 +50,12 @@ func NewApp(config *Config) (*App, error) {
 	nodeRegistry := repo.NewInMemNodeRegistry()
 	chunkNodeIndex := domain.NewInMemChunkNodeIndex()
 
-	catalog := domain.NewCatalogService(
+	catalogSerivce := catalog.NewCatalogService(
 		objectRepo,
 		chunkRepo,
 	)
+
+	catalogCleanup, _ := catalog.NewCatalogCleanup(objectRepo, chunkRepo, config)
 
 	storagePlacement := storagenode.NewPlacementService(
 		chunkNodeIndex,
@@ -59,7 +63,7 @@ func NewApp(config *Config) (*App, error) {
 		config,
 	)
 
-	replicate := replicate.NewReplicationWorker(
+	replicateService := replicate.NewReplicationExecutor(
 		chunkRepo,
 		objectRepo,
 		storagePlacement,
@@ -77,20 +81,20 @@ func NewApp(config *Config) (*App, error) {
 		chunkNodeIndex,
 		chunkRepo,
 		nodeRegistry,
-		replicate,
+		replicateService,
 	)
 
 	storageCleanup := storagenode.NewCleanupWorker(
 		storageLifecycle,
-		replicate,
+		replicateService,
 		config,
 	)
 
 	clientFacade := domain.NewClientFacadeService(
-		catalog,
+		catalogSerivce,
 		storagePlacement,
 		storageLifecycle,
-		replicate,
+		replicateService,
 		config,
 	)
 
@@ -105,12 +109,13 @@ func NewApp(config *Config) (*App, error) {
 		nodeRegistry:     nodeRegistry,
 		chunkNodeIndex:   chunkNodeIndex,
 
-		catalog:          catalog,
+		catalogService:   catalogSerivce,
+		catalogCleanup:   catalogCleanup,
 		storageLifecycle: storageLifecycle,
 		storagePlacement: storagePlacement,
 		storageReport:    storageReport,
 		storageCleanup:   storageCleanup,
-		replicate:        replicate,
+		replicateService: replicateService,
 
 		storageAPI: storageAPI,
 		clientAPI:  clientAPI,
@@ -124,8 +129,9 @@ func (app *App) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	go app.replicate.RunLoop(ctx)
+	go app.replicateService.RunLoop(ctx)
 	go app.storageCleanup.RunLoop(ctx)
+	go app.catalogCleanup.RunLoop(ctx)
 
 	err := listener.RunGRPCServer(ctx, &app.config.Listen, func(s *grpc.Server) {
 		mpb.RegisterMasterStorageServiceServer(s, app.storageAPI)

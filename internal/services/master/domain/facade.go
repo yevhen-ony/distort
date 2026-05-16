@@ -4,6 +4,7 @@ import (
 	"context"
 	t "dos/internal/common/types"
 	m "dos/internal/services/master"
+	"dos/internal/services/master/domain/catalog"
 	"dos/internal/services/master/domain/storagenode"
 	"fmt"
 	"log/slog"
@@ -18,7 +19,7 @@ type ReplicationScheduler interface {
 }
 
 type ClientFacadeService struct {
-	catalog   *CatalogService
+	catalog   *catalog.CatalogService
 	placement *storagenode.PlacementService
 	lifecycle *storagenode.LifecycleService
 	replicate ReplicationScheduler
@@ -27,7 +28,7 @@ type ClientFacadeService struct {
 }
 
 func NewClientFacadeService(
-	objectCatalog *CatalogService,
+	objectCatalog *catalog.CatalogService,
 	placement *storagenode.PlacementService,
 	lifecycle *storagenode.LifecycleService,
 	replicate ReplicationScheduler,

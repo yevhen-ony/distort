@@ -97,3 +97,33 @@ func (o *InMemObjectRepo) AddChunk(_ context.Context, oid t.ObjectID, key t.Chun
 	obj.Chunks[key] = cid 
 	return nil
 }
+
+func (o *InMemObjectRepo) RemoveChunk(_ context.Context, objectID t.ObjectID, chunkKey t.ChunkKey) {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	obj, ok := o.objects[objectID]
+	if !ok {
+		return 
+	}
+
+	delete(obj.Chunks, chunkKey)
+}
+
+func (o *InMemObjectRepo) DeleteObject(_ context.Context, objectID t.ObjectID) error {
+	o.mu.Lock()
+	defer o.mu.Unlock()
+
+	obj, ok := o.objects[objectID]
+	if !ok {
+		return nil
+	}
+	
+	if len(obj.Chunks) > 0 {
+		return m.ErrObjectNotEmpty 
+	}
+
+	delete(o.objects, objectID)
+	return nil
+
+}

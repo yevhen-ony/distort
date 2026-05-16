@@ -18,7 +18,8 @@ type ServiceConfig struct {
 	ChunkAllocationMargin  config.Size   `yaml:"chunk_allocation_margin"`
 	NodeInactivityTimeout  time.Duration `yaml:"node_inactivity_timeout"`
 	NodeCleanupInterval    time.Duration `yaml:"node_cleanup_interval"`
-	ReplicationQueueLength int           `yanl:"reconcile_queue_length"`
+	ReplicationQueueLength int           `yaml:"reconcile_queue_length"`
+	CatalogCleanupInterval time.Duration `yaml:"catalog_cleanup_interval"`
 }
 
 func (c *Config) ReplicationCount() int {
@@ -39,4 +40,8 @@ func (c *Config) NodeInactivityTimeout() time.Duration {
 
 func (c *Config) ReplicationQueueLength() int {
 	return c.Service.ReplicationQueueLength
+}
+
+func (c *Config) CatalogCleanupInterval() time.Duration {
+	return c.Service.CatalogCleanupInterval
 }

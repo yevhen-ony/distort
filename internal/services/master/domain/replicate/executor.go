@@ -21,7 +21,7 @@ type ReplicationConfig interface {
 	ReplicationQueueLength() int
 }
 
-type ReplicationWorker struct {
+type ReplicationExecutor struct {
 	chunkRepo  m.ChunkRepo
 	objectRepo m.ObjectRepo
 	placement m.StorageNodePlacement
@@ -31,14 +31,14 @@ type ReplicationWorker struct {
 	queue *Queue
 }
 
-func NewReplicationWorker(
+func NewReplicationExecutor(
 	chunkRepo m.ChunkRepo,
 	objectRepo m.ObjectRepo,
 	placement m.StorageNodePlacement,
 	transport *transport.Storage,
 	config ReplicationConfig,
-) *ReplicationWorker {
-	return &ReplicationWorker{
+) *ReplicationExecutor {
+	return &ReplicationExecutor{
 		chunkRepo: chunkRepo,
 		objectRepo: objectRepo,
 		placement: placement,
@@ -47,7 +47,7 @@ func NewReplicationWorker(
 	}
 }
 
-func (s *ReplicationWorker) ReplicateChunk(ctx context.Context, chunkID t.ChunkID) error {
+func (s *ReplicationExecutor) ReplicateChunk(ctx context.Context, chunkID t.ChunkID) error {
 
 	ctx = dosctx.WithChunkID(ctx, chunkID)
 
@@ -96,7 +96,7 @@ func (s *ReplicationWorker) ReplicateChunk(ctx context.Context, chunkID t.ChunkI
 	return nil
 }
 
-func (s *ReplicationWorker) AddReplica(ctx context.Context, meta t.ChunkMeta, count int) (t.NodeID, error) {
+func (s *ReplicationExecutor) AddReplica(ctx context.Context, meta t.ChunkMeta, count int) (t.NodeID, error) {
 
 	ctx = dosctx.WithOperation(ctx, "add")
 
@@ -138,7 +138,7 @@ func (s *ReplicationWorker) AddReplica(ctx context.Context, meta t.ChunkMeta, co
 	return "", ErrReplicationAttemptsExhausted
 }
 
-func (s *ReplicationWorker) DeleteReplica(ctx context.Context, meta t.ChunkMeta, count int) error {
+func (s *ReplicationExecutor) DeleteReplica(ctx context.Context, meta t.ChunkMeta, count int) error {
 	
 	ctx = dosctx.WithOperation(ctx, "delete")
 
@@ -165,7 +165,7 @@ func (s *ReplicationWorker) DeleteReplica(ctx context.Context, meta t.ChunkMeta,
 	return errors.Join(errs...)
 }
 
-func (s *ReplicationWorker) RunLoop(ctx context.Context) {
+func (s *ReplicationExecutor) RunLoop(ctx context.Context) {
 	ctx = dosctx.WithService(ctx, "replication")
 	for {
 		chunkID, err := s.queue.Pop(ctx)
@@ -177,6 +177,6 @@ func (s *ReplicationWorker) RunLoop(ctx context.Context) {
 	}
 }
 
-func (s *ReplicationWorker) Schedule(ctx context.Context, chunkID t.ChunkID) {
+func (s *ReplicationExecutor) Schedule(ctx context.Context, chunkID t.ChunkID) {
 	s.queue.Enqueue(ctx, chunkID)
 }

@@ -58,7 +58,7 @@ func (srv *Server) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) 
 		return err
 	}
 
-	slog.DebugContext(ctx, "put chunk request")
+	slog.DebugContext(ctx, "put chunk requested")
 
 	meta := convert.ChunkMetaFromPB(header)
 	builder, err := srv.storage.StartUpload(ctx, &meta)

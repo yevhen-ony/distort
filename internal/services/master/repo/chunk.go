@@ -128,3 +128,20 @@ func (r *InMemChunkRepo) List(_ context.Context) []m.Chunk {
 	}
 	return result 
 }
+
+func (r *InMemChunkRepo) DeleteWithNoReplicas(_ context.Context, chunkID t.ChunkID) bool {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	chunk, ok := r.chunks[chunkID]
+	if !ok {
+		return true 
+	}
+
+	if chunk.ReplicaCount > 0 {
+		return false
+	}
+
+	delete(r.chunks, chunkID)
+	return true
+}
