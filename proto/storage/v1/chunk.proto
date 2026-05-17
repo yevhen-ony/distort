@@ -38,7 +38,6 @@ message PutChunkHeader {
   string node_id = 1;
   string chunk_id = 2;
   common.v1.Digest digest = 3;
-  repeated common.v1.NodeRef targets = 4;
 }
 
 message PutChunkResponse {}

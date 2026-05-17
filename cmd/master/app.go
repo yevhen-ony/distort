@@ -2,16 +2,17 @@ package main
 
 import (
 	"context"
+
 	mpb "dos/gen/proto/master/v1"
 	"dos/internal/common/connect"
 	"dos/internal/common/listener"
+	"dos/internal/common/transport/chunkrpc"
 	"dos/internal/services/master/api"
 	"dos/internal/services/master/domain"
 	"dos/internal/services/master/domain/catalog"
 	"dos/internal/services/master/domain/replicate"
 	"dos/internal/services/master/domain/storagenode"
 	"dos/internal/services/master/repo"
-	"dos/internal/services/master/transport"
 
 	"google.golang.org/grpc"
 )
@@ -43,7 +44,7 @@ type App struct {
 func NewApp(config *Config) (*App, error) {
 	conn := connect.NewConnCache()
 
-	storageTransport := transport.NewStorage(conn)
+	storageTransport, _ := chunkrpc.NewTransport(conn, config)
 
 	objectRepo := repo.NewInMemObjectRepo()
 	chunkRepo := repo.NewInMemChunkRepo()

@@ -5,7 +5,7 @@ services:
     ports:
       - "10000:10000"
     environment:
-      - SERVICE__REPLICATION_COUNT=2
+      - SERVICE__REPLICATION_COUNT=1
 
   storage1:
     profiles: [main]
@@ -25,6 +25,16 @@ services:
     environment:
       - TRANSPORT__MASTER_ADDR=master:10000
       - TRANSPORT__ADVERTISE_ADDR=storage2:10001
+      - STORE__ROOT_DIR=/data
+  
+  storage3:
+    profiles: [main]
+    image: dos-storage:latest
+    depends_on:
+      - master
+    environment:
+      - TRANSPORT__MASTER_ADDR=master:10000
+      - TRANSPORT__ADVERTISE_ADDR=storage3:10001
       - STORE__ROOT_DIR=/data
 
   client:

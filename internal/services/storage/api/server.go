@@ -85,17 +85,9 @@ func (srv *Server) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) 
 		return fmt.Errorf("commit upload: %w", err)
 	}
 
-	chainCtx := context.WithoutCancel(ctx)
-
 	if err := stream.SendAndClose(&spb.PutChunkResponse{}); err != nil {
 		return fmt.Errorf("close stream: %w", err)
 	}
-
-	targets := utils.Map(header.GetTargets(), convert.NodeRefFromPB)
-	if len(targets) > 0 {
-		go srv.storage.SendChunk(chainCtx, builder.Chunk(), targets)
-	}
-
 	return nil
 }
 
@@ -115,7 +107,7 @@ func (srv *Server) GetChunk(req *spb.GetChunkRequest, stream spb.ChunkService_Ge
 		return err
 	}
 
-	chunk, err := srv.storage.GetChunk(t.ChunkID(req.GetChunkId()))
+	chunk, err := srv.storage.LoadChunk(t.ChunkID(req.GetChunkId()))
 	if err != nil {
 		return fmt.Errorf("get chunk: %w", err)
 	}
@@ -165,7 +157,7 @@ func (srv *Server) ReplicateChunk(
 	targets := utils.Map(req.GetTargets(), convert.NodeRefFromPB)
 	replCtx := context.WithoutCancel(ctx)
 	go func() {
-		_ = srv.storage.ReplicateChunk(replCtx, chunkID, targets)
+		_ = srv.storage.ForwardChunk(replCtx, chunkID, targets)
 	}()
 
 	rsp = &spb.ReplicateChunkResponse{}

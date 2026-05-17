@@ -8,7 +8,6 @@ import (
 	"dos/internal/common/connect"
 	"dos/internal/common/convert"
 	t "dos/internal/common/types"
-	"dos/internal/common/utils"
 	"errors"
 	"fmt"
 	"io"
@@ -24,7 +23,7 @@ type Session struct {
 	progress   Progress
 }
 
-func (s *Session) Upload(ctx context.Context, chunk *t.Chunk) (t.NodeID, error) {
+func (s *Session) Upload(ctx context.Context, chunk *t.Chunk) (t.NodeRef, error) {
 	var errs []error
 	others := make([]t.NodeRef, 0, len(s.targets))
 	for i, target := range s.targets {
@@ -34,12 +33,12 @@ func (s *Session) Upload(ctx context.Context, chunk *t.Chunk) (t.NodeID, error) 
 
 		err := s.uploadToNode(ctx, target, chunk, others)
 		if err == nil {
-			return target.ID, nil
+			return target, nil
 		}
 		slog.WarnContext(ctx, "send chunk failed", "addr", target.Addr, "chunk", chunk.Meta.ID, "error", err)
 		errs = append(errs, fmt.Errorf("send chunk %s to %s failed: %w", chunk.Meta.ID, target.Addr, err))
 	}
-	return "", fmt.Errorf("all candidate nodes failed: %w", errors.Join(errs...))
+	return t.NodeRef{}, fmt.Errorf("all candidate nodes failed: %w", errors.Join(errs...))
 }
 
 func (s *Session) uploadToNode(
@@ -64,7 +63,6 @@ func (s *Session) uploadToNode(
 			Size:     int64(chunk.Meta.Digest.Size),
 			Checksum: string(chunk.Meta.Digest.Checksum),
 		},
-		Targets: utils.Map(others, convert.NodeRefToPB),
 	}
 
 	s.progress = NewProgress(chunk.Meta, target)

@@ -14,12 +14,17 @@ type Config struct {
 }
 
 type ServiceConfig struct {
+	FrameSize              config.Size   `yaml:"frame_size"`
 	ReplicationCount       int           `yaml:"replication_count"`
 	ChunkAllocationMargin  config.Size   `yaml:"chunk_allocation_margin"`
 	NodeInactivityTimeout  time.Duration `yaml:"node_inactivity_timeout"`
 	NodeCleanupInterval    time.Duration `yaml:"node_cleanup_interval"`
 	ReplicationQueueLength int           `yaml:"reconcile_queue_length"`
 	CatalogCleanupInterval time.Duration `yaml:"catalog_cleanup_interval"`
+}
+
+func (c *Config) FrameSize() int64 {
+	return int64(c.Service.FrameSize)
 }
 
 func (c *Config) ReplicationCount() int {

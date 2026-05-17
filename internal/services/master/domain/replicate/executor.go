@@ -10,7 +10,7 @@ import (
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
 	m "dos/internal/services/master"
-	"dos/internal/services/master/transport"
+	"dos/internal/common/transport/chunkrpc"
 )
 
 var (
@@ -26,7 +26,7 @@ type ReplicationExecutor struct {
 	objectRepo m.ObjectRepo
 	placement m.StorageNodePlacement
 
-	transport *transport.Storage
+	transport *chunkrpc.Transport
 
 	queue *Queue
 }
@@ -35,7 +35,7 @@ func NewReplicationExecutor(
 	chunkRepo m.ChunkRepo,
 	objectRepo m.ObjectRepo,
 	placement m.StorageNodePlacement,
-	transport *transport.Storage,
+	transport *chunkrpc.Transport,
 	config ReplicationConfig,
 ) *ReplicationExecutor {
 	return &ReplicationExecutor{
@@ -57,8 +57,6 @@ func (s *ReplicationExecutor) ReplicateChunk(ctx context.Context, chunkID t.Chun
 	if err != nil {
 		return fmt.Errorf("read chunk %s: %w", chunkID, err)
 	}
-
-
 
 	wantedReplicaCount, err := s.objectRepo.GetReplication(ctx, chunk.ObjectID)
 	if err != nil {

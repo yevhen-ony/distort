@@ -131,7 +131,7 @@ func (svc *StorageService) CommitUpload(
 	return nil
 }
 
-func (svc *StorageService) GetChunk(chunkID t.ChunkID) (t.Chunk, error) {
+func (svc *StorageService) LoadChunk(chunkID t.ChunkID) (t.Chunk, error) {
 	svc.state.Mu.RLock()
 	state, ok := svc.state.Catalog[chunkID]
 	svc.state.Mu.RUnlock()
@@ -156,40 +156,78 @@ func (svc *StorageService) GetChunk(chunkID t.ChunkID) (t.Chunk, error) {
 	return chunk, nil
 }
 
-func (svc *StorageService) ReplicateChunk(
+func (svc *StorageService) ForwardChunk(
 	ctx context.Context, chunkID t.ChunkID, targets []t.NodeRef,
 ) error {
 
-	chunk, err := svc.GetChunk(chunkID)
+	slog.DebugContext(ctx, "forward chunk")
+
+	slog.DebugContext(ctx, "load chunk")
+	chunk, err := svc.LoadChunk(chunkID)
 	if err != nil {
 		return fmt.Errorf("get chunk: %w", err)
 	}
-	return svc.SendChunk(ctx, chunk, targets)
+
+	ctx, cancel := context.WithTimeout(ctx, svc.config.ReplicationTimeout())
+	defer cancel()
+
+	slog.DebugContext(ctx, "send chunk")
+	chosen, err := svc.SendChunk(ctx, chunk, targets)
+	if err != nil {
+		return fmt.Errorf("send chunk: %w", err)
+	}
+
+	targets = utils.Select(targets, func(r t.NodeRef) bool {
+		return r.ID != chosen.ID
+	})
+
+	if len(targets) == 0 {
+		return nil
+	}
+	
+	slog.DebugContext(ctx, "handoff replicate chunk", "source", chosen.ID)
+	if err := svc.ReplicateChunk(ctx, chunkID, chosen, targets); err != nil {
+		return fmt.Errorf("replicate chunk: %w", err)
+	}
+
+	return nil
 }
 
 func (svc *StorageService) SendChunk( 
 	ctx context.Context, chunk t.Chunk, targets []t.NodeRef,
-) error {
-	ctx, cancel := context.WithTimeout(ctx, svc.config.ReplicationTimeout())
-	defer cancel()
+) (t.NodeRef, error) {
 
 	targets = utils.Select(targets, func(r t.NodeRef) bool {
 		return r.ID != svc.identity.nodeID
 	})
 	if len(targets) == 0 {
-		return s.ErrNoValidTargets 
+		return t.NodeRef{}, s.ErrNoValidTargets 
 	}
 
 	session := svc.chunkTransport.NewTransferSession(targets)
-	if _, err := session.Upload(ctx, &chunk); err != nil {
-		slog.ErrorContext(ctx, "chunk replication failed", "targets", targets, "error", err)
+	chosen, err := session.Upload(ctx, &chunk)
+	if err != nil {
+		slog.ErrorContext(ctx, "push chunk failed", "targets", targets, "error", err)
 
 		svc.reporter.Report(ctx, t.NewReplicaChainFailed(chunk.Meta.ID, targets).ToRecord())
 		svc.reporter.Flush(ctx)
 
-		return fmt.Errorf("upload replica: %w", err)
+		return t.NodeRef{}, fmt.Errorf("upload replica: %w", err)
 	}
 
+	return chosen, nil
+}
+
+func (svc *StorageService) ReplicateChunk(
+	ctx context.Context, chunkID t.ChunkID, source t.NodeRef, targets []t.NodeRef,
+) error {
+
+	err := svc.chunkTransport.ReplicateChunk(ctx, chunkID, source, targets)
+	if err != nil {
+		slog.ErrorContext(ctx, "replicate chunk failed",
+			"source", source, "targets", targets, "error", err)
+		return fmt.Errorf("replicate chunk: %w", err)
+	}
 	return nil
 }
 
