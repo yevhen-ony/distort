@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	"fmt"
+
 	spb "dos/gen/proto/storage/v1"
 	"dos/internal/common/connect"
 	"dos/internal/common/listener"
@@ -12,8 +14,6 @@ import (
 	"dos/internal/services/storage/core/report"
 	"dos/internal/services/storage/store"
 	"dos/internal/services/storage/transport"
-
-	"fmt"
 
 	"google.golang.org/grpc"
 )

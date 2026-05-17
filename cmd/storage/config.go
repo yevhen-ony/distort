@@ -33,6 +33,7 @@ type ServiceConfig struct {
 	ReplicationTimeout  time.Duration `yaml:"replication_timeout"`
 	ReportInterval      time.Duration `yaml:"report_interval"`
 	ReportQueueCapacity int           `yaml:"report_queue_capacity"`
+	MaxParallelHeavyOps int           `yaml:"max_parallel_heavy_ops"`
 }
 
 func (cfg *Config) MaxStorage() int64 {
@@ -73,4 +74,8 @@ func (cfg *Config) ReplicationTimeout() time.Duration {
 
 func (cfg *Config) QueueCapacity() int {
 	return cfg.Service.ReportQueueCapacity
+}
+
+func (cfg *Config) MaxParallelHeavyOps() int {
+	return cfg.Service.MaxParallelHeavyOps
 }

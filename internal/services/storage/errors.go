@@ -15,4 +15,6 @@ var (
 	ErrNodeNotRegistered = errors.New("node is not registered")
 
 	ErrNoValidTargets = errors.New("no valid targets provided")
+	
+	ErrServiceBusy = errors.New("service busy")
 )

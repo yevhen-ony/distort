@@ -60,8 +60,14 @@ func (srv *Server) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) 
 
 	slog.DebugContext(ctx, "put chunk requested")
 
+	release, err := srv.storage.AcquireOpSlot(ctx)
+	if err != nil {
+		return err
+	}
+	defer release()
+
 	meta := convert.ChunkMetaFromPB(header)
-	builder, err := srv.storage.StartUpload(ctx, &meta)
+	session, err := srv.storage.StartUpload(ctx, &meta)
 	if err != nil {
 		return fmt.Errorf("start upload session: %w", err)
 	}
@@ -75,12 +81,12 @@ func (srv *Server) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) 
 		if err != nil {
 			return fmt.Errorf("receive data request: %w", err)
 		}
-		if _, err = builder.Write(req.GetData()); err != nil {
+		if _, err = session.Write(req.GetData()); err != nil {
 			return fmt.Errorf("write to upload session: %w", err)
 		}
 	}
 
-	err = srv.storage.CommitUpload(ctx, builder.Chunk(), &meta)
+	err = srv.storage.CommitUpload(ctx, session.Chunk(), &meta)
 	if err != nil {
 		return fmt.Errorf("commit upload: %w", err)
 	}
@@ -102,7 +108,13 @@ func (srv *Server) GetChunk(req *spb.GetChunkRequest, stream spb.ChunkService_Ge
 		}
 	}()
 	slog.DebugContext(ctx, "get chunk request")
-	
+
+	release, err := srv.storage.AcquireOpSlot(ctx)
+	if err != nil {
+		return err
+	}
+	defer release()
+
 	if err = srv.identity.Validate(t.NodeID(req.GetNodeId())); err != nil {
 		return err
 	}
@@ -155,10 +167,10 @@ func (srv *Server) ReplicateChunk(
 
 	chunkID := t.ChunkID(req.GetChunkId())
 	targets := utils.Map(req.GetTargets(), convert.NodeRefFromPB)
-	replCtx := context.WithoutCancel(ctx)
-	go func() {
-		_ = srv.storage.ForwardChunk(replCtx, chunkID, targets)
-	}()
+	err = srv.storage.ScheduleForwardChunk(ctx, chunkID, targets)
+	if err != nil {
+		return nil, err
+	}
 
 	rsp = &spb.ReplicateChunkResponse{}
 	return rsp, nil
@@ -213,4 +225,3 @@ func (srv *Server) validatePutChunkHeader(header *spb.PutChunkHeader) error {
 	}
 	return nil
 }
-

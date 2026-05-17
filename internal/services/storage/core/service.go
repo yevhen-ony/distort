@@ -21,6 +21,7 @@ type StorageServiceConfig interface {
 	HeartbeatInterval() time.Duration
 	ReportInterval() time.Duration
 	ReplicationTimeout() time.Duration
+	MaxParallelHeavyOps() int	
 }
 
 type Reporter interface {
@@ -44,6 +45,8 @@ type StorageService struct {
 	reporter Reporter
 
 	config StorageServiceConfig
+
+	sem chan struct{}
 }
 
 func NewStorageService(
@@ -74,6 +77,8 @@ func NewStorageService(
 		identity:        identity,
 		reporter:        &NOOPReporter{},
 		config:          config,
+
+		sem: make(chan struct{}, config.MaxParallelHeavyOps()),
 	}
 	return service, nil
 }
@@ -88,6 +93,18 @@ func (svc *StorageService) Start(ctx context.Context) error {
 	}
 	slog.Debug("catalog built", "chunks", len(svc.state.Catalog))
 	return nil
+}
+
+func (svc *StorageService) AcquireOpSlot(ctx context.Context) (func(), error) {
+	acqCtx, cancel := context.WithTimeout(ctx, time.Second)
+	defer cancel()
+
+	select {
+	case <-acqCtx.Done():
+		return nil, s.ErrServiceBusy
+	case svc.sem <- struct{}{}:
+		return func() { <-svc.sem }, nil
+	}
 }
 
 func (svc *StorageService) StartUpload(_ context.Context, meta *t.ChunkMeta) (*ChunkBuilder, error) {
@@ -193,6 +210,31 @@ func (svc *StorageService) ForwardChunk(
 	return nil
 }
 
+func (svc *StorageService) ScheduleForwardChunk(
+	ctx context.Context, chunkID t.ChunkID, targets []t.NodeRef,
+) error {
+
+	svc.state.Mu.RLock()
+	_, ok := svc.state.Catalog[chunkID]
+	svc.state.Mu.RUnlock()
+	if !ok {
+		return s.ErrChunkNotFound
+	}
+
+	release, err := svc.AcquireOpSlot(ctx)
+	if err != nil {
+		return err
+	}
+
+	fwdCtx := context.WithoutCancel(ctx)
+	go func() {
+		defer release()
+		_ = svc.ForwardChunk(fwdCtx, chunkID, targets)
+	}()
+
+	return nil
+}
+
 func (svc *StorageService) SendChunk( 
 	ctx context.Context, chunk t.Chunk, targets []t.NodeRef,
 ) (t.NodeRef, error) {
@@ -226,6 +268,10 @@ func (svc *StorageService) ReplicateChunk(
 	if err != nil {
 		slog.ErrorContext(ctx, "replicate chunk failed",
 			"source", source, "targets", targets, "error", err)
+
+		svc.reporter.Report(ctx, t.NewReplicaChainFailed(chunkID, targets).ToRecord())
+		svc.reporter.Flush(ctx)
+
 		return fmt.Errorf("replicate chunk: %w", err)
 	}
 	return nil

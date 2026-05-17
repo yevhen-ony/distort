@@ -22,6 +22,8 @@ func toStatus(err error) error {
 	}
 
 	switch {
+	case errors.Is(err, s.ErrServiceBusy):
+		return status.Error(codes.ResourceExhausted, err.Error())
 	case errors.Is(err, s.ErrInvalidDigest):
 		return status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, s.ErrChunkNotFound):

@@ -22,3 +22,5 @@ service:
 
   report_interval: 15s
   report_queue_capacity: 10
+
+  max_parallel_heavy_ops: 1
