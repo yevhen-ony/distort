@@ -14,3 +14,4 @@ service:
   node_cleanup_interval: 15s
   replication_queue_length: 100
   catalog_cleanup_interval: 20s
+  replication_interval: 5s

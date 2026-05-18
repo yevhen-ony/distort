@@ -94,7 +94,7 @@ func (app *App) Start(ctx context.Context) error {
 		return fmt.Errorf("start storage service: %w", err) 
 	}
 
-	go app.reportService.RunReportLoop(ctx)
+	go app.reportService.RunLoop(ctx)
 	go app.storageService.RunHearbeatLoop(ctx)
 
 	go app.runGrpcServer(ctx)

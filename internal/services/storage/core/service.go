@@ -179,6 +179,13 @@ func (svc *StorageService) ForwardChunk(
 
 	slog.DebugContext(ctx, "forward chunk")
 
+	targets = utils.Select(targets, func(r t.NodeRef) bool {
+		return r.ID != svc.identity.nodeID
+	})
+	if len(targets) == 0 {
+		return s.ErrNoValidTargets 
+	}
+
 	slog.DebugContext(ctx, "load chunk")
 	chunk, err := svc.LoadChunk(chunkID)
 	if err != nil {
@@ -203,7 +210,8 @@ func (svc *StorageService) ForwardChunk(
 	}
 	
 	slog.DebugContext(ctx, "handoff replicate chunk", "source", chosen.ID)
-	if err := svc.ReplicateChunk(ctx, chunkID, chosen, targets); err != nil {
+	err = svc.ReplicateChunk(ctx, chunkID, chosen, targets)
+	if err != nil {
 		return fmt.Errorf("replicate chunk: %w", err)
 	}
 
@@ -238,13 +246,6 @@ func (svc *StorageService) ScheduleForwardChunk(
 func (svc *StorageService) SendChunk( 
 	ctx context.Context, chunk t.Chunk, targets []t.NodeRef,
 ) (t.NodeRef, error) {
-
-	targets = utils.Select(targets, func(r t.NodeRef) bool {
-		return r.ID != svc.identity.nodeID
-	})
-	if len(targets) == 0 {
-		return t.NodeRef{}, s.ErrNoValidTargets 
-	}
 
 	session := svc.chunkTransport.NewTransferSession(targets)
 	chosen, err := session.Upload(ctx, &chunk)

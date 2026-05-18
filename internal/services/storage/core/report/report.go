@@ -3,6 +3,7 @@ package report
 import (
 	"context"
 	"dos/internal/common/dosctx"
+	"dos/internal/common/queue"
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
 	"dos/internal/services/storage/transport"
@@ -27,30 +28,30 @@ type ReportProcessor interface{
 type NOPReportProcessor struct {}
 func (*NOPReportProcessor) Process(context.Context, t.ReportResult) {}
 
-
 type ReportService struct {
 	identity IdentityProvider 
 	master *transport.Master
 
 	config Config
 
-	queue *Queue
 	pending []t.StorageNodeReport
 	processor ReportProcessor
+	
+	queue *queue.Queue[t.StorageNodeReport]
 
-	wake chan struct{}
+	flush chan struct{}
 }
 
 func NewReportService(
 	identity IdentityProvider, master *transport.Master, cfg Config, 
 ) *ReportService {
-
+	queue := queue.NewQueue[t.StorageNodeReport](cfg.QueueCapacity())
 	return &ReportService {
 		identity: identity,
 		master: master,
 		config: cfg,
-		queue: NewReportQueue(cfg.QueueCapacity()),
-		wake: make(chan struct{}, 1),
+		queue: queue,
+		flush: make(chan struct{}, 1),
 		processor: &NOPReportProcessor{},
 	}
 }
@@ -60,20 +61,24 @@ func (rs *ReportService) SetReportProcessor(p ReportProcessor) {
 }
 
 func (rs *ReportService) Report(ctx context.Context, report t.StorageNodeReport) {
-	rs.queue.Enqueue(ctx, report)
-	if rs.queue.IsFull() {
+	if err := rs.queue.Enq(ctx, report); err != nil {
+		return 
+	}
+	if rs.queue.Full() {
 		rs.Flush(ctx)
 	}
 }
 
 func (rs *ReportService) Flush(ctx context.Context) {
 	select {
-	case rs.wake <- struct{}{}:
-	case <-ctx.Done():
+	case rs.flush <- struct{}{}:
+	default:
 	}
 }
 
 func (rs *ReportService) RunReportIteration(ctx context.Context) {
+
+	slog.DebugContext(ctx, "exec report chunks")
 
 	if len(rs.pending) > 0 {
 		result, err := rs.SendReports(ctx, rs.pending)
@@ -122,7 +127,7 @@ func (rs *ReportService) SendReports(
 	return result, nil
 }
 
-func (rs *ReportService) RunReportLoop(ctx context.Context) {
+func (rs *ReportService) RunLoop(ctx context.Context) {
 	timer := time.NewTimer(0)
 	defer timer.Stop()
 	
@@ -133,10 +138,9 @@ func (rs *ReportService) RunReportLoop(ctx context.Context) {
 		case <-ctx.Done():
 			return
 		case <-timer.C:
-		case <-rs.wake:
+		case <-rs.flush:
 		}
 
-		slog.DebugContext(ctx, "exec report chunks")
 		rs.RunReportIteration(ctx)
 
 		interval := utils.Jitter(rs.config.ReportInterval(), 0.2) 
