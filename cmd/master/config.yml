@@ -13,5 +13,7 @@ service:
   node_inactivity_timeout: 30s
   node_cleanup_interval: 15s
   replication_queue_length: 100
-  catalog_cleanup_interval: 20s
-  replication_interval: 5s
+  catalog_cleanup_interval: 15s
+  replication_exec_interval: 3s
+  chunk_stale_after: 15s
+  replication_planner_interval: 15s

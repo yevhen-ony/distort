@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 
 	mpb "dos/gen/proto/master/v1"
 	"dos/internal/common/connect"
@@ -25,13 +26,14 @@ type App struct {
 	nodeRegistry     *repo.InMemNodeRegistry
 	chunkNodeIndex   *domain.InMemChunkNodeIndex
 
-	replicateService *replicate.ReplicationExecutor
-	catalogService   *catalog.CatalogService
-	catalogCleanup   *catalog.CatalogCleanup
-	storageLifecycle *storagenode.LifecycleService
-	storagePlacement *storagenode.PlacementService
-	storageReport    *storagenode.ReportService
-	storageCleanup   *storagenode.CleanupWorker
+	replicateExecutor *replicate.ReplicationExecutor
+	replicatePlanner  *replicate.ReplicationPlanner
+	catalogService    *catalog.CatalogService
+	catalogCleanup    *catalog.CatalogCleanup
+	storageLifecycle  *storagenode.LifecycleService
+	storagePlacement  *storagenode.PlacementService
+	storageReport     *storagenode.ReportService
+	storageCleanup    *storagenode.CleanupWorker
 
 	clientFacade *domain.ClientFacadeService
 
@@ -56,7 +58,10 @@ func NewApp(config *Config) (*App, error) {
 		chunkRepo,
 	)
 
-	catalogCleanup, _ := catalog.NewCatalogCleanup(objectRepo, chunkRepo, config)
+	catalogCleanup, err := catalog.NewCatalogCleanup(objectRepo, chunkRepo, config)
+	if err != nil {
+		return nil, fmt.Errorf("catalog cleanup init: %w", err)
+	}
 
 	storagePlacement := storagenode.NewPlacementService(
 		chunkNodeIndex,
@@ -64,13 +69,23 @@ func NewApp(config *Config) (*App, error) {
 		config,
 	)
 
-	replicateService := replicate.NewReplicationExecutor(
+	replicateExecutor := replicate.NewReplicationExecutor(
 		chunkRepo,
 		objectRepo,
 		storagePlacement,
 		storageTransport,
 		config,
 	)
+
+	replicatePlanner, err := replicate.NewReplicationPlanner(
+		objectRepo,
+		chunkRepo,
+		replicateExecutor,
+		config,
+	)
+	if err != nil {
+		return nil, fmt.Errorf("replicate planner init: %w", err)
+	}
 
 	storageLifecycle := storagenode.NewLifecycleService(
 		chunkNodeIndex,
@@ -82,12 +97,12 @@ func NewApp(config *Config) (*App, error) {
 		chunkNodeIndex,
 		chunkRepo,
 		nodeRegistry,
-		replicateService,
+		replicateExecutor,
 	)
 
 	storageCleanup := storagenode.NewCleanupWorker(
 		storageLifecycle,
-		replicateService,
+		replicateExecutor,
 		config,
 	)
 
@@ -95,7 +110,7 @@ func NewApp(config *Config) (*App, error) {
 		catalogSerivce,
 		storagePlacement,
 		storageLifecycle,
-		replicateService,
+		replicateExecutor,
 		config,
 	)
 
@@ -110,13 +125,14 @@ func NewApp(config *Config) (*App, error) {
 		nodeRegistry:     nodeRegistry,
 		chunkNodeIndex:   chunkNodeIndex,
 
-		catalogService:   catalogSerivce,
-		catalogCleanup:   catalogCleanup,
-		storageLifecycle: storageLifecycle,
-		storagePlacement: storagePlacement,
-		storageReport:    storageReport,
-		storageCleanup:   storageCleanup,
-		replicateService: replicateService,
+		catalogService:    catalogSerivce,
+		catalogCleanup:    catalogCleanup,
+		storageLifecycle:  storageLifecycle,
+		storagePlacement:  storagePlacement,
+		storageReport:     storageReport,
+		storageCleanup:    storageCleanup,
+		replicateExecutor: replicateExecutor,
+		replicatePlanner:  replicatePlanner,
 
 		storageAPI: storageAPI,
 		clientAPI:  clientAPI,
@@ -130,7 +146,8 @@ func (app *App) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	go app.replicateService.RunLoop(ctx)
+	go app.replicatePlanner.RunLoop(ctx)
+	go app.replicateExecutor.RunLoop(ctx)
 	go app.storageCleanup.RunLoop(ctx)
 	go app.catalogCleanup.RunLoop(ctx)
 

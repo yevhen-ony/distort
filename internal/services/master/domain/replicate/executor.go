@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"dos/internal/common/dosctx"
+	"dos/internal/common/loop"
 	"dos/internal/common/queue"
 	"dos/internal/common/transport/chunkrpc"
 	t "dos/internal/common/types"
@@ -21,20 +22,18 @@ var (
 
 type ReplicationConfig interface {
 	ReplicationQueueLength() int
-	ReplicationInterval() time.Duration
+	ReplicationExecInterval() time.Duration
 }
 
 type ReplicationExecutor struct {
 	chunkRepo  m.ChunkRepo
 	objectRepo m.ObjectRepo
 	placement  m.StorageNodePlacement
+	transport  *chunkrpc.Transport
+	config     ReplicationConfig
 
-	transport *chunkrpc.Transport
-
-	config ReplicationConfig
-
-	queue *queue.DedupQueue[t.ChunkID]
-	flush chan struct{}
+	queue  *queue.DedupQueue[t.ChunkID]
+	looper *loop.Looper
 }
 
 func NewReplicationExecutor(
@@ -46,29 +45,31 @@ func NewReplicationExecutor(
 ) *ReplicationExecutor {
 
 	queue := queue.NewDedupQueue[t.ChunkID](config.ReplicationQueueLength())
+	looper := loop.NewLooper(config.ReplicationExecInterval())
 	return &ReplicationExecutor{
 		chunkRepo:  chunkRepo,
 		objectRepo: objectRepo,
 		placement:  placement,
 		transport:  transport,
 		config:     config,
-		queue:      queue,
-		flush:      make(chan struct{}, 1),
+
+		queue:  queue,
+		looper: looper,
 	}
 }
 
-func (s *ReplicationExecutor) ReplicateChunk(ctx context.Context, chunkID t.ChunkID) error {
+func (r *ReplicationExecutor) ReplicateChunk(ctx context.Context, chunkID t.ChunkID) error {
 
 	ctx = dosctx.WithChunkID(ctx, chunkID)
 
 	slog.DebugContext(ctx, "do replication")
 
-	chunk, err := s.chunkRepo.Get(ctx, chunkID)
+	chunk, err := r.chunkRepo.Get(ctx, chunkID)
 	if err != nil {
 		return fmt.Errorf("read chunk %s: %w", chunkID, err)
 	}
 
-	wantedReplicaCount, err := s.objectRepo.GetReplication(ctx, chunk.ObjectID)
+	wantedReplicaCount, err := r.objectRepo.GetReplication(ctx, chunk.ObjectID)
 	if err != nil {
 		return fmt.Errorf("read object %s: %w", chunk.ObjectID, err)
 	}
@@ -87,8 +88,10 @@ func (s *ReplicationExecutor) ReplicateChunk(ctx context.Context, chunkID t.Chun
 		return nil
 	}
 
+	r.chunkRepo.Touch(ctx, chunk.Meta.ID)
+
 	if count > 0 {
-		_, err = s.AddReplica(ctx, chunk.ChunkMeta, count)
+		_, err = r.AddReplica(ctx, chunk.Meta, count)
 		if err != nil {
 
 			return fmt.Errorf("replicate chunk %s: %w", chunkID, err)
@@ -97,20 +100,20 @@ func (s *ReplicationExecutor) ReplicateChunk(ctx context.Context, chunkID t.Chun
 	}
 
 	// count < 0
-	err = s.DeleteReplica(ctx, chunk.ChunkMeta, -count)
+	err = r.DeleteReplica(ctx, chunk.Meta, -count)
 	if err != nil {
 		return fmt.Errorf("delete chunk %s: %w", chunkID, err)
 	}
 	return nil
 }
 
-func (s *ReplicationExecutor) AddReplica(ctx context.Context, meta t.ChunkMeta, count int) (t.NodeID, error) {
+func (r *ReplicationExecutor) AddReplica(ctx context.Context, meta t.ChunkMeta, count int) (t.NodeID, error) {
 
 	ctx = dosctx.WithOperation(ctx, "add")
 
 	slog.DebugContext(ctx, "add replica")
 
-	sources, err := s.placement.GetChunkNodes(ctx, meta.ID)
+	sources, err := r.placement.GetChunkNodes(ctx, meta.ID)
 	if err != nil {
 		slog.ErrorContext(ctx, "list chunk's nodes failed")
 		return "", fmt.Errorf("list chunk's nodes: %w", err)
@@ -120,7 +123,7 @@ func (s *ReplicationExecutor) AddReplica(ctx context.Context, meta t.ChunkMeta, 
 		return "", errors.New("no replication sources found")
 	}
 
-	targets, err := s.placement.GetCandidates(ctx, m.CandidateNodesQuery{
+	targets, err := r.placement.GetCandidates(ctx, m.CandidateNodesQuery{
 		MinFreeBytes: meta.Digest.Size,
 		ExcludeChunk: meta.ID,
 		MaxCount:     count,
@@ -136,7 +139,7 @@ func (s *ReplicationExecutor) AddReplica(ctx context.Context, meta t.ChunkMeta, 
 
 	for _, source := range utils.RandomSelect(sources, len(sources)) {
 
-		err = s.transport.ReplicateChunk(ctx, meta.ID, source, targets)
+		err = r.transport.ReplicateChunk(ctx, meta.ID, source, targets)
 		if err != nil {
 			slog.ErrorContext(ctx, "replicate chunk failed", "source", source.ID, "error", err)
 			continue
@@ -146,13 +149,13 @@ func (s *ReplicationExecutor) AddReplica(ctx context.Context, meta t.ChunkMeta, 
 	return "", ErrReplicationAttemptsExhausted
 }
 
-func (s *ReplicationExecutor) DeleteReplica(ctx context.Context, meta t.ChunkMeta, count int) error {
+func (r *ReplicationExecutor) DeleteReplica(ctx context.Context, meta t.ChunkMeta, count int) error {
 
 	ctx = dosctx.WithOperation(ctx, "delete")
 
 	slog.DebugContext(ctx, "delete replica")
 
-	nodeRefs, err := s.placement.GetChunkNodes(ctx, meta.ID)
+	nodeRefs, err := r.placement.GetChunkNodes(ctx, meta.ID)
 	if err != nil {
 		slog.ErrorContext(ctx, "get chunk nodes while deleting replica", "error", err)
 		return fmt.Errorf("get chunk nodes %s: %w", meta.ID, err)
@@ -160,7 +163,7 @@ func (s *ReplicationExecutor) DeleteReplica(ctx context.Context, meta t.ChunkMet
 
 	var errs []error
 	for _, nodeRef := range utils.RandomSelect(nodeRefs, count) {
-		err = s.transport.DeleteChunk(ctx, meta.ID, nodeRef)
+		err = r.transport.DeleteChunk(ctx, meta.ID, nodeRef)
 		if err != nil {
 			slog.ErrorContext(ctx, "delete replica failed", "source", nodeRef.ID, "error", err)
 			errs = append(errs, fmt.Errorf(
@@ -173,45 +176,26 @@ func (s *ReplicationExecutor) DeleteReplica(ctx context.Context, meta t.ChunkMet
 	return errors.Join(errs...)
 }
 
-func (re *ReplicationExecutor) RunReplicationIteration(ctx context.Context) {
-	chunkIDs := re.queue.Drain()
+func (r *ReplicationExecutor) RunReplicationIteration(ctx context.Context) {
+	chunkIDs := r.queue.Drain()
 	if len(chunkIDs) == 0 {
 		return
 	}
 	slog.DebugContext(ctx, "replicate chunks", "count", len(chunkIDs))
 	for _, chunkID := range chunkIDs {
-		re.ReplicateChunk(ctx, chunkID)
+		r.ReplicateChunk(ctx, chunkID)
 	}
 }
 
-func (rs *ReplicationExecutor) RunLoop(ctx context.Context) {
-	timer := time.NewTimer(rs.config.ReplicationInterval())
-	defer timer.Stop()
-
-	ctx = dosctx.WithService(ctx, "replicate")
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-timer.C:
-		case <-rs.flush:
-		}
-
-		rs.RunReplicationIteration(ctx)
-
-		interval := utils.Jitter(rs.config.ReplicationInterval(), 0.2)
-		timer.Reset(interval)
-	}
+func (r *ReplicationExecutor) RunLoop(ctx context.Context) {
+	ctx = dosctx.WithService(ctx, "replication_executor")
+	r.looper.Run(ctx, r.RunReplicationIteration)
 }
 
-func (s *ReplicationExecutor) Schedule(ctx context.Context, chunkID t.ChunkID) {
-	s.queue.Enq(ctx, chunkID)
+func (r *ReplicationExecutor) Schedule(ctx context.Context, chunkID t.ChunkID) {
+	r.queue.Enq(ctx, chunkID)
 }
 
-func (s *ReplicationExecutor) Flush(_ context.Context) {
-	select {
-	case s.flush <- struct{}{}:
-	default:
-	}
+func (r *ReplicationExecutor) Flush(_ context.Context) {
+	r.looper.Flush()
 }

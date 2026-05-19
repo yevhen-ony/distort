@@ -14,14 +14,16 @@ type Config struct {
 }
 
 type ServiceConfig struct {
-	FrameSize              config.Size   `yaml:"frame_size"`
-	ReplicationCount       int           `yaml:"replication_count"`
-	ChunkAllocationMargin  config.Size   `yaml:"chunk_allocation_margin"`
-	NodeInactivityTimeout  time.Duration `yaml:"node_inactivity_timeout"`
-	NodeCleanupInterval    time.Duration `yaml:"node_cleanup_interval"`
-	ReplicationQueueLength int           `yaml:"replication_queue_length"`
-	CatalogCleanupInterval time.Duration `yaml:"catalog_cleanup_interval"`
-	ReplicationInterval    time.Duration `yaml:"replication_interval"`
+	FrameSize                  config.Size   `yaml:"frame_size"`
+	ChunkAllocationMargin      config.Size   `yaml:"chunk_allocation_margin"`
+	ReplicationCount           int           `yaml:"replication_count"`
+	ReplicationQueueLength     int           `yaml:"replication_queue_length"`
+	ReplicationExecInterval    time.Duration `yaml:"replication_interval"`
+	ReplicationPlannerInterval time.Duration `yaml:"replication_planner_interval"`
+	NodeInactivityTimeout      time.Duration `yaml:"node_inactivity_timeout"`
+	NodeCleanupInterval        time.Duration `yaml:"node_cleanup_interval"`
+	CatalogCleanupInterval     time.Duration `yaml:"catalog_cleanup_interval"`
+	ChunkStaleAfter            time.Duration `yaml:"chunk_stale_after"`
 }
 
 func (c *Config) FrameSize() int64 {
@@ -52,6 +54,14 @@ func (c *Config) CatalogCleanupInterval() time.Duration {
 	return c.Service.CatalogCleanupInterval
 }
 
-func (c *Config) ReplicationInterval() time.Duration {
-	return c.Service.ReplicationInterval
+func (c *Config) ReplicationExecInterval() time.Duration {
+	return c.Service.ReplicationExecInterval
+}
+
+func (c *Config) ChunkStaleAfter() time.Duration {
+	return c.Service.ChunkStaleAfter
+}
+
+func (c *Config) ReplicationPlannerInterval() time.Duration {
+	return c.Service.ReplicationPlannerInterval
 }

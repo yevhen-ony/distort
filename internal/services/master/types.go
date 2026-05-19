@@ -21,17 +21,18 @@ func (o *Object) Clone() *Object {
 	maps.Copy(chunks, o.Chunks)
 
 	return &Object{
-		ID:     o.ID,
-		Chunks: chunks,
+		ID:          o.ID,
+		Chunks:      chunks,
 		Replication: o.Replication,
 	}
 }
 
 type Chunk struct {
-	t.ChunkMeta
-	ReplicaCount int
-	ObjectID     t.ObjectID
-	ChunkKey     t.ChunkKey
+	Meta          t.ChunkMeta
+	ReplicaCount  int
+	ObjectID      t.ObjectID
+	ChunkKey      t.ChunkKey
+	LastTouchedAt time.Time
 }
 
 func (c *Chunk) Clone() *Chunk {
@@ -40,9 +41,11 @@ func (c *Chunk) Clone() *Chunk {
 	}
 
 	return &Chunk{
-		ChunkMeta:    *c.ChunkMeta.Clone(),
-		ReplicaCount: c.ReplicaCount,
-		ObjectID:     c.ObjectID,
+		Meta:          *c.Meta.Clone(),
+		ReplicaCount:  c.ReplicaCount,
+		ObjectID:      c.ObjectID,
+		ChunkKey:      c.ChunkKey,
+		LastTouchedAt: c.LastTouchedAt,
 	}
 }
 

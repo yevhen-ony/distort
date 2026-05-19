@@ -61,6 +61,9 @@ type ChunkRepo interface {
 	DecReplication(context.Context, t.ChunkID)
 	List(context.Context) []Chunk
 	DeleteWithNoReplicas(context.Context, t.ChunkID) bool
+	Touch(context.Context, t.ChunkID)
+
+	ForEach(context.Context, func(Chunk))
 }
 
 type NodeQuery struct {

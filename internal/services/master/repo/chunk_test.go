@@ -46,9 +46,9 @@ func TestInMemChunkRepo_Get(test *testing.T) {
 		
 		ch, err := r.Get(ctx, id)
 		require.NoError(test, err)
-		require.NotNil(test, ch.Digest)
-		assert.Equal(test, int64(1), ch.Digest.Size)
-		assert.Equal(test, "abc", string(ch.Digest.Checksum))
+		require.NotNil(test, ch.Meta.Digest)
+		assert.Equal(test, int64(1), ch.Meta.Digest.Size)
+		assert.Equal(test, "abc", string(ch.Meta.Digest.Checksum))
 	})
 }
 

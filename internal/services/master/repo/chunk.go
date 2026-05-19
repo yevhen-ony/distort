@@ -7,15 +7,16 @@ import (
 	"fmt"
 	"log/slog"
 	"sync"
+	"time"
 
 	"dos/internal/common/digest"
 	t "dos/internal/common/types"
 	m "dos/internal/services/master"
 )
 
-type InMemChunkRepo struct { 
+type InMemChunkRepo struct {
 	chunks map[t.ChunkID]*m.Chunk
-	mu sync.RWMutex
+	mu     sync.RWMutex
 }
 
 func NewInMemChunkRepo() *InMemChunkRepo {
@@ -34,11 +35,11 @@ func (r *InMemChunkRepo) Create(
 	if _, ok := r.chunks[id]; ok {
 		return m.ErrChunkExists
 	}
-	chunkMeta := t.ChunkMeta{ID: id}
 	r.chunks[id] = &m.Chunk{
-		ChunkMeta: chunkMeta,
-		ObjectID: objectID,
-		ChunkKey: chunkKey,
+		Meta:          t.ChunkMeta{ID: id},
+		ObjectID:      objectID,
+		ChunkKey:      chunkKey,
+		LastTouchedAt: time.Now(),
 	}
 	return nil
 }
@@ -50,7 +51,7 @@ func (r *InMemChunkRepo) NewChunkID() t.ChunkID {
 	for {
 		id := genChunkID()
 		if _, ok := r.chunks[id]; !ok {
-			return id	
+			return id
 		}
 	}
 }
@@ -63,22 +64,24 @@ func genChunkID() t.ChunkID {
 
 func (r *InMemChunkRepo) SetDigest(_ context.Context, id t.ChunkID, digest *digest.Digest) error {
 	r.mu.Lock()
-	defer r.mu.Unlock() 
+	defer r.mu.Unlock()
 
 	if digest == nil {
 		return fmt.Errorf("set nil digest")
 	}
-	chunk, ok := r.chunks[id]	
+	chunk, ok := r.chunks[id]
 	if !ok {
-		return m.ErrChunkNotFound 
+		return m.ErrChunkNotFound
 	}
-	if chunk.Digest == nil {
-		chunk.Digest = digest.Clone() 
+	if chunk.Meta.Digest == nil {
+		chunk.Meta.Digest = digest.Clone()
+		chunk.LastTouchedAt = time.Now()
 		return nil
 	}
-	if err := chunk.Digest.Match(digest); err != nil {
-		return err 
+	if err := chunk.Meta.Digest.Match(digest); err != nil {
+		return err
 	}
+	chunk.LastTouchedAt = time.Now()
 	return nil
 }
 
@@ -97,11 +100,13 @@ func (r *InMemChunkRepo) IncReplication(ctx context.Context, chunkID t.ChunkID) 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	chunk, ok := r.chunks[chunkID]	
+	chunk, ok := r.chunks[chunkID]
 	if !ok {
 		slog.WarnContext(ctx, "try increment replication of non-existing chunk", "chunk_id", chunkID)
+		return
 	}
 	chunk.ReplicaCount++
+	chunk.LastTouchedAt = time.Now()
 }
 
 func (r *InMemChunkRepo) DecReplication(ctx context.Context, chunkID t.ChunkID) {
@@ -110,12 +115,14 @@ func (r *InMemChunkRepo) DecReplication(ctx context.Context, chunkID t.ChunkID) 
 
 	chunk, ok := r.chunks[chunkID]
 	if !ok {
-		slog.WarnContext(ctx, "try decrement replication of non-existing chunk", "chunk_id", chunkID)
+		slog.WarnContext(ctx, "try decrement replication of Chnon-existing chunk", "chunk_id", chunkID)
+		return
 	}
 	if chunk.ReplicaCount == 0 {
 		slog.WarnContext(ctx, "try decrement replication below zero", "chunk_id", chunkID)
 	}
 	chunk.ReplicaCount--
+	chunk.LastTouchedAt = time.Now()
 }
 
 func (r *InMemChunkRepo) List(_ context.Context) []m.Chunk {
@@ -126,7 +133,7 @@ func (r *InMemChunkRepo) List(_ context.Context) []m.Chunk {
 	for _, chunk := range r.chunks {
 		result = append(result, *chunk.Clone())
 	}
-	return result 
+	return result
 }
 
 func (r *InMemChunkRepo) DeleteWithNoReplicas(_ context.Context, chunkID t.ChunkID) bool {
@@ -135,7 +142,7 @@ func (r *InMemChunkRepo) DeleteWithNoReplicas(_ context.Context, chunkID t.Chunk
 
 	chunk, ok := r.chunks[chunkID]
 	if !ok {
-		return true 
+		return true
 	}
 
 	if chunk.ReplicaCount > 0 {
@@ -144,4 +151,24 @@ func (r *InMemChunkRepo) DeleteWithNoReplicas(_ context.Context, chunkID t.Chunk
 
 	delete(r.chunks, chunkID)
 	return true
+}
+
+func (r *InMemChunkRepo) Touch(_ context.Context, chunkID t.ChunkID) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	chunk, ok := r.chunks[chunkID]
+	if !ok {
+		return
+	}
+	chunk.LastTouchedAt = time.Now()
+}
+
+func (r *InMemChunkRepo) ForEach(_ context.Context, fn func(m.Chunk)) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	
+	for _, chunk := range r.chunks {
+		fn(*chunk.Clone())
+	}
 }

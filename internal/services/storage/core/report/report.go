@@ -3,9 +3,9 @@ package report
 import (
 	"context"
 	"dos/internal/common/dosctx"
+	"dos/internal/common/loop"
 	"dos/internal/common/queue"
 	t "dos/internal/common/types"
-	"dos/internal/common/utils"
 	"dos/internal/services/storage/transport"
 	"log/slog"
 	"time"
@@ -38,21 +38,20 @@ type ReportService struct {
 	processor ReportProcessor
 	
 	queue *queue.Queue[t.StorageNodeReport]
-
-	flush chan struct{}
+	looper *loop.Looper
 }
 
 func NewReportService(
-	identity IdentityProvider, master *transport.Master, cfg Config, 
+	identity IdentityProvider, master *transport.Master, config Config, 
 ) *ReportService {
-	queue := queue.NewQueue[t.StorageNodeReport](cfg.QueueCapacity())
+	queue := queue.NewQueue[t.StorageNodeReport](config.QueueCapacity())
 	return &ReportService {
 		identity: identity,
 		master: master,
-		config: cfg,
+		config: config,
 		queue: queue,
-		flush: make(chan struct{}, 1),
 		processor: &NOPReportProcessor{},
+		looper: loop.NewLooper(config.ReportInterval()),
 	}
 }
 
@@ -69,12 +68,6 @@ func (rs *ReportService) Report(ctx context.Context, report t.StorageNodeReport)
 	}
 }
 
-func (rs *ReportService) Flush(ctx context.Context) {
-	select {
-	case rs.flush <- struct{}{}:
-	default:
-	}
-}
 
 func (rs *ReportService) RunReportIteration(ctx context.Context) {
 
@@ -128,24 +121,10 @@ func (rs *ReportService) SendReports(
 }
 
 func (rs *ReportService) RunLoop(ctx context.Context) {
-	timer := time.NewTimer(0)
-	defer timer.Stop()
-	
-	ctx = dosctx.WithService(ctx, "report")
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-timer.C:
-		case <-rs.flush:
-		}
-
-		rs.RunReportIteration(ctx)
-
-		interval := utils.Jitter(rs.config.ReportInterval(), 0.2) 
-		timer.Reset(interval)
-	}
+	ctx = dosctx.WithService(ctx, "reporter")
+	rs.looper.SkipFirstWait().Run(ctx, rs.RunReportIteration) 
 }
 
-
+func (rs *ReportService) Flush(_ context.Context) {
+	rs.looper.Flush()
+}

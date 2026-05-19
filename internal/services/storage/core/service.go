@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"dos/internal/common/dosctx"
+	"dos/internal/common/loop"
 	"dos/internal/common/transport/chunkrpc"
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
@@ -21,7 +22,7 @@ type StorageServiceConfig interface {
 	HeartbeatInterval() time.Duration
 	ReportInterval() time.Duration
 	ReplicationTimeout() time.Duration
-	MaxParallelHeavyOps() int	
+	MaxParallelHeavyOps() int
 }
 
 type Reporter interface {
@@ -40,13 +41,12 @@ type StorageService struct {
 	diskStore       s.ChunkStorage
 	masterTransport s.MasterTransport
 	chunkTransport  *chunkrpc.Transport
+	identity        *IdentityService
+	reporter        Reporter
+	config          StorageServiceConfig
 
-	identity *IdentityService
-	reporter Reporter
-
-	config StorageServiceConfig
-
-	sem chan struct{}
+	looper *loop.Looper
+	sem    chan struct{}
 }
 
 func NewStorageService(
@@ -78,7 +78,8 @@ func NewStorageService(
 		reporter:        &NOOPReporter{},
 		config:          config,
 
-		sem: make(chan struct{}, config.MaxParallelHeavyOps()),
+		looper: loop.NewLooper(config.HeartbeatInterval()),
+		sem:    make(chan struct{}, config.MaxParallelHeavyOps()),
 	}
 	return service, nil
 }
@@ -183,7 +184,7 @@ func (svc *StorageService) ForwardChunk(
 		return r.ID != svc.identity.nodeID
 	})
 	if len(targets) == 0 {
-		return s.ErrNoValidTargets 
+		return s.ErrNoValidTargets
 	}
 
 	slog.DebugContext(ctx, "load chunk")
@@ -208,7 +209,7 @@ func (svc *StorageService) ForwardChunk(
 	if len(targets) == 0 {
 		return nil
 	}
-	
+
 	slog.DebugContext(ctx, "handoff replicate chunk", "source", chosen.ID)
 	err = svc.ReplicateChunk(ctx, chunkID, chosen, targets)
 	if err != nil {
@@ -243,7 +244,7 @@ func (svc *StorageService) ScheduleForwardChunk(
 	return nil
 }
 
-func (svc *StorageService) SendChunk( 
+func (svc *StorageService) SendChunk(
 	ctx context.Context, chunk t.Chunk, targets []t.NodeRef,
 ) (t.NodeRef, error) {
 
@@ -291,7 +292,7 @@ func (svc *StorageService) DeleteChunk(ctx context.Context, chunkID t.ChunkID) e
 		slog.WarnContext(ctx, "delete non-existing chunk")
 		return nil
 	}
-	
+
 	if err := svc.diskStore.Delete(chunkID); err != nil {
 		return fmt.Errorf("delete data from disk: %w", err)
 	}
@@ -308,8 +309,7 @@ func (svc *StorageService) DeleteChunk(ctx context.Context, chunkID t.ChunkID) e
 	return nil
 }
 
-func (svc *StorageService) Heartbeat(ctx context.Context) error {
-	ctx = dosctx.WithOperation(ctx, "heartbeat")
+func (svc *StorageService) Heartbeat(ctx context.Context) {
 
 	svc.state.Mu.RLock()
 	stats := t.NodeStats{
@@ -321,42 +321,26 @@ func (svc *StorageService) Heartbeat(ctx context.Context) error {
 
 	nodeID, err := svc.identity.GetID()
 	if err != nil {
-		return fmt.Errorf("read node id: %w", err)
+		slog.ErrorContext(ctx, "read node id failed", "error", err)
+		return
 	}
 
 	res, err := svc.masterTransport.Heartbeat(ctx, nodeID, stats)
 	if err != nil {
-		return err
+		slog.ErrorContext(ctx, "heartbeat transport failed", "node_id", nodeID, "error", err)
 	}
 
 	if res.NodeUnknown {
-		slog.Warn("request new node id")
+		slog.WarnContext(ctx, "node id is unknown", "node_id", nodeID)
 		if err := svc.identity.RequestNewID(ctx); err != nil {
-			return err
+			slog.WarnContext(ctx, "request new node id failed", "error", err)
 		}
 	}
-	return nil
 }
 
 func (svc *StorageService) RunHearbeatLoop(ctx context.Context) {
-	timer := time.NewTimer(0)
-	defer timer.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-timer.C:
-		}
-
-		slog.DebugContext(ctx, "exec heartbeat")
-		if err := svc.Heartbeat(ctx); err != nil {
-			slog.ErrorContext(ctx, "heartbeat failed", "error", err)
-		}
-
-		interval := utils.Jitter(svc.config.HeartbeatInterval(), 0.2)
-		timer.Reset(interval)
-	}
+	ctx = dosctx.WithOperation(ctx, "heartbeat")
+	svc.looper.SkipFirstWait().Run(ctx, svc.Heartbeat)
 }
 
 func (svc *StorageService) buildCatalog(ctx context.Context) error {
@@ -374,7 +358,7 @@ func (svc *StorageService) buildCatalog(ctx context.Context) error {
 			slog.Error("read chunk", "id", id, "error", err)
 			continue
 		}
-		catalog[id] = NewChunkRecord(meta) 
+		catalog[id] = NewChunkRecord(meta)
 		totalBytes += meta.Digest.Size
 		svc.reporter.Report(ctx, t.NewReplicaStaged(meta).ToRecord())
 	}
@@ -389,33 +373,32 @@ func (svc *StorageService) buildCatalog(ctx context.Context) error {
 }
 
 type ChunkBuilder struct {
-	id t.ChunkID
-	data []byte	
-	n int
+	id   t.ChunkID
+	data []byte
+	n    int
 }
 
 func NewChunkBuilder(chunkID t.ChunkID, size int64) *ChunkBuilder {
 	return &ChunkBuilder{
-		id: chunkID,
+		id:   chunkID,
 		data: make([]byte, size),
 	}
 }
 
 func (b *ChunkBuilder) Write(p []byte) (int, error) {
-  	if b.n+len(p) > len(b.data) {
-  		return 0, io.ErrShortBuffer
-  	}
+	if b.n+len(p) > len(b.data) {
+		return 0, io.ErrShortBuffer
+	}
 
-  	n := copy(b.data[b.n:], p)
+	n := copy(b.data[b.n:], p)
 	if n != len(p) {
 		return 0, io.ErrShortWrite
 	}
 
-  	b.n += n
-  	return n, nil
+	b.n += n
+	return n, nil
 }
 
 func (b *ChunkBuilder) Chunk() t.Chunk {
 	return t.NewChunk(b.id, b.data[:b.n])
 }
-

@@ -2,7 +2,6 @@ package utils
 
 import (
 	"math/rand/v2"
-	"time"
 )
 
 func SplitFrames(data []byte, size int64) [][]byte {
@@ -55,9 +54,4 @@ func RandomSelectOne[T any](ts []T) T {
 	return ts[rand.IntN(len(ts))]
 }
 
-func Jitter(base time.Duration, frac float64) time.Duration {
-	delta := float64(base) * frac
-	j := (rand.Float64()*2 - 1) * delta
-	return time.Duration(float64(base) + j)
-}
 

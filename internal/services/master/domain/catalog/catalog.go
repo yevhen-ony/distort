@@ -79,10 +79,10 @@ func (s *CatalogService) DescribeChunk(ctx context.Context, chunkID t.ChunkID) (
 		
 		size := int64(0)
 		if chunk.ReplicaCount > 0 {
-			size = chunk.Digest.Size
+			size = chunk.Meta.Digest.Size
 		}
 		desc := t.ChunkDesc{
-			ChunkID:   chunk.ID,
+			ChunkID:   chunk.Meta.ID,
 			ChunkKey:  chunk.ChunkKey,
 			ChunkSize: size,
 		}
@@ -103,10 +103,10 @@ func (s *CatalogService) ListChunks(ctx context.Context) []t.ChunkInfo {
 	return utils.Map(s.chunkRepo.List(ctx), func(c m.Chunk) t.ChunkInfo {
 		size := int64(0)
 		if c.ReplicaCount > 0 {
-			size = c.Digest.Size
+			size = c.Meta.Digest.Size
 		}
 		return t.ChunkInfo{
-			ID:           c.ID,
+			ID:           c.Meta.ID,
 			Size:         size,
 			ReplicaCount: c.ReplicaCount,
 			ObjectID:     c.ObjectID,
