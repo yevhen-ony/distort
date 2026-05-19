@@ -13,7 +13,8 @@ import (
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
 	s "dos/internal/services/storage"
-	"dos/internal/services/storage/core"
+	"dos/internal/services/storage/core/identity"
+	"dos/internal/services/storage/core/storage"
 )
 
 type Config interface {
@@ -23,12 +24,12 @@ type Config interface {
 type Server struct {
 	spb.UnimplementedChunkServiceServer
 
-	identity *core.IdentityService
-	storage  *core.StorageService
+	identity *identity.IdentityService
+	storage  *storage.StorageService
 	config   Config
 }
 
-func New(identity *core.IdentityService, storage *core.StorageService, config Config) *Server {
+func New(identity *identity.IdentityService, storage *storage.StorageService, config Config) *Server {
 	return &Server{
 		identity: identity,
 		storage:  storage,
@@ -60,17 +61,12 @@ func (srv *Server) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) 
 
 	slog.DebugContext(ctx, "put chunk requested")
 
-	release, err := srv.storage.AcquireOpSlot(ctx)
-	if err != nil {
-		return err
-	}
-	defer release()
-
 	meta := convert.ChunkMetaFromPB(header)
 	session, err := srv.storage.StartUpload(ctx, &meta)
 	if err != nil {
 		return fmt.Errorf("start upload session: %w", err)
 	}
+	defer session.Close()
 
 	for {
 		req, err := stream.Recv()
@@ -86,8 +82,7 @@ func (srv *Server) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) 
 		}
 	}
 
-	err = srv.storage.CommitUpload(ctx, session.Chunk(), &meta)
-	if err != nil {
+	if err := session.Commit(ctx); err != nil {
 		return fmt.Errorf("commit upload: %w", err)
 	}
 

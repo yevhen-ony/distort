@@ -1,4 +1,4 @@
-package core
+package storage
 
 import (
 	"context"
@@ -14,6 +14,7 @@ import (
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
 	s "dos/internal/services/storage"
+	"dos/internal/services/storage/core/identity"
 )
 
 type StorageServiceConfig interface {
@@ -41,19 +42,21 @@ type StorageService struct {
 	diskStore       s.ChunkStorage
 	masterTransport s.MasterTransport
 	chunkTransport  *chunkrpc.Transport
-	identity        *IdentityService
+	identity        *identity.IdentityService
 	reporter        Reporter
 	config          StorageServiceConfig
 
 	looper *loop.Looper
 	sem    chan struct{}
+
+	metrics *StorageServiceMetrics
 }
 
 func NewStorageService(
 	diskStore s.ChunkStorage,
 	masterTransport s.MasterTransport,
 	chunkTransport *chunkrpc.Transport,
-	identity *IdentityService,
+	identity *identity.IdentityService,
 	config StorageServiceConfig,
 ) (*StorageService, error) {
 
@@ -80,6 +83,7 @@ func NewStorageService(
 
 		looper: loop.NewLooper(config.HeartbeatInterval()),
 		sem:    make(chan struct{}, config.MaxParallelHeavyOps()),
+		
 	}
 	return service, nil
 }
@@ -100,15 +104,27 @@ func (svc *StorageService) AcquireOpSlot(ctx context.Context) (func(), error) {
 	acqCtx, cancel := context.WithTimeout(ctx, time.Second)
 	defer cancel()
 
+	start := time.Now()
+
 	select {
 	case <-acqCtx.Done():
+		svc.metrics.OpSlotsAcquireDuration.Observe(time.Since(start).Seconds())
 		return nil, s.ErrServiceBusy
+
 	case svc.sem <- struct{}{}:
-		return func() { <-svc.sem }, nil
+		svc.metrics.OpSlotsAcquireDuration.Observe(time.Since(start).Seconds())
+		svc.metrics.OpSlotsInUse.Add(1)
+		start = time.Now()
+		release := func() { 
+			<-svc.sem
+			svc.metrics.OpSlotsInUse.Add(-1)
+			svc.metrics.OpSlotsHoldDuration.Observe(time.Since(start).Seconds())
+		}
+		return release, nil
 	}
 }
 
-func (svc *StorageService) StartUpload(_ context.Context, meta *t.ChunkMeta) (*ChunkBuilder, error) {
+func (svc *StorageService) StartUpload(ctx context.Context, meta *t.ChunkMeta) (*UploadSession, error) {
 	svc.state.Mu.RLock()
 	_, ok := svc.state.Catalog[meta.ID]
 	svc.state.Mu.RUnlock()
@@ -116,14 +132,41 @@ func (svc *StorageService) StartUpload(_ context.Context, meta *t.ChunkMeta) (*C
 	if ok {
 		return nil, s.ErrChunkConflict
 	}
-	builder := NewChunkBuilder(meta.ID, meta.Digest.Size)
-	return builder, nil
+
+	release, err := svc.AcquireOpSlot(ctx) 
+	if err != nil {
+		return nil, err
+	}
+
+	start := time.Now()
+
+	session := &UploadSession{
+		id: meta.ID, 
+		data: make([]byte, meta.Digest.Size),
+		onCommit: func(ctx context.Context, chunk t.Chunk) error {
+			defer release()
+			err := svc.commitUpload(ctx, chunk, meta)
+			if err != nil {
+				svc.metrics.UploadsFailedDuration.Observe(time.Since(start).Seconds())
+			} else {
+				svc.metrics.UploadsSuccessDuration.Observe(time.Since(start).Seconds())
+			}
+			return err
+		},
+		onAbort: func() error {
+			defer release() 
+			svc.metrics.UploadsFailedDuration.Observe(time.Since(start).Seconds())
+			return nil
+		},
+
+	}
+	return session, nil
 }
 
-func (svc *StorageService) CommitUpload(
+func (svc *StorageService) commitUpload(
 	ctx context.Context, chunk t.Chunk, meta *t.ChunkMeta,
 ) error {
-	ctx = dosctx.WithOperation(ctx, "commit upload")
+	ctx = dosctx.WithOperation(ctx, "commit_upload")
 
 	if err := meta.Digest.Match(chunk.Meta.Digest); err != nil {
 		return err
@@ -133,20 +176,52 @@ func (svc *StorageService) CommitUpload(
 		return fmt.Errorf("store chunk: %w", err)
 	}
 
+	if err := svc.AddToCatalog(meta); err != nil {
+		if err := svc.diskStore.Delete(meta.ID); err != nil {
+			slog.ErrorContext(ctx, "rollback failed", "error", err)
+		}
+		return err
+	}
+
+	svc.reporter.Report(ctx, t.NewReplicaStaged(*meta).ToRecord())
+	return nil
+}
+
+func (svc *StorageService) AddToCatalog(meta *t.ChunkMeta) error {
 	svc.state.Mu.Lock()
 	defer svc.state.Mu.Unlock()
 
 	if _, ok := svc.state.Catalog[meta.ID]; ok {
-		if err := svc.diskStore.Delete(meta.ID); err != nil {
-			slog.ErrorContext(ctx, "rollback failed after catalog conflict", "error", err)
-		}
 		return s.ErrChunkConflict
 	}
 
+	size := meta.Digest.Size
+
+	svc.metrics.ChunksCount.Add(1)
+	svc.metrics.ChunksTotalBytes.Add(float64(size))
+
 	svc.state.Catalog[meta.ID] = NewChunkRecord(*meta)
 	svc.state.TotalBytes += meta.Digest.Size
-	svc.reporter.Report(ctx, t.NewReplicaStaged(*meta).ToRecord())
+
 	return nil
+}
+
+func (svc *StorageService) RemoveFromCatalog(chunkID t.ChunkID) bool {
+	svc.state.Mu.Lock()
+	defer svc.state.Mu.Unlock()
+
+	rec, ok := svc.state.Catalog[chunkID]
+	if !ok {
+		return false
+	}
+	size := rec.Meta.Digest.Size
+	
+	svc.metrics.ChunksCount.Add(-1)
+	svc.metrics.ChunksTotalBytes.Add(float64(size))
+
+	svc.state.TotalBytes -= size 
+	delete(svc.state.Catalog, chunkID)
+	return true
 }
 
 func (svc *StorageService) LoadChunk(chunkID t.ChunkID) (t.Chunk, error) {
@@ -174,14 +249,19 @@ func (svc *StorageService) LoadChunk(chunkID t.ChunkID) (t.Chunk, error) {
 	return chunk, nil
 }
 
+
 func (svc *StorageService) ForwardChunk(
 	ctx context.Context, chunkID t.ChunkID, targets []t.NodeRef,
 ) error {
 
 	slog.DebugContext(ctx, "forward chunk")
+	nodeID, err := svc.identity.GetID()
+	if err != nil {
+		return fmt.Errorf("access node id: %w", err)
+	}
 
 	targets = utils.Select(targets, func(r t.NodeRef) bool {
-		return r.ID != svc.identity.nodeID
+		return r.ID != nodeID
 	})
 	if len(targets) == 0 {
 		return s.ErrNoValidTargets
@@ -248,9 +328,12 @@ func (svc *StorageService) SendChunk(
 	ctx context.Context, chunk t.Chunk, targets []t.NodeRef,
 ) (t.NodeRef, error) {
 
+	start := time.Now()
+
 	session := svc.chunkTransport.NewTransferSession(targets)
 	chosen, err := session.Upload(ctx, &chunk)
 	if err != nil {
+		svc.metrics.SendsFailedDuration.Observe(time.Since(start).Seconds())
 		slog.ErrorContext(ctx, "push chunk failed", "targets", targets, "error", err)
 
 		svc.reporter.Report(ctx, t.NewReplicaChainFailed(chunk.Meta.ID, targets).ToRecord())
@@ -259,15 +342,20 @@ func (svc *StorageService) SendChunk(
 		return t.NodeRef{}, fmt.Errorf("upload replica: %w", err)
 	}
 
+	svc.metrics.SendsSuccessDuration.Observe(time.Since(start).Seconds())
 	return chosen, nil
 }
 
 func (svc *StorageService) ReplicateChunk(
 	ctx context.Context, chunkID t.ChunkID, source t.NodeRef, targets []t.NodeRef,
 ) error {
+	
+	start := time.Now()
 
 	err := svc.chunkTransport.ReplicateChunk(ctx, chunkID, source, targets)
 	if err != nil {
+		svc.metrics.ReplicateFailedDuration.Observe(time.Since(start).Seconds())
+
 		slog.ErrorContext(ctx, "replicate chunk failed",
 			"source", source, "targets", targets, "error", err)
 
@@ -276,6 +364,8 @@ func (svc *StorageService) ReplicateChunk(
 
 		return fmt.Errorf("replicate chunk: %w", err)
 	}
+
+	svc.metrics.ReplicateSuccessDuration.Observe(time.Since(start).Seconds())
 	return nil
 }
 
@@ -297,15 +387,9 @@ func (svc *StorageService) DeleteChunk(ctx context.Context, chunkID t.ChunkID) e
 		return fmt.Errorf("delete data from disk: %w", err)
 	}
 
-	svc.state.Mu.Lock()
-	if chunk, ok := svc.state.Catalog[chunkID]; ok {
-		delete(svc.state.Catalog, chunkID)
-		svc.state.TotalBytes -= chunk.Meta.Digest.Size
+	if svc.RemoveFromCatalog(chunkID) {
+		svc.reporter.Report(ctx, t.NewReplicaDeleted(chunkID).ToRecord())
 	}
-	svc.state.Mu.Unlock()
-
-	svc.reporter.Report(ctx, t.NewReplicaDeleted(chunkID).ToRecord())
-
 	return nil
 }
 
@@ -327,6 +411,7 @@ func (svc *StorageService) Heartbeat(ctx context.Context) {
 
 	res, err := svc.masterTransport.Heartbeat(ctx, nodeID, stats)
 	if err != nil {
+		svc.metrics.HeartbeatFailedTotal.Inc()
 		slog.ErrorContext(ctx, "heartbeat transport failed", "node_id", nodeID, "error", err)
 	}
 
@@ -369,36 +454,10 @@ func (svc *StorageService) buildCatalog(ctx context.Context) error {
 
 	svc.state.Catalog = catalog
 	svc.state.TotalBytes = totalBytes
+	
+	svc.metrics.ChunksCount.Set(float64(len(catalog)))
+	svc.metrics.ChunksTotalBytes.Set(float64(totalBytes))
+	
 	return nil
 }
 
-type ChunkBuilder struct {
-	id   t.ChunkID
-	data []byte
-	n    int
-}
-
-func NewChunkBuilder(chunkID t.ChunkID, size int64) *ChunkBuilder {
-	return &ChunkBuilder{
-		id:   chunkID,
-		data: make([]byte, size),
-	}
-}
-
-func (b *ChunkBuilder) Write(p []byte) (int, error) {
-	if b.n+len(p) > len(b.data) {
-		return 0, io.ErrShortBuffer
-	}
-
-	n := copy(b.data[b.n:], p)
-	if n != len(p) {
-		return 0, io.ErrShortWrite
-	}
-
-	b.n += n
-	return n, nil
-}
-
-func (b *ChunkBuilder) Chunk() t.Chunk {
-	return t.NewChunk(b.id, b.data[:b.n])
-}
