@@ -25,6 +25,7 @@ type ReplicationConfig interface {
 	ReplicationExecInterval() time.Duration
 }
 
+
 type ReplicationExecutor struct {
 	chunkRepo  m.ChunkRepo
 	objectRepo m.ObjectRepo
@@ -68,30 +69,19 @@ func (r *ReplicationExecutor) ReplicateChunk(ctx context.Context, chunkID t.Chun
 	if err != nil {
 		return fmt.Errorf("read chunk %s: %w", chunkID, err)
 	}
-
-	wantedReplicaCount, err := r.objectRepo.GetReplication(ctx, chunk.ObjectID)
+	
+	count, err := r.decide(ctx, chunk)
 	if err != nil {
-		return fmt.Errorf("read object %s: %w", chunk.ObjectID, err)
+		return fmt.Errorf("decision: %w", err)
 	}
-
-	count := wantedReplicaCount - chunk.ReplicaCount
 	if count == 0 {
-		return nil
-	}
-	slog.DebugContext(ctx, "replication decision",
-		"wanted", wantedReplicaCount,
-		"actual", chunk.ReplicaCount,
-		"delta", count,
-	)
-
-	if chunk.ReplicaCount == 0 {
 		return nil
 	}
 
 	r.chunkRepo.Touch(ctx, chunk.Meta.ID)
 
 	if count > 0 {
-		_, err = r.AddReplica(ctx, chunk.Meta, count)
+		_, err = r.addReplica(ctx, chunk.Meta, count)
 		if err != nil {
 
 			return fmt.Errorf("replicate chunk %s: %w", chunkID, err)
@@ -100,14 +90,43 @@ func (r *ReplicationExecutor) ReplicateChunk(ctx context.Context, chunkID t.Chun
 	}
 
 	// count < 0
-	err = r.DeleteReplica(ctx, chunk.Meta, -count)
+	err = r.deleteReplica(ctx, chunk.Meta, -count)
 	if err != nil {
 		return fmt.Errorf("delete chunk %s: %w", chunkID, err)
 	}
 	return nil
 }
 
-func (r *ReplicationExecutor) AddReplica(ctx context.Context, meta t.ChunkMeta, count int) (t.NodeID, error) {
+func (r *ReplicationExecutor) decide(ctx context.Context, chunk m.Chunk) (int, error) {
+
+	actual := chunk.ReplicaCount
+	wanted, err := r.objectRepo.GetReplication(ctx, chunk.ObjectID)
+	if err != nil {
+		slog.ErrorContext(ctx, "access object failed", "object_id", chunk.ObjectID)
+		return 0, fmt.Errorf("read object %s: %w", chunk.ObjectID, err)
+	}
+
+	delta := wanted - actual 
+	if delta == 0 {
+		return 0, nil
+	}
+
+	slog.DebugContext(ctx, "replication decision",
+		"wanted", wanted,
+		"actual", actual,
+		"delta", delta,
+	)
+
+	if actual == 0  {
+		slog.WarnContext(ctx, "unreachable chunk detected")
+		return 0, nil
+	}
+
+	return delta, nil 
+}
+
+
+func (r *ReplicationExecutor) addReplica(ctx context.Context, meta t.ChunkMeta, count int) (t.NodeID, error) {
 
 	ctx = dosctx.WithOperation(ctx, "add")
 
@@ -149,7 +168,7 @@ func (r *ReplicationExecutor) AddReplica(ctx context.Context, meta t.ChunkMeta, 
 	return "", ErrReplicationAttemptsExhausted
 }
 
-func (r *ReplicationExecutor) DeleteReplica(ctx context.Context, meta t.ChunkMeta, count int) error {
+func (r *ReplicationExecutor) deleteReplica(ctx context.Context, meta t.ChunkMeta, count int) error {
 
 	ctx = dosctx.WithOperation(ctx, "delete")
 
@@ -199,3 +218,4 @@ func (r *ReplicationExecutor) Schedule(ctx context.Context, chunkID t.ChunkID) {
 func (r *ReplicationExecutor) Flush(_ context.Context) {
 	r.looper.Flush()
 }
+
