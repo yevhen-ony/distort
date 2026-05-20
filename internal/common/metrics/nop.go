@@ -16,6 +16,6 @@ func (nopHistogram) Observe(float64) {}
 
 type NopProvider struct{}
 
-func (NopProvider) Counter(string, ...string) Counter     { return nopCounter{} }
-func (NopProvider) Gauge(string, ...string) Gauge         { return nopGauge{} }
-func (NopProvider) Histogram(string, ...string) Histogram { return nopHistogram{} }
+func (NopProvider) Counter(CounterOpts) Counter       { return nopCounter{} }
+func (NopProvider) Gauge(GaugeOpts) Gauge             { return nopGauge{} }
+func (NopProvider) Histogram(HistogramOpts) Histogram { return nopHistogram{} }

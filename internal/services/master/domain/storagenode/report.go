@@ -15,6 +15,8 @@ type ReportService struct {
 	nodeRegistry    m.NodeRegistry
 
 	replication m.ReplicaScheduler
+
+	metrics *NodeReportMetrics
 }
 
 func NewReportService(
@@ -59,6 +61,7 @@ func (s *ReportService) Report(
 				"chunk_id", r.ChunkID,
 				"targets", r.Targets,
 			)
+			s.metrics.ReplicaChainFailedTotal.Inc()
 			s.replication.Schedule(ctx, r.ChunkID)
 			continue
 		}
@@ -78,10 +81,12 @@ func (s *ReportService) reportStagedReplica(
 
 	if err := s.chunkRepository.SetDigest(ctx, meta.ID, meta.Digest); err != nil {
 		slog.WarnContext(ctx, "reject chunk report", "chunk_id", meta.ID, "reason", err)
+		s.metrics.StagedReplicasRejectedTotal.Inc()
 		return err
 	}
 	if s.chunkNodeIndex.AttachChunk(ctx, nodeID, meta.ID) {
 		s.chunkRepository.IncReplication(ctx, meta.ID)
+		s.metrics.StagedReplicasAcceptedTotal.Inc()
 	}
 	return nil
 }
@@ -89,8 +94,9 @@ func (s *ReportService) reportStagedReplica(
 func (s *ReportService) reportDeletedReplica(
 	ctx context.Context, nodeID t.NodeID, report *t.ReplicaDeletedReport,
 ) {
-	chunkID := report.ChunkID 
+	chunkID := report.ChunkID
 	slog.DebugContext(ctx, "deleted replica reported", "chunk_id", chunkID)
+	s.metrics.DeletedReplicasTotal.Inc()
 
 	if s.chunkNodeIndex.DetachChunk(ctx, nodeID, chunkID) {
 		s.chunkRepository.DecReplication(ctx, chunkID)

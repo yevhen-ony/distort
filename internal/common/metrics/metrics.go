@@ -15,7 +15,8 @@ type Histogram interface {
 }
 
 type Provider interface {
-  	Counter(name string, labels ...string) Counter
-  	Gauge(name string, labels ...string) Gauge
-  	Histogram(name string, labels ...string) Histogram
+	Counter(CounterOpts) Counter
+  	Gauge(GaugeOpts) Gauge
+  	Histogram(HistogramOpts) Histogram
 }
+

@@ -71,7 +71,7 @@ func (r *InMemNodeRegistry) UpdateStats(_ context.Context, nid t.NodeID, stats t
 	}
 
 	node.Stats = stats
-	node.LastSeenAt = time.Now().UTC()
+	node.LastSeenAt = time.Now()
 
 	return nil 
 }

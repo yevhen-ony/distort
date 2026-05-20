@@ -35,6 +35,8 @@ type ReplicationExecutor struct {
 
 	queue  *queue.DedupQueue[t.ChunkID]
 	looper *loop.Looper
+
+	metrics *ReplicationMetrics
 }
 
 func NewReplicationExecutor(
@@ -59,18 +61,11 @@ func NewReplicationExecutor(
 	}
 }
 
-func (r *ReplicationExecutor) ReplicateChunk(ctx context.Context, chunkID t.ChunkID) error {
+func (r *ReplicationExecutor) ReplicateChunk(ctx context.Context, chunk m.Chunk) error {
 
-	ctx = dosctx.WithChunkID(ctx, chunkID)
+	ctx = dosctx.WithChunkID(ctx, chunk.Meta.ID)
 
-	slog.DebugContext(ctx, "do replication")
-
-	chunk, err := r.chunkRepo.Get(ctx, chunkID)
-	if err != nil {
-		return fmt.Errorf("read chunk %s: %w", chunkID, err)
-	}
-	
-	count, err := r.decide(ctx, chunk)
+	count, err := r.decideReplication(ctx, chunk)
 	if err != nil {
 		return fmt.Errorf("decision: %w", err)
 	}
@@ -78,13 +73,11 @@ func (r *ReplicationExecutor) ReplicateChunk(ctx context.Context, chunkID t.Chun
 		return nil
 	}
 
-	r.chunkRepo.Touch(ctx, chunk.Meta.ID)
 
 	if count > 0 {
 		_, err = r.addReplica(ctx, chunk.Meta, count)
 		if err != nil {
-
-			return fmt.Errorf("replicate chunk %s: %w", chunkID, err)
+			return fmt.Errorf("add replica %s: %w", chunk.Meta.ID, err)
 		}
 		return nil
 	}
@@ -92,12 +85,12 @@ func (r *ReplicationExecutor) ReplicateChunk(ctx context.Context, chunkID t.Chun
 	// count < 0
 	err = r.deleteReplica(ctx, chunk.Meta, -count)
 	if err != nil {
-		return fmt.Errorf("delete chunk %s: %w", chunkID, err)
+		return fmt.Errorf("delete replica %s: %w", chunk.Meta.ID, err)
 	}
 	return nil
 }
 
-func (r *ReplicationExecutor) decide(ctx context.Context, chunk m.Chunk) (int, error) {
+func (r *ReplicationExecutor) decideReplication(ctx context.Context, chunk m.Chunk) (int, error) {
 
 	actual := chunk.ReplicaCount
 	wanted, err := r.objectRepo.GetReplication(ctx, chunk.ObjectID)
@@ -119,6 +112,7 @@ func (r *ReplicationExecutor) decide(ctx context.Context, chunk m.Chunk) (int, e
 
 	if actual == 0  {
 		slog.WarnContext(ctx, "unreachable chunk detected")
+		r.metrics.UnreachableChunkObservationsTotal.Inc()
 		return 0, nil
 	}
 
@@ -126,11 +120,24 @@ func (r *ReplicationExecutor) decide(ctx context.Context, chunk m.Chunk) (int, e
 }
 
 
-func (r *ReplicationExecutor) addReplica(ctx context.Context, meta t.ChunkMeta, count int) (t.NodeID, error) {
+func (r *ReplicationExecutor) addReplica(
+	ctx context.Context, meta t.ChunkMeta, count int,
+) (chosen t.NodeID, err error) {
 
+	start := time.Now()  
+	defer func() {
+		duration := time.Since(start).Seconds()
+		if err != nil {
+			r.metrics.AddReplicaFailedDuration.Observe(duration)
+		} else {
+			r.metrics.AddReplicaSuccessDuration.Observe(duration)
+		}
+	}()
+	
 	ctx = dosctx.WithOperation(ctx, "add")
-
 	slog.DebugContext(ctx, "add replica")
+	
+	r.chunkRepo.Touch(ctx, meta.ID)
 
 	sources, err := r.placement.GetChunkNodes(ctx, meta.ID)
 	if err != nil {
@@ -168,10 +175,19 @@ func (r *ReplicationExecutor) addReplica(ctx context.Context, meta t.ChunkMeta, 
 	return "", ErrReplicationAttemptsExhausted
 }
 
-func (r *ReplicationExecutor) deleteReplica(ctx context.Context, meta t.ChunkMeta, count int) error {
+func (r *ReplicationExecutor) deleteReplica(ctx context.Context, meta t.ChunkMeta, count int) (err error) {
+
+	start := time.Now()
+	defer func() {
+		duration := time.Since(start).Seconds()
+		if err != nil {
+			r.metrics.DeleteReplicaFailedDuration.Observe(duration)
+		} else {
+			r.metrics.DeleteReplicaSuccessDuration.Observe(duration)
+		}
+	}()
 
 	ctx = dosctx.WithOperation(ctx, "delete")
-
 	slog.DebugContext(ctx, "delete replica")
 
 	nodeRefs, err := r.placement.GetChunkNodes(ctx, meta.ID)
@@ -202,7 +218,16 @@ func (r *ReplicationExecutor) RunReplicationIteration(ctx context.Context) {
 	}
 	slog.DebugContext(ctx, "replicate chunks", "count", len(chunkIDs))
 	for _, chunkID := range chunkIDs {
-		r.ReplicateChunk(ctx, chunkID)
+
+		chunk, err := r.chunkRepo.Get(ctx, chunkID)
+		if err != nil {
+			slog.WarnContext(ctx, 
+				"failed to access scheduled chunk",
+				"chunk_id", chunkID,
+				"error", err,
+			)
+		}
+		r.ReplicateChunk(ctx, chunk)
 	}
 }
 
@@ -213,6 +238,7 @@ func (r *ReplicationExecutor) RunLoop(ctx context.Context) {
 
 func (r *ReplicationExecutor) Schedule(ctx context.Context, chunkID t.ChunkID) {
 	r.queue.Enq(ctx, chunkID)
+	r.metrics.ReplicationScheduledTotal.Inc()
 }
 
 func (r *ReplicationExecutor) Flush(_ context.Context) {

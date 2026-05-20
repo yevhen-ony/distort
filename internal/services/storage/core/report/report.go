@@ -39,6 +39,8 @@ type ReportService struct {
 	
 	queue *queue.Queue[t.StorageNodeReport]
 	looper *loop.Looper
+
+	metrics *ReportServiceMetrics
 }
 
 func NewReportService(
@@ -88,6 +90,8 @@ func (rs *ReportService) RunReportIteration(ctx context.Context) {
 	if len(rs.pending) == 0 {
 		return
 	}
+	
+	rs.metrics.ReportsQueueBatchSize.Observe(float64(len(rs.pending)))
 
 	result, err := rs.SendReports(ctx, rs.pending)
 	if err != nil {
@@ -103,11 +107,15 @@ func (rs *ReportService) ProcessReportResult(ctx context.Context, result t.Repor
 		slog.WarnContext(ctx, "rejected chunks", "chunk_ids", result.Rejected)
 	}
 	rs.processor.Process(ctx, result)
+	rs.metrics.ReportsRejectedTotal.Add(float64(len(result.Rejected)))
 }
 
 func (rs *ReportService) SendReports(
 	ctx context.Context, reports []t.StorageNodeReport,
 ) (t.ReportResult, error) {
+
+	rs.metrics.ReportsSentTotal.Inc()
+
 	nodeID, err := rs.identity.GetID()
 	if err != nil {
 		return t.ReportResult{}, err
@@ -115,8 +123,10 @@ func (rs *ReportService) SendReports(
 
 	result, err := rs.master.ReportChunks(ctx, nodeID, reports)
 	if err != nil {
+		rs.metrics.ReportsFailedTotal.Inc()
 		return t.ReportResult{}, err
 	}
+	rs.metrics.ReportsRecordsTotal.Add(float64(len(reports)))
 	return result, nil
 }
 

@@ -10,8 +10,9 @@ import (
 	"dos/internal/common/transport/chunkrpc"
 	s "dos/internal/services/storage"
 	"dos/internal/services/storage/api"
-	"dos/internal/services/storage/core"
+	"dos/internal/services/storage/core/identity"
 	"dos/internal/services/storage/core/report"
+	"dos/internal/services/storage/core/storage"
 	"dos/internal/services/storage/store"
 	"dos/internal/services/storage/transport"
 
@@ -24,9 +25,9 @@ type App struct {
 
 	storageInfra s.ChunkStorage 
 	
-	identityService *core.IdentityService
+	identityService *identity.IdentityService
 	reportService *report.ReportService
-	storageService *core.StorageService
+	storageService *storage.StorageService
 
 	chunkTransport *chunkrpc.Transport
 	masterTransport *transport.Master
@@ -47,7 +48,7 @@ func NewApp(config *Config) (*App, error) {
 		return nil, fmt.Errorf("master transport init: %w", err)
 	}
 
-	identityService := core.NewIdentityService(masterTransport, config)
+	identityService := identity.NewIdentityService(masterTransport, config)
 
 	reportService := report.NewReportService(identityService, masterTransport, config)
 
@@ -56,7 +57,7 @@ func NewApp(config *Config) (*App, error) {
 		return nil, fmt.Errorf("chunk store init: %w", err)
 	}
 
-	storageService, err := core.NewStorageService(
+	storageService, err := storage.NewStorageService(
 		storageInfra,
 		masterTransport,
 		chunkTransport,

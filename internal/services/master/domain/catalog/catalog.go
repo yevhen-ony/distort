@@ -12,6 +12,8 @@ import (
 type CatalogService struct {
 	objectRepo m.ObjectRepo
 	chunkRepo  m.ChunkRepo
+	
+	metrics *CatalogMetrics
 }
 
 func NewCatalogService(objectRepo m.ObjectRepo, chunkRepo m.ChunkRepo) *CatalogService {
@@ -24,8 +26,12 @@ func NewCatalogService(objectRepo m.ObjectRepo, chunkRepo m.ChunkRepo) *CatalogS
 func (s *CatalogService) Create(
 	ctx context.Context, objectID t.ObjectID, replicaCount int,
 ) error {
-
-	return s.objectRepo.Create(ctx, objectID, replicaCount)
+	err := s.objectRepo.Create(ctx, objectID, replicaCount)
+	if err != nil {
+		return err
+	}
+	s.metrics.ObjectCount.Add(1)
+	return nil
 }
 
 func (s *CatalogService) GetReplicaCount(ctx context.Context, objectID t.ObjectID) (int, error) {
@@ -54,6 +60,7 @@ func (s *CatalogService) AllocateChunk(
 		ChunkKey:  chunkKey,
 		ChunkSize: chunkSize,
 	}
+	s.metrics.ChunkCount.Add(1)
 	return desc, nil
 }
 
