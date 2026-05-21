@@ -1,4 +1,4 @@
-package identity 
+package identity
 
 import (
 	"context"
@@ -13,29 +13,43 @@ import (
 	"time"
 )
 
-type IdentityServiceConfig interface {
+type IdentityConfig interface {
 	AdvertiseAddr() string
 	RegistrationTimeout() time.Duration
 }
 
-type IdentityService struct {
-	master *transport.Master
-	config IdentityServiceConfig
-	mu sync.RWMutex
-
-	nodeID t.NodeID
-	obtainedAt time.Time 
+type IdentityDeps struct {
+	MasterT *transport.Master
+	Config  IdentityConfig
 }
 
-func NewIdentityService(master *transport.Master, config IdentityServiceConfig) *IdentityService {
-	return &IdentityService{master: master, config: config}
+type IdentityService struct {
+	masterT *transport.Master
+	config  IdentityConfig
+	mu      sync.RWMutex
+
+	nodeID     t.NodeID
+	obtainedAt time.Time
+}
+
+func NewIdentityService(deps IdentityDeps) (*IdentityService, error) {
+	if deps.MasterT == nil {
+		return nil, errors.New("missing master transport")
+	}
+	if deps.Config == nil {
+		return nil, errors.New("missing config")
+	}
+	service := &IdentityService{
+		masterT: deps.MasterT,
+		config:  deps.Config,
+	}
+	return service, nil
 }
 
 var (
-	ErrInvalidNodeID = errors.New("invalid node id")
+	ErrInvalidNodeID     = errors.New("invalid node id")
 	ErrNodeNotRegistered = errors.New("node not registered")
 )
-
 
 func (is *IdentityService) getNewID(ctx context.Context) (t.NodeID, error) {
 
@@ -44,7 +58,7 @@ func (is *IdentityService) getNewID(ctx context.Context) (t.NodeID, error) {
 	retry := retry.Retry{Delay: time.Second}
 	err := retry.Run(ctx, func(ctx context.Context) error {
 		var innerErr error
-		nodeID, innerErr = is.master.RegisterNode(ctx, is.config.AdvertiseAddr())
+		nodeID, innerErr = is.masterT.RegisterNode(ctx, is.config.AdvertiseAddr())
 		return innerErr
 	})
 
@@ -66,7 +80,7 @@ func (is *IdentityService) RequestNewID(ctx context.Context) error {
 	if requestedAt.Before(is.obtainedAt.Add(is.config.RegistrationTimeout())) {
 		return nil
 	}
-	
+
 	nodeID, err := is.getNewID(ctx)
 	if err != nil {
 		slog.ErrorContext(ctx, "fail to get new node ID: %w", err)
@@ -92,10 +106,9 @@ func (is *IdentityService) Validate(nodeID t.NodeID) error {
 func (is *IdentityService) GetID() (t.NodeID, error) {
 	is.mu.RLock()
 	defer is.mu.RUnlock()
-	
+
 	if is.nodeID == "" {
 		return "", ErrNodeNotRegistered
 	}
 	return is.nodeID, nil
 }
-

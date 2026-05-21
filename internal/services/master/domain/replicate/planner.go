@@ -15,61 +15,65 @@ type ReplicationScheduler interface {
 	Schedule(context.Context, t.ChunkID)
 }
 
-type ReplicationPlannerConfig interface {
+type PlannerConfig interface {
 	ChunkStaleAfter() time.Duration
 	ReplicationPlannerInterval() time.Duration
 }
 
-type ReplicationPlanner struct {
-	objectRepo m.ObjectRepo
-	chunkRepo m.ChunkRepo
-	replicate ReplicationScheduler
+type PlannerDeps struct {
+	ObjectRepo  m.ObjectRepo
+	ChunkRepo   m.ChunkRepo
+	Replication ReplicationScheduler
+	Config      PlannerConfig
+}
 
-	config ReplicationPlannerConfig
+type PlannerService struct {
+	objectRepo m.ObjectRepo
+	chunkRepo  m.ChunkRepo
+	replicate  ReplicationScheduler
+
+	config PlannerConfig
 
 	looper *loop.Looper
 }
 
-func NewReplicationPlanner(
-	objectRepo m.ObjectRepo,
-	chunkRepo m.ChunkRepo,
-	replicate ReplicationScheduler,
-	config ReplicationPlannerConfig,	
-) (*ReplicationPlanner, error) {
+func NewPlannerService(deps PlannerDeps) (*PlannerService, error) {
 
-	if objectRepo == nil {
+	if deps.ObjectRepo == nil {
 		return nil, errors.New("missing object repo")
 	}
-	if chunkRepo == nil {
+	if deps.ChunkRepo == nil {
 		return nil, errors.New("missing chunk repo")
 	}
-	if replicate == nil {
+	if deps.Replication == nil {
 		return nil, errors.New("missing replication scheduler")
 	}
-	if config == nil {
+	if deps.Config == nil {
 		return nil, errors.New("missing config")
 	}
-	planner := &ReplicationPlanner{
-		objectRepo: objectRepo,
-		chunkRepo: chunkRepo,
-		replicate: replicate,
-		config: config,
-		looper: loop.NewLooper(config.ReplicationPlannerInterval()),
+	looper := loop.NewLooper(deps.Config.ReplicationPlannerInterval())
+
+	planner := &PlannerService{
+		objectRepo: deps.ObjectRepo,
+		chunkRepo:  deps.ChunkRepo,
+		replicate:  deps.Replication,
+		config:     deps.Config,
+		looper:     looper,
 	}
 	return planner, nil
 }
 
-func (p *ReplicationPlanner) ScheduleStaleChunks(ctx context.Context) {
-	now := time.Now() 
+func (p *PlannerService) ScheduleStaleChunks(ctx context.Context) {
+	now := time.Now()
 	p.chunkRepo.ForEach(ctx, func(chunk m.Chunk) {
-		desired, err := p.objectRepo.GetReplication(ctx, chunk.ObjectID)	
+		desired, err := p.objectRepo.GetReplication(ctx, chunk.ObjectID)
 		if err != nil {
-		  	slog.ErrorContext(ctx,
+			slog.ErrorContext(ctx,
 				"read object replication for chunk failed",
 				"chunk_id", chunk.Meta.ID,
 				"object_id", chunk.ObjectID,
 				"error", err,
-		  	)
+			)
 			return
 		}
 		if chunk.ReplicaCount == desired {
@@ -82,11 +86,11 @@ func (p *ReplicationPlanner) ScheduleStaleChunks(ctx context.Context) {
 	})
 }
 
-func (p *ReplicationPlanner) RunLoop(ctx context.Context) {
+func (p *PlannerService) RunLoop(ctx context.Context) {
 	ctx = dosctx.WithService(ctx, "replication_planner")
 	p.looper.Run(ctx, p.ScheduleStaleChunks)
 }
 
-func (p *ReplicationPlanner) Flush() {
+func (p *PlannerService) Flush() {
 	p.looper.Flush()
 }

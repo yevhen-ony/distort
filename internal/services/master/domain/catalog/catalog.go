@@ -1,7 +1,8 @@
-package catalog 
+package catalog
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	t "dos/internal/common/types"
@@ -9,18 +10,36 @@ import (
 	m "dos/internal/services/master"
 )
 
+type CatalogDeps struct {
+	ObjectRepo m.ObjectRepo
+	ChunkRepo  m.ChunkRepo
+	Metrics    *CatalogMetrics
+}
+
 type CatalogService struct {
 	objectRepo m.ObjectRepo
 	chunkRepo  m.ChunkRepo
-	
+
 	metrics *CatalogMetrics
 }
 
-func NewCatalogService(objectRepo m.ObjectRepo, chunkRepo m.ChunkRepo) *CatalogService {
-	return &CatalogService{
-		objectRepo: objectRepo,
-		chunkRepo:  chunkRepo,
+func NewCatalogService(deps CatalogDeps) (*CatalogService, error) {
+	if deps.ObjectRepo == nil {
+		return nil, errors.New("missing object repository")
 	}
+	if deps.ChunkRepo == nil {
+		return nil, errors.New("missing chunk repository")
+	}
+	if deps.Metrics == nil {
+		return nil, errors.New("missing metrics")
+	}
+
+	service := &CatalogService{
+		objectRepo: deps.ObjectRepo,
+		chunkRepo:  deps.ChunkRepo,
+		metrics:    deps.Metrics,
+	}
+	return service, nil
 }
 
 func (s *CatalogService) Create(
@@ -79,28 +98,28 @@ func (s *CatalogService) GetObjectChunks(ctx context.Context, objectID t.ObjectI
 }
 
 func (s *CatalogService) DescribeChunk(ctx context.Context, chunkID t.ChunkID) (t.ChunkDesc, error) {
-		chunk, err := s.chunkRepo.Get(ctx, chunkID)
-		if err != nil {
-			return t.ChunkDesc{}, fmt.Errorf("access chunk %s: %w", chunkID, err)
-		}
-		
-		size := int64(0)
-		if chunk.ReplicaCount > 0 {
-			size = chunk.Meta.Digest.Size
-		}
-		desc := t.ChunkDesc{
-			ChunkID:   chunk.Meta.ID,
-			ChunkKey:  chunk.ChunkKey,
-			ChunkSize: size,
-		}
-		return desc, nil 
+	chunk, err := s.chunkRepo.Get(ctx, chunkID)
+	if err != nil {
+		return t.ChunkDesc{}, fmt.Errorf("access chunk %s: %w", chunkID, err)
+	}
+
+	size := int64(0)
+	if chunk.ReplicaCount > 0 {
+		size = chunk.Meta.Digest.Size
+	}
+	desc := t.ChunkDesc{
+		ChunkID:   chunk.Meta.ID,
+		ChunkKey:  chunk.ChunkKey,
+		ChunkSize: size,
+	}
+	return desc, nil
 }
 
 func (s *CatalogService) ListObjects(ctx context.Context) []t.ObjectInfo {
 	return utils.Map(s.objectRepo.List(ctx), func(o m.Object) t.ObjectInfo {
-		return t.ObjectInfo {
-			ID: o.ID,
-			ChunkCount: len(o.Chunks),
+		return t.ObjectInfo{
+			ID:          o.ID,
+			ChunkCount:  len(o.Chunks),
 			Replication: o.Replication,
 		}
 	})

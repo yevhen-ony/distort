@@ -20,48 +20,72 @@ var (
 	ErrReplicationAttemptsExhausted = errors.New("all replication attempts exhausted")
 )
 
-type ReplicationConfig interface {
+type ExecutorConfig interface {
 	ReplicationQueueLength() int
 	ReplicationExecInterval() time.Duration
 }
 
+type ExecutorDeps struct {
+	ChunkRepo  m.ChunkRepo
+	ObjectRepo m.ObjectRepo
+	Placement  m.StorageNodePlacement
+	ChunkT     *chunkrpc.Transport
+	Config     ExecutorConfig
+	Metrics    *ExecutorMetrics
+}
 
-type ReplicationExecutor struct {
+type ExecutorService struct {
 	chunkRepo  m.ChunkRepo
 	objectRepo m.ObjectRepo
 	placement  m.StorageNodePlacement
-	transport  *chunkrpc.Transport
-	config     ReplicationConfig
+	chunkT     *chunkrpc.Transport
+
+	metrics *ExecutorMetrics
+	config  ExecutorConfig
 
 	queue  *queue.DedupQueue[t.ChunkID]
 	looper *loop.Looper
-
-	metrics *ReplicationMetrics
 }
 
-func NewReplicationExecutor(
-	chunkRepo m.ChunkRepo,
-	objectRepo m.ObjectRepo,
-	placement m.StorageNodePlacement,
-	transport *chunkrpc.Transport,
-	config ReplicationConfig,
-) *ReplicationExecutor {
+func NewExecutorService(deps ExecutorDeps) (*ExecutorService, error) {
+	if deps.ChunkRepo == nil {
+		return nil, errors.New("missing chunk repository")
+	}
+	if deps.ObjectRepo == nil {
+		return nil, errors.New("missing object repository")
+	}
+	if deps.Placement == nil {
+		return nil, errors.New("missing placement service")
+	}
+	if deps.ChunkT == nil {
+		return nil, errors.New("missing chunk placement")
+	}
+	if deps.Config == nil {
+		return nil, errors.New("missing config")
+	}
+	if deps.Metrics == nil {
+		return nil, errors.New("missing metrics")
+	}
 
+	config := deps.Config
 	queue := queue.NewDedupQueue[t.ChunkID](config.ReplicationQueueLength())
 	looper := loop.NewLooper(config.ReplicationExecInterval())
-	return &ReplicationExecutor{
-		chunkRepo:  chunkRepo,
-		objectRepo: objectRepo,
-		placement:  placement,
-		transport:  transport,
-		config:     config,
+	service := &ExecutorService{
+		chunkRepo:  deps.ChunkRepo,
+		objectRepo: deps.ObjectRepo,
+		placement:  deps.Placement,
+		chunkT:     deps.ChunkT,
+		metrics:    deps.Metrics,
+
+		config: deps.Config,
 
 		queue:  queue,
 		looper: looper,
 	}
+	return service, nil
 }
 
-func (r *ReplicationExecutor) ReplicateChunk(ctx context.Context, chunk m.Chunk) error {
+func (r *ExecutorService) ReplicateChunk(ctx context.Context, chunk m.Chunk) error {
 
 	ctx = dosctx.WithChunkID(ctx, chunk.Meta.ID)
 
@@ -72,7 +96,6 @@ func (r *ReplicationExecutor) ReplicateChunk(ctx context.Context, chunk m.Chunk)
 	if count == 0 {
 		return nil
 	}
-
 
 	if count > 0 {
 		_, err = r.addReplica(ctx, chunk.Meta, count)
@@ -90,7 +113,7 @@ func (r *ReplicationExecutor) ReplicateChunk(ctx context.Context, chunk m.Chunk)
 	return nil
 }
 
-func (r *ReplicationExecutor) decideReplication(ctx context.Context, chunk m.Chunk) (int, error) {
+func (r *ExecutorService) decideReplication(ctx context.Context, chunk m.Chunk) (int, error) {
 
 	actual := chunk.ReplicaCount
 	wanted, err := r.objectRepo.GetReplication(ctx, chunk.ObjectID)
@@ -99,7 +122,7 @@ func (r *ReplicationExecutor) decideReplication(ctx context.Context, chunk m.Chu
 		return 0, fmt.Errorf("read object %s: %w", chunk.ObjectID, err)
 	}
 
-	delta := wanted - actual 
+	delta := wanted - actual
 	if delta == 0 {
 		return 0, nil
 	}
@@ -110,21 +133,20 @@ func (r *ReplicationExecutor) decideReplication(ctx context.Context, chunk m.Chu
 		"delta", delta,
 	)
 
-	if actual == 0  {
+	if actual == 0 {
 		slog.WarnContext(ctx, "unreachable chunk detected")
 		r.metrics.UnreachableChunkObservationsTotal.Inc()
 		return 0, nil
 	}
 
-	return delta, nil 
+	return delta, nil
 }
 
-
-func (r *ReplicationExecutor) addReplica(
+func (r *ExecutorService) addReplica(
 	ctx context.Context, meta t.ChunkMeta, count int,
 ) (chosen t.NodeID, err error) {
 
-	start := time.Now()  
+	start := time.Now()
 	defer func() {
 		duration := time.Since(start).Seconds()
 		if err != nil {
@@ -133,10 +155,10 @@ func (r *ReplicationExecutor) addReplica(
 			r.metrics.AddReplicaSuccessDuration.Observe(duration)
 		}
 	}()
-	
+
 	ctx = dosctx.WithOperation(ctx, "add")
 	slog.DebugContext(ctx, "add replica")
-	
+
 	r.chunkRepo.Touch(ctx, meta.ID)
 
 	sources, err := r.placement.GetChunkNodes(ctx, meta.ID)
@@ -165,7 +187,7 @@ func (r *ReplicationExecutor) addReplica(
 
 	for _, source := range utils.RandomSelect(sources, len(sources)) {
 
-		err = r.transport.ReplicateChunk(ctx, meta.ID, source, targets)
+		err = r.chunkT.ReplicateChunk(ctx, meta.ID, source, targets)
 		if err != nil {
 			slog.ErrorContext(ctx, "replicate chunk failed", "source", source.ID, "error", err)
 			continue
@@ -175,7 +197,7 @@ func (r *ReplicationExecutor) addReplica(
 	return "", ErrReplicationAttemptsExhausted
 }
 
-func (r *ReplicationExecutor) deleteReplica(ctx context.Context, meta t.ChunkMeta, count int) (err error) {
+func (r *ExecutorService) deleteReplica(ctx context.Context, meta t.ChunkMeta, count int) (err error) {
 
 	start := time.Now()
 	defer func() {
@@ -198,7 +220,7 @@ func (r *ReplicationExecutor) deleteReplica(ctx context.Context, meta t.ChunkMet
 
 	var errs []error
 	for _, nodeRef := range utils.RandomSelect(nodeRefs, count) {
-		err = r.transport.DeleteChunk(ctx, meta.ID, nodeRef)
+		err = r.chunkT.DeleteChunk(ctx, meta.ID, nodeRef)
 		if err != nil {
 			slog.ErrorContext(ctx, "delete replica failed", "source", nodeRef.ID, "error", err)
 			errs = append(errs, fmt.Errorf(
@@ -211,7 +233,7 @@ func (r *ReplicationExecutor) deleteReplica(ctx context.Context, meta t.ChunkMet
 	return errors.Join(errs...)
 }
 
-func (r *ReplicationExecutor) RunReplicationIteration(ctx context.Context) {
+func (r *ExecutorService) RunReplicationIteration(ctx context.Context) {
 	chunkIDs := r.queue.Drain()
 	if len(chunkIDs) == 0 {
 		return
@@ -221,7 +243,7 @@ func (r *ReplicationExecutor) RunReplicationIteration(ctx context.Context) {
 
 		chunk, err := r.chunkRepo.Get(ctx, chunkID)
 		if err != nil {
-			slog.WarnContext(ctx, 
+			slog.WarnContext(ctx,
 				"failed to access scheduled chunk",
 				"chunk_id", chunkID,
 				"error", err,
@@ -231,17 +253,16 @@ func (r *ReplicationExecutor) RunReplicationIteration(ctx context.Context) {
 	}
 }
 
-func (r *ReplicationExecutor) RunLoop(ctx context.Context) {
+func (r *ExecutorService) RunLoop(ctx context.Context) {
 	ctx = dosctx.WithService(ctx, "replication_executor")
 	r.looper.Run(ctx, r.RunReplicationIteration)
 }
 
-func (r *ReplicationExecutor) Schedule(ctx context.Context, chunkID t.ChunkID) {
+func (r *ExecutorService) Schedule(ctx context.Context, chunkID t.ChunkID) {
 	r.queue.Enq(ctx, chunkID)
 	r.metrics.ReplicationScheduledTotal.Inc()
 }
 
-func (r *ReplicationExecutor) Flush(_ context.Context) {
+func (r *ExecutorService) Flush(_ context.Context) {
 	r.looper.Flush()
 }
-

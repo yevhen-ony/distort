@@ -25,13 +25,10 @@ func (c *Config) ListeningAddr() string {
 type Service struct {
 	registry *prometheus.Registry
 	provider *Provider
-	config *Config
+	config Config
 }
 
-func NewService(config *Config) (*Service, error) {
-	if config == nil {
-		return nil, errors.New("missing config")
-	}
+func NewService(config Config) *Service {
 	registry := prometheus.NewRegistry()
 	provider := newProvider(registry, config.Namespace)
 
@@ -40,7 +37,7 @@ func NewService(config *Config) (*Service, error) {
 		provider: provider,
 		config: config,	
 	}
-	return s, nil
+	return s
 }
 
 func (s *Service) Provider() metrics.Provider {

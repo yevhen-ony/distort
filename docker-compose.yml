@@ -4,6 +4,7 @@ services:
     image: dos-master:latest
     ports:
       - "10000:10000"
+      - "9090:9090"
     environment:
       - SERVICE__REPLICATION_COUNT=1
 
@@ -12,6 +13,8 @@ services:
     image: dos-storage:latest
     depends_on:
       - master
+    ports:
+      - "9091:9090"
     environment:
       - TRANSPORT__MASTER_ADDR=master:10000
       - TRANSPORT__ADVERTISE_ADDR=storage1:10001
@@ -22,6 +25,8 @@ services:
     image: dos-storage:latest
     depends_on:
       - master
+    ports:
+      - "9092:9090"
     environment:
       - TRANSPORT__MASTER_ADDR=master:10000
       - TRANSPORT__ADVERTISE_ADDR=storage2:10001
@@ -32,6 +37,8 @@ services:
     image: dos-storage:latest
     depends_on:
       - master
+    ports:
+      - "9093:9090"
     environment:
       - TRANSPORT__MASTER_ADDR=master:10000
       - TRANSPORT__ADVERTISE_ADDR=storage3:10001

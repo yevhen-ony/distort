@@ -7,12 +7,12 @@ import (
 	"dos/internal/common/queue"
 	t "dos/internal/common/types"
 	"dos/internal/services/storage/transport"
+	"errors"
 	"log/slog"
 	"time"
 )
 
-
-type Config interface {
+type ReportConfig interface {
 	ReportInterval() time.Duration
 	QueueCapacity() int
 }
@@ -21,40 +21,64 @@ type IdentityProvider interface {
 	GetID() (t.NodeID, error)
 }
 
-type ReportProcessor interface{
+type ReportProcessor interface {
 	Process(context.Context, t.ReportResult)
 }
 
-type NOPReportProcessor struct {}
+type NOPReportProcessor struct{}
+
 func (*NOPReportProcessor) Process(context.Context, t.ReportResult) {}
 
-type ReportService struct {
-	identity IdentityProvider 
-	master *transport.Master
-
-	config Config
-
-	pending []t.StorageNodeReport
-	processor ReportProcessor
-	
-	queue *queue.Queue[t.StorageNodeReport]
-	looper *loop.Looper
-
-	metrics *ReportServiceMetrics
+type ReportDeps struct {
+	Identity IdentityProvider
+	MasterT  *transport.Master
+	Config   ReportConfig
+	Metrics  *ReportMetrics
 }
 
-func NewReportService(
-	identity IdentityProvider, master *transport.Master, config Config, 
-) *ReportService {
-	queue := queue.NewQueue[t.StorageNodeReport](config.QueueCapacity())
-	return &ReportService {
-		identity: identity,
-		master: master,
-		config: config,
-		queue: queue,
-		processor: &NOPReportProcessor{},
-		looper: loop.NewLooper(config.ReportInterval()),
+type ReportService struct {
+	identity IdentityProvider
+	masterT  *transport.Master
+	metrics  *ReportMetrics
+
+	processor ReportProcessor
+
+	config ReportConfig
+
+	pending []t.StorageNodeReport
+
+	queue  *queue.Queue[t.StorageNodeReport]
+	looper *loop.Looper
+}
+
+func NewReportService(deps ReportDeps) (*ReportService, error) {
+	if deps.Identity == nil {
+		return nil, errors.New("missing identity")
 	}
+	if deps.MasterT == nil {
+		return nil, errors.New("missing master transport")
+	}
+	if deps.Config == nil {
+		return nil, errors.New("missing config")
+	}
+	if deps.Metrics == nil {
+		return nil, errors.New("missing metrics")
+	}
+
+	config := deps.Config 
+	queue := queue.NewQueue[t.StorageNodeReport](config.QueueCapacity())
+	looper := loop.NewLooper(config.ReportInterval())
+	service := &ReportService{
+		identity: deps.Identity,
+		masterT:  deps.MasterT,
+		config:   deps.Config,
+		metrics:  deps.Metrics,
+
+		queue:     queue,
+		looper:    looper,
+		processor: &NOPReportProcessor{},
+	}
+	return service, nil
 }
 
 func (rs *ReportService) SetReportProcessor(p ReportProcessor) {
@@ -63,13 +87,12 @@ func (rs *ReportService) SetReportProcessor(p ReportProcessor) {
 
 func (rs *ReportService) Report(ctx context.Context, report t.StorageNodeReport) {
 	if err := rs.queue.Enq(ctx, report); err != nil {
-		return 
+		return
 	}
 	if rs.queue.Full() {
 		rs.Flush(ctx)
 	}
 }
-
 
 func (rs *ReportService) RunReportIteration(ctx context.Context) {
 
@@ -84,13 +107,13 @@ func (rs *ReportService) RunReportIteration(ctx context.Context) {
 		rs.ProcessReportResult(ctx, result)
 		rs.pending = nil
 	}
-	
+
 	rs.pending = rs.queue.Drain()
 	slog.DebugContext(ctx, "drain report queue", "length", len(rs.pending))
 	if len(rs.pending) == 0 {
 		return
 	}
-	
+
 	rs.metrics.ReportsQueueBatchSize.Observe(float64(len(rs.pending)))
 
 	result, err := rs.SendReports(ctx, rs.pending)
@@ -121,7 +144,7 @@ func (rs *ReportService) SendReports(
 		return t.ReportResult{}, err
 	}
 
-	result, err := rs.master.ReportChunks(ctx, nodeID, reports)
+	result, err := rs.masterT.ReportChunks(ctx, nodeID, reports)
 	if err != nil {
 		rs.metrics.ReportsFailedTotal.Inc()
 		return t.ReportResult{}, err
@@ -132,7 +155,7 @@ func (rs *ReportService) SendReports(
 
 func (rs *ReportService) RunLoop(ctx context.Context) {
 	ctx = dosctx.WithService(ctx, "reporter")
-	rs.looper.SkipFirstWait().Run(ctx, rs.RunReportIteration) 
+	rs.looper.SkipFirstWait().Run(ctx, rs.RunReportIteration)
 }
 
 func (rs *ReportService) Flush(_ context.Context) {

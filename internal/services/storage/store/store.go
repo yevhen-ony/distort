@@ -11,7 +11,7 @@ import (
 	t "dos/internal/common/types"
 )
 
-type FSChunkStorage struct {
+type ChunkStorageBackend struct {
 	commitDir string
 }
 
@@ -19,20 +19,20 @@ type ChunkStorageConfig interface {
 	StorageRootDir() string
 }
 
-func NewChunkStorage(config ChunkStorageConfig) (*FSChunkStorage, error) {
+func NewChunkStorage(config ChunkStorageConfig) (*ChunkStorageBackend, error) {
 
 	commitDir, err := getCommitDir(config.StorageRootDir())
 	if err != nil {
 		return nil, fmt.Errorf("get commit dir: %w", err)
 	}
 
-	s := &FSChunkStorage{
+	s := &ChunkStorageBackend{
 		commitDir: commitDir,
 	}
 	return s, nil
 }
 
-func (stg *FSChunkStorage) Get(chunkID t.ChunkID) (io.ReadCloser, error) {
+func (stg *ChunkStorageBackend) Get(chunkID t.ChunkID) (io.ReadCloser, error) {
 
 	chunkPath := filepath.Join(stg.commitDir, string(chunkID))
 	f, err := os.OpenFile(chunkPath, os.O_RDONLY, 0)
@@ -42,7 +42,7 @@ func (stg *FSChunkStorage) Get(chunkID t.ChunkID) (io.ReadCloser, error) {
 	return f, nil
 }
 
-func (stg *FSChunkStorage) Delete(chunkID t.ChunkID) error {
+func (stg *ChunkStorageBackend) Delete(chunkID t.ChunkID) error {
 	chunkPath := filepath.Join(stg.commitDir, string(chunkID))
 	err := os.Remove(chunkPath)
 	if errors.Is(err, os.ErrNotExist) {
@@ -51,7 +51,7 @@ func (stg *FSChunkStorage) Delete(chunkID t.ChunkID) error {
 	return err
 }
 
-func (stg *FSChunkStorage) GetMeta(chunkID t.ChunkID) (t.ChunkMeta, error) {
+func (stg *ChunkStorageBackend) GetMeta(chunkID t.ChunkID) (t.ChunkMeta, error) {
 
 	chunkPath := filepath.Join(stg.commitDir, string(chunkID))
 
@@ -74,7 +74,7 @@ func (stg *FSChunkStorage) GetMeta(chunkID t.ChunkID) (t.ChunkMeta, error) {
 	return meta, nil
 }
 
-func (stg *FSChunkStorage) List() ([]t.ChunkID, error) {
+func (stg *ChunkStorageBackend) List() ([]t.ChunkID, error) {
 	entries, err := os.ReadDir(stg.commitDir)
 	if err != nil {
 		return nil, err
@@ -90,7 +90,7 @@ func (stg *FSChunkStorage) List() ([]t.ChunkID, error) {
 	return chunks, nil
 }
 
-func (stg *FSChunkStorage) Store(chunk t.Chunk) (err error) {
+func (stg *ChunkStorageBackend) Store(chunk t.Chunk) (err error) {
 	
 	chunkPath := filepath.Join(stg.commitDir, string(chunk.Meta.ID))
 	defer func() {

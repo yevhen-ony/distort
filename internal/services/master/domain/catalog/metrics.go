@@ -9,11 +9,11 @@ type CatalogMetrics struct {
 
 func NewCatalogMetrics(provider metrics.Provider) *CatalogMetrics {
 	objectCount := provider.Gauge(metrics.GaugeOpts{
-		Name: "catalog_objects_count",
+		Name: "master_catalog_objects_count",
 		Help: "Current number of objects in the master catalog.",
 	})
 	chunkCount := provider.Gauge(metrics.GaugeOpts{
-		Name: "catalog_chunks_count",
+		Name: "master_catalog_chunks_count",
 		Help: "Current number of chunks in the master catalog.",
 	})
 

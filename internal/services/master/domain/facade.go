@@ -6,6 +6,7 @@ import (
 	m "dos/internal/services/master"
 	"dos/internal/services/master/domain/catalog"
 	"dos/internal/services/master/domain/storagenode"
+	"errors"
 	"fmt"
 	"log/slog"
 )
@@ -18,6 +19,14 @@ type ReplicationScheduler interface {
 	Schedule(context.Context, t.ChunkID)
 }
 
+type ClientFacadeDeps struct {
+	Catalog     *catalog.CatalogService
+	Placement   *storagenode.PlacementService
+	Lifecycle   *storagenode.LifecycleService
+	Replication ReplicationScheduler
+	Config      ClientFacadeConfig
+}
+
 type ClientFacadeService struct {
 	catalog   *catalog.CatalogService
 	placement *storagenode.PlacementService
@@ -27,20 +36,30 @@ type ClientFacadeService struct {
 	config ClientFacadeConfig
 }
 
-func NewClientFacadeService(
-	objectCatalog *catalog.CatalogService,
-	placement *storagenode.PlacementService,
-	lifecycle *storagenode.LifecycleService,
-	replicate ReplicationScheduler,
-	config ClientFacadeConfig,
-) *ClientFacadeService {
-	return &ClientFacadeService{
-		catalog:   objectCatalog,
-		placement: placement,
-		lifecycle: lifecycle,
-		replicate: replicate,
-		config:    config,
+func NewClientFacadeService(deps ClientFacadeDeps) (*ClientFacadeService, error) {
+	if deps.Catalog == nil {
+		return nil, errors.New("missing catalog service")
 	}
+	if deps.Placement == nil {
+		return nil, errors.New("missing placement service")
+	}
+	if deps.Lifecycle == nil {
+		return nil, errors.New("missing lifecycle service")
+	}
+	if deps.Replication == nil {
+		return nil, errors.New("missing replication scheduler")
+	}
+	if deps.Config == nil {
+		return nil, errors.New("missing config")
+	}
+	service := &ClientFacadeService{
+		catalog:   deps.Catalog,
+		placement: deps.Placement,
+		lifecycle: deps.Lifecycle,
+		replicate: deps.Replication,
+		config:    deps.Config,
+	}
+	return service, nil
 }
 
 func (s *ClientFacadeService) CreateObject(ctx context.Context, oid t.ObjectID) error {
@@ -130,7 +149,7 @@ func (s *ClientFacadeService) ListNodes(ctx context.Context) []t.NodeInfo {
 
 func (s *ClientFacadeService) SetReplication(ctx context.Context, objectID t.ObjectID, count int) error {
 	nodesCount := s.lifecycle.GetNodeCount(ctx)
-	if count > nodesCount{
+	if count > nodesCount {
 		return fmt.Errorf("requested replica count %d exceeds number of nodes %d", count, nodesCount)
 	}
 	if err := s.catalog.SetReplicaCount(ctx, objectID, count); err != nil {

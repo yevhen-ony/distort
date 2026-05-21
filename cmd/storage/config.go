@@ -6,11 +6,13 @@ import (
 	"dos/internal/common/config"
 	"dos/internal/common/listener"
 	"dos/internal/common/logger"
+	"dos/internal/common/metrics/prom"
 )
 
 type Config struct {
 	Logger    logger.Config   `yaml:"logger"`
 	Listen    listener.Config `yaml:"listen"`
+	Metrics   prom.Config     `yaml:"metrics"`
 	Store     StoreConfig     `yaml:"store"`
 	Transport TransportConfig `yaml:"transport"`
 	Service   ServiceConfig   `yaml:"service"`
@@ -36,7 +38,7 @@ type ServiceConfig struct {
 	MaxParallelHeavyOps int           `yaml:"max_parallel_heavy_ops"`
 }
 
-func (cfg *Config) MaxStorage() int64 {
+func (cfg *Config) MaxStorageBytes() int64 {
 	return int64(cfg.Store.MaxStorage)
 }
 

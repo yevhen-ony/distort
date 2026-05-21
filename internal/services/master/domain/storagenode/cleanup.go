@@ -4,6 +4,7 @@ import (
 	"context"
 	t "dos/internal/common/types"
 	m "dos/internal/services/master"
+	"errors"
 	"log/slog"
 	"time"
 )
@@ -13,24 +14,36 @@ type CleanupConfig interface {
 	NodeCleanupInterval() time.Duration
 }
 
+type CleanupDeps struct {
+	Lifecycle   *LifecycleService
+	Replication m.ReplicaScheduler
+	Config      CleanupConfig
+}
+
 type CleanupWorker struct {
 	lifecycle *LifecycleService
 	replicate m.ReplicaScheduler
 
-	config    CleanupConfig
+	config CleanupConfig
 }
 
-func NewCleanupWorker(
-	lifecycle *LifecycleService,
-	replicate m.ReplicaScheduler, 
-	config CleanupConfig,
-) *CleanupWorker {
-
-	return &CleanupWorker{
-		lifecycle: lifecycle,
-		replicate: replicate,
-		config:    config,
+func NewCleanupWorker(deps CleanupDeps) (*CleanupWorker, error) {
+	if deps.Lifecycle == nil {
+		return nil, errors.New("missing lifecycle service")
 	}
+	if deps.Replication == nil {
+		return nil, errors.New("missing replication scheduler")
+	}
+	if deps.Config == nil {
+		return nil, errors.New("missing config")
+	}
+
+	service := &CleanupWorker{
+		lifecycle: deps.Lifecycle,
+		replicate: deps.Replication,
+		config:    deps.Config,
+	}
+	return service, nil
 }
 
 func (s *CleanupWorker) RemoveInactive(ctx context.Context) int {

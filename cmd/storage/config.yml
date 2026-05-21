@@ -15,6 +15,11 @@ transport:
   master_addr: localhost:10000
   frame_size: 1MB
 
+metrics:
+  scrape_port: 9090
+  scrape_path: /metrics
+  namespace: dos 
+
 service:
   heartbeat_interval: 15s
   registration_timeout: 1m

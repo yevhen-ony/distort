@@ -5,32 +5,53 @@ import (
 	"dos/internal/common/dosctx"
 	t "dos/internal/common/types"
 	m "dos/internal/services/master"
+	"errors"
 	"fmt"
 	"log/slog"
 )
 
+type ReportDeps struct {
+	ChunkRepo      m.ChunkRepo
+	NodeRegistry   m.NodeRegistry
+	ChunkNodeIndex m.ChunkNodeIndex
+	Replication    m.ReplicaScheduler
+	Metrics        *ReportMetrics
+}
+
 type ReportService struct {
-	chunkNodeIndex  m.ChunkNodeIndex
-	chunkRepository m.ChunkRepo
-	nodeRegistry    m.NodeRegistry
+	chunkNodeIndex m.ChunkNodeIndex
+	chunkRepo      m.ChunkRepo
+	nodeRegistry   m.NodeRegistry
 
 	replication m.ReplicaScheduler
 
-	metrics *NodeReportMetrics
+	metrics *ReportMetrics
 }
 
-func NewReportService(
-	chunkNodeIndex m.ChunkNodeIndex,
-	chunkRepository m.ChunkRepo,
-	nodeRegistry m.NodeRegistry,
-	replication m.ReplicaScheduler,
-) *ReportService {
-	return &ReportService{
-		chunkNodeIndex:  chunkNodeIndex,
-		chunkRepository: chunkRepository,
-		nodeRegistry:    nodeRegistry,
-		replication:     replication,
+func NewReportService(deps ReportDeps) (*ReportService, error) {
+	if deps.ChunkNodeIndex == nil {
+		return nil, errors.New("missing chunk-node index")
 	}
+	if deps.ChunkRepo == nil {
+		return nil, errors.New("missing chunk repository")
+	}
+	if deps.NodeRegistry == nil {
+		return nil, errors.New("missing node registry")
+	}
+	if deps.Replication == nil {
+		return nil, errors.New("missing replication scheduler")
+	}
+	if deps.Metrics == nil {
+		return nil, errors.New("missing metrics")
+	}
+	service := &ReportService{
+		chunkNodeIndex: deps.ChunkNodeIndex,
+		chunkRepo:      deps.ChunkRepo,
+		nodeRegistry:   deps.NodeRegistry,
+		replication:    deps.Replication,
+		metrics:        deps.Metrics,
+	}
+	return service, nil
 }
 
 func (s *ReportService) Report(
@@ -79,13 +100,13 @@ func (s *ReportService) reportStagedReplica(
 	meta := report.Chunk
 	slog.DebugContext(ctx, "staged replica reported", "chunk_id", meta.ID)
 
-	if err := s.chunkRepository.SetDigest(ctx, meta.ID, meta.Digest); err != nil {
+	if err := s.chunkRepo.SetDigest(ctx, meta.ID, meta.Digest); err != nil {
 		slog.WarnContext(ctx, "reject chunk report", "chunk_id", meta.ID, "reason", err)
 		s.metrics.StagedReplicasRejectedTotal.Inc()
 		return err
 	}
 	if s.chunkNodeIndex.AttachChunk(ctx, nodeID, meta.ID) {
-		s.chunkRepository.IncReplication(ctx, meta.ID)
+		s.chunkRepo.IncReplication(ctx, meta.ID)
 		s.metrics.StagedReplicasAcceptedTotal.Inc()
 	}
 	return nil
@@ -99,6 +120,6 @@ func (s *ReportService) reportDeletedReplica(
 	s.metrics.DeletedReplicasTotal.Inc()
 
 	if s.chunkNodeIndex.DetachChunk(ctx, nodeID, chunkID) {
-		s.chunkRepository.DecReplication(ctx, chunkID)
+		s.chunkRepo.DecReplication(ctx, chunkID)
 	}
 }

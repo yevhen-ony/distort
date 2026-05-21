@@ -11,52 +11,55 @@ import (
 	m "dos/internal/services/master"
 )
 
-type CatalogCleanupConfig interface {
+type CleanupConfig interface {
 	CatalogCleanupInterval() time.Duration
 }
 
-type CatalogCleanup struct {
-	objectRepo m.ObjectRepo
-	chunkRepo  m.ChunkRepo
-
-	config CatalogCleanupConfig
-
-	looper *loop.Looper
-	metrics *CatalogMetrics
+type CleanupDeps struct {
+	ObjectRepo m.ObjectRepo
+	ChunkRepo  m.ChunkRepo
+	Config     CleanupConfig
+	Metrics    *CatalogMetrics
 }
 
-var (
-	ErrMissingObjectRepo = errors.New("missing object repo")
-	ErrMissingChunkRepo  = errors.New("missing chunk repo")
-	ErrMissingConfig     = errors.New("missing config")
-)
+type CleanupService struct {
+	objectRepo m.ObjectRepo
+	chunkRepo  m.ChunkRepo
+	metrics    *CatalogMetrics
 
-func NewCatalogCleanup(
-	objectRepo m.ObjectRepo, chunkRepo m.ChunkRepo, config CatalogCleanupConfig,
-) (*CatalogCleanup, error) {
+	config CleanupConfig
 
-	if objectRepo == nil {
-		return nil, ErrMissingObjectRepo
+	looper *loop.Looper
+}
+
+func NewCleanupService(deps CleanupDeps) (*CleanupService, error) {
+
+	if deps.ObjectRepo == nil {
+		return nil, errors.New("missing object repository")
 	}
-	if chunkRepo == nil {
-		return nil, ErrMissingChunkRepo
+	if deps.ChunkRepo == nil {
+		return nil, errors.New("missing chunk repository")
 	}
-	if config == nil {
-		return nil, ErrMissingConfig
+	if deps.Config == nil {
+		return nil, errors.New("missing config")
+	}
+	if deps.Metrics == nil {
+		return nil, errors.New("missing metrics")
 	}
 
-	looper := loop.NewLooper(config.CatalogCleanupInterval())
+	looper := loop.NewLooper(deps.Config.CatalogCleanupInterval())
 
-	cleanup := &CatalogCleanup{
-		objectRepo: objectRepo,
-		chunkRepo:  chunkRepo,
-		config:     config,
+	cleanup := &CleanupService{
+		objectRepo: deps.ObjectRepo,
+		chunkRepo:  deps.ChunkRepo,
+		config:     deps.Config,
+		metrics:    deps.Metrics,
 		looper:     looper,
 	}
 	return cleanup, nil
 }
 
-func (cc *CatalogCleanup) RemoveUnwanted(ctx context.Context) []t.ObjectID {
+func (cc *CleanupService) RemoveUnwanted(ctx context.Context) []t.ObjectID {
 	removedObjectIDs := []t.ObjectID{}
 
 	objects := cc.objectRepo.List(ctx)
@@ -87,7 +90,7 @@ func (cc *CatalogCleanup) RemoveUnwanted(ctx context.Context) []t.ObjectID {
 	return removedObjectIDs
 }
 
-func (cc *CatalogCleanup) RunLoop(ctx context.Context) {
+func (cc *CleanupService) RunLoop(ctx context.Context) {
 	cc.looper.Run(ctx, func(ctx context.Context) {
 		removed := cc.RemoveUnwanted(ctx)
 		if len(removed) > 0 {

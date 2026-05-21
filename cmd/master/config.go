@@ -4,12 +4,14 @@ import (
 	"dos/internal/common/config"
 	"dos/internal/common/listener"
 	"dos/internal/common/logger"
+	"dos/internal/common/metrics/prom"
 	"time"
 )
 
 type Config struct {
 	Logger  logger.Config   `yaml:"logger"`
 	Listen  listener.Config `yaml:"listen"`
+	Metrics prom.Config     `yaml:"metrics"`
 	Service ServiceConfig   `yaml:"service"`
 }
 
