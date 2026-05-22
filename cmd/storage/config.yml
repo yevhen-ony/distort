@@ -16,7 +16,7 @@ transport:
   frame_size: 1MB
 
 metrics:
-  scrape_port: 9090
+  scrape_port: 9100
   scrape_path: /metrics
   namespace: dos 
 

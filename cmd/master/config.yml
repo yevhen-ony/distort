@@ -7,7 +7,7 @@ listen:
   port: 10000
 
 metrics:
-  scrape_port: 9090
+  scrape_port: 9100
   scrape_path: /metrics
   namespace: dos 
 

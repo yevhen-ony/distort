@@ -134,12 +134,14 @@ func (app *App) Start(ctx context.Context) error {
 	if err := app.identityS.RequestNewID(ctx); err != nil {
 		return fmt.Errorf("request id: %w", err)
 	}
+
+	go app.metricsS.Serve(ctx)
+	go app.reportS.RunLoop(ctx)
+
 	if err := app.storageS.Start(ctx); err != nil {
 		return fmt.Errorf("start storage service: %w", err)
 	}
 
-	go app.metricsS.Serve(ctx)
-	go app.reportS.RunLoop(ctx)
 	go app.heartbeatS.RunLoop(ctx)
 	go app.runGrpcServer(ctx)
 

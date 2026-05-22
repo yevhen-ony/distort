@@ -94,7 +94,7 @@ func (cs *ChunkCatalogService) Remove(chunkID t.ChunkID) bool {
 	size := rec.Meta.Digest.Size
 
 	cs.metrics.ChunksCount.Add(-1)
-	cs.metrics.ChunksTotalBytes.Add(float64(size))
+	cs.metrics.ChunksTotalBytes.Add(float64(-size))
 
 	cs.totalBytes -= size
 	delete(cs.catalog, chunkID)

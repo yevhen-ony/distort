@@ -55,7 +55,10 @@ func (is *IdentityService) getNewID(ctx context.Context) (t.NodeID, error) {
 
 	var nodeID t.NodeID
 
-	retry := retry.Retry{Delay: time.Second}
+	retry := retry.Retry{
+		Delay: time.Second,
+		Timeout: 2 * time.Second,
+	}
 	err := retry.Run(ctx, func(ctx context.Context) error {
 		var innerErr error
 		nodeID, innerErr = is.masterT.RegisterNode(ctx, is.config.AdvertiseAddr())

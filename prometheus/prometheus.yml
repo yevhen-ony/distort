@@ -1,0 +1,11 @@
+scrape_configs:
+  - job_name: dos
+    metrics_path: /metrics
+    scrape_interval: 2s
+    static_configs:
+      - targets:
+        - "master:9100"
+        - "storage1:9100"
+        - "storage2:9100"
+        - "storage3:9100"
+

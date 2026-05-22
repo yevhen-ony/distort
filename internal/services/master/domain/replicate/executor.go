@@ -248,6 +248,7 @@ func (r *ExecutorService) RunReplicationIteration(ctx context.Context) {
 				"chunk_id", chunkID,
 				"error", err,
 			)
+			continue
 		}
 		r.ReplicateChunk(ctx, chunk)
 	}
@@ -259,8 +260,10 @@ func (r *ExecutorService) RunLoop(ctx context.Context) {
 }
 
 func (r *ExecutorService) Schedule(ctx context.Context, chunkID t.ChunkID) {
-	r.queue.Enq(ctx, chunkID)
-	r.metrics.ReplicationScheduledTotal.Inc()
+	ok, err := r.queue.Enq(ctx, chunkID)
+	if err == nil && ok {
+		r.metrics.ReplicationScheduledTotal.Inc()
+	}
 }
 
 func (r *ExecutorService) Flush(_ context.Context) {
