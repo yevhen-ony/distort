@@ -73,6 +73,7 @@ message AllocateChunkRequest {
   string object_id = 1;
   string chunk_key = 2;
   int64 chunk_size = 3;
+  repeated common.v1.NodeRef exclude_nodes = 4;
 }
 
 message AllocateChunkResponse {

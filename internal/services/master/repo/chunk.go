@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/rand"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"log/slog"
 	"sync"
@@ -26,17 +27,16 @@ func NewInMemChunkRepo() *InMemChunkRepo {
 }
 
 func (r *InMemChunkRepo) Create(
-	_ context.Context, id t.ChunkID, objectID t.ObjectID, chunkKey t.ChunkKey,
-) error {
+	_ context.Context, chunkID t.ChunkID, objectID t.ObjectID, chunkKey t.ChunkKey) error {
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if _, ok := r.chunks[id]; ok {
+	if _, ok := r.chunks[chunkID]; ok {
 		return m.ErrChunkExists
 	}
-	r.chunks[id] = &m.Chunk{
-		Meta:          t.ChunkMeta{ID: id},
+	r.chunks[chunkID] = &m.Chunk{
+		Meta:          t.ChunkMeta{ID: chunkID},
 		ObjectID:      objectID,
 		ChunkKey:      chunkKey,
 		LastTouchedAt: time.Now(),
@@ -85,47 +85,69 @@ func (r *InMemChunkRepo) SetDigest(_ context.Context, id t.ChunkID, digest *dige
 	return nil
 }
 
-func (r *InMemChunkRepo) Get(_ context.Context, id t.ChunkID) (m.Chunk, error) {
+func (r *InMemChunkRepo) GetDigest(_ context.Context, id t.ChunkID) (*digest.Digest, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	
+	chunk, ok := r.chunks[id]
+	if !ok {
+		return nil, m.ErrChunkNotFound
+	}
+	return chunk.Meta.Digest, nil
+}
+
+func (r *InMemChunkRepo) Exists(_ context.Context, chunkID t.ChunkID) (bool, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+	
+	_, ok := r.chunks[chunkID]
+	return ok, nil
+}
+
+func (r *InMemChunkRepo) Get(_ context.Context, chunkID t.ChunkID) (m.Chunk, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	chunk, ok := r.chunks[id]
+	chunk, ok := r.chunks[chunkID]
 	if !ok {
 		return m.Chunk{}, m.ErrChunkNotFound
 	}
 	return *chunk.Clone(), nil
 }
 
-func (r *InMemChunkRepo) IncReplication(ctx context.Context, chunkID t.ChunkID) {
+func (r *InMemChunkRepo) IncReplicaCount(ctx context.Context, chunkID t.ChunkID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	chunk, ok := r.chunks[chunkID]
 	if !ok {
 		slog.WarnContext(ctx, "try increment replication of non-existing chunk", "chunk_id", chunkID)
-		return
+		return m.ErrChunkNotFound 
 	}
 	chunk.ReplicaCount++
 	chunk.LastTouchedAt = time.Now()
+	return nil
 }
 
-func (r *InMemChunkRepo) DecReplication(ctx context.Context, chunkID t.ChunkID) {
+func (r *InMemChunkRepo) DecReplicaCount(ctx context.Context, chunkID t.ChunkID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	chunk, ok := r.chunks[chunkID]
 	if !ok {
-		slog.WarnContext(ctx, "try decrement replication of Chnon-existing chunk", "chunk_id", chunkID)
-		return
+		slog.WarnContext(ctx, "try decrement replication of non-existing chunk", "chunk_id", chunkID)
+		return m.ErrChunkNotFound
 	}
 	if chunk.ReplicaCount == 0 {
 		slog.WarnContext(ctx, "try decrement replication below zero", "chunk_id", chunkID)
+		return errors.New("decrement replicas below zero")
 	}
 	chunk.ReplicaCount--
 	chunk.LastTouchedAt = time.Now()
+	return nil
 }
 
-func (r *InMemChunkRepo) List(_ context.Context) []m.Chunk {
+func (r *InMemChunkRepo) List(_ context.Context) ([]m.Chunk, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -133,35 +155,36 @@ func (r *InMemChunkRepo) List(_ context.Context) []m.Chunk {
 	for _, chunk := range r.chunks {
 		result = append(result, *chunk.Clone())
 	}
-	return result
+	return result, nil
 }
 
-func (r *InMemChunkRepo) DeleteWithNoReplicas(_ context.Context, chunkID t.ChunkID) bool {
+func (r *InMemChunkRepo) Delete(_ context.Context, chunkID t.ChunkID) (bool, error) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	chunk, ok := r.chunks[chunkID]
 	if !ok {
-		return true
+		return false, nil 
 	}
 
 	if chunk.ReplicaCount > 0 {
-		return false
+		return false, errors.New("delete not empty chunk") 
 	}
 
 	delete(r.chunks, chunkID)
-	return true
+	return true, nil
 }
 
-func (r *InMemChunkRepo) Touch(_ context.Context, chunkID t.ChunkID) {
+func (r *InMemChunkRepo) Touch(_ context.Context, chunkID t.ChunkID) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
 	chunk, ok := r.chunks[chunkID]
 	if !ok {
-		return
+		return m.ErrChunkNotFound 
 	}
 	chunk.LastTouchedAt = time.Now()
+	return nil
 }
 
 func (r *InMemChunkRepo) ForEach(_ context.Context, fn func(m.Chunk)) {

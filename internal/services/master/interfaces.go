@@ -24,7 +24,7 @@ type StorageNodeReport interface {
 
 type ClientFacade interface {
 	CreateObject(context.Context, t.ObjectID) error
-	AllocateChunk(context.Context, AllocateChunkCommand) (t.ChunkPlacement, error)
+	AllocateChunk(context.Context, AllocateChunkCommand) (*t.ChunkPlacement, error)
 	GetObjectAccess(context.Context, t.ObjectID) (t.ObjectAccess, error)
 
 	ListObjects(context.Context) []t.ObjectInfo
@@ -40,28 +40,40 @@ type ObjectCatalog interface {
 	GetChunks(ctx context.Context, objectID t.ObjectID) ([]t.ChunkDesc, error)
 }
 
-
 type ObjectRepo interface {
+
 	Create(context.Context, t.ObjectID, int) error
+	Delete(context.Context, t.ObjectID) error
+
+	List(context.Context) []Object
 	Get(context.Context, t.ObjectID) (Object, error)
+	Exists(context.Context, t.ObjectID) (bool, error)
+	
 	GetReplication(context.Context, t.ObjectID) (int, error)
 	SetReplication(context.Context, t.ObjectID, int) error
-	List(context.Context) []Object
+
+	ExistsChunk(context.Context, t.ObjectID, t.ChunkKey) (bool, error)
 	AddChunk(context.Context, t.ObjectID, t.ChunkKey, t.ChunkID) error
-	RemoveChunk(context.Context, t.ObjectID, t.ChunkKey)
-	DeleteObject(context.Context, t.ObjectID) error
+	GetChunk(context.Context, t.ObjectID, t.ChunkKey) (t.ChunkID, error)
+	DeleteChunk(context.Context, t.ObjectID, t.ChunkKey)
 }
 
 type ChunkRepo interface {
 	NewChunkID() t.ChunkID
+
 	Create(context.Context, t.ChunkID, t.ObjectID, t.ChunkKey) error
+	Delete(context.Context, t.ChunkID) (bool, error)
+	Touch(context.Context, t.ChunkID) error
+
+	Exists(context.Context, t.ChunkID) (bool, error)
 	Get(context.Context, t.ChunkID) (Chunk, error)
+	List(context.Context) ([]Chunk, error)
+
 	SetDigest(context.Context, t.ChunkID, *digest.Digest) error
-	IncReplication(context.Context, t.ChunkID)
-	DecReplication(context.Context, t.ChunkID)
-	List(context.Context) []Chunk
-	DeleteWithNoReplicas(context.Context, t.ChunkID) bool
-	Touch(context.Context, t.ChunkID)
+	GetDigest(context.Context, t.ChunkID) (*digest.Digest, error)
+
+	IncReplicaCount(context.Context, t.ChunkID) error
+	DecReplicaCount(context.Context, t.ChunkID) error
 
 	ForEach(context.Context, func(Chunk))
 }
@@ -80,7 +92,7 @@ type NodeRegistry interface {
 	Find(context.Context, NodeQuery) []Node
 	UpdateStats(context.Context, t.NodeID, t.NodeStats) error
 
-	Count(context.Context) int 
+	Count(context.Context) int
 	GetInactive(context.Context, time.Time) []t.NodeID
 }
 
@@ -95,8 +107,9 @@ type ChunkNodeIndex interface {
 
 type CandidateNodesQuery struct {
 	MinFreeBytes int64
-	ExcludeChunk      t.ChunkID
-	MaxCount          int
+	MaxCount     int
+	ExcludeChunk t.ChunkID
+	ExcludeNodes []t.NodeRef
 }
 
 type PlacementPolicy interface {
@@ -104,9 +117,10 @@ type PlacementPolicy interface {
 }
 
 type AllocateChunkCommand struct {
-	ObjectID  t.ObjectID
-	ChunkKey  t.ChunkKey
-	ChunkSize int64
+	ObjectID     t.ObjectID
+	ChunkKey     t.ChunkKey
+	ChunkSize    int64
+	ExcludeNodes []t.NodeRef
 }
 
 type ReplicaScheduler interface {

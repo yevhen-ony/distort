@@ -63,33 +63,59 @@ func NewClientFacadeService(deps ClientFacadeDeps) (*ClientFacadeService, error)
 }
 
 func (s *ClientFacadeService) CreateObject(ctx context.Context, oid t.ObjectID) error {
+
 	return s.catalog.Create(ctx, oid, s.config.ReplicationCount())
 }
 
 func (s *ClientFacadeService) AllocateChunk(
-	ctx context.Context,
-	cmd m.AllocateChunkCommand,
-) (t.ChunkPlacement, error) {
+	ctx context.Context, cmd m.AllocateChunkCommand,
+) (*t.ChunkPlacement, error) {
 
-	replicaCount, err := s.catalog.GetReplicaCount(ctx, cmd.ObjectID)
+	exists, err := s.catalog.ExistsChunk(ctx, cmd.ObjectID, cmd.ChunkKey)
 	if err != nil {
-		return t.ChunkPlacement{}, err
+		return nil, fmt.Errorf("exists chunk: %w", err)
+	}
+
+	var chunkDesc t.ChunkDesc
+
+	if exists {
+
+		chunkID, err := s.catalog.GetChunk(ctx, cmd.ObjectID, cmd.ChunkKey)
+		if err != nil {
+			return nil, fmt.Errorf("get chunk: %w", err) 
+		}
+
+		chunkDesc, err = s.catalog.DescribeChunk(ctx, chunkID)
+		if err != nil {
+			return nil,  fmt.Errorf("describe chunk: %w", err)
+		}
+		
+		if chunkDesc.ChunkSize > 0 {
+			return nil, m.ErrChunkKeyOccupied
+		}
+	} else {
+
+		chunkDesc, err = s.catalog.AddChunk(ctx, cmd.ObjectID, cmd.ChunkKey, cmd.ChunkSize)
+		if err != nil {
+			return nil, fmt.Errorf("add chunk: %w", err)
+		}
+	}
+
+	replicaCount, err := s.catalog.GetReplication(ctx, cmd.ObjectID)
+	if err != nil {
+		return nil, err
 	}
 
 	candidates, err := s.placement.GetCandidates(ctx, m.CandidateNodesQuery{
 		MinFreeBytes: cmd.ChunkSize,
 		MaxCount:     replicaCount,
+		ExcludeNodes: cmd.ExcludeNodes,
 	})
 	if err != nil {
-		return t.ChunkPlacement{}, fmt.Errorf("get candidate nodes: %w", err)
+		return nil, fmt.Errorf("get candidate nodes: %w", err)
 	}
 
-	chunkDesc, err := s.catalog.AllocateChunk(ctx, cmd.ObjectID, cmd.ChunkKey, cmd.ChunkSize)
-	if err != nil {
-		return t.ChunkPlacement{}, fmt.Errorf("allocate chunk: %w", err)
-	}
-
-	res := t.ChunkPlacement{
+	res := &t.ChunkPlacement{
 		ChunkDesc: chunkDesc,
 		Nodes:     candidates,
 	}
@@ -152,7 +178,7 @@ func (s *ClientFacadeService) SetReplication(ctx context.Context, objectID t.Obj
 	if count > nodesCount {
 		return fmt.Errorf("requested replica count %d exceeds number of nodes %d", count, nodesCount)
 	}
-	if err := s.catalog.SetReplicaCount(ctx, objectID, count); err != nil {
+	if err := s.catalog.SetReplication(ctx, objectID, count); err != nil {
 		return fmt.Errorf("set replication count: %w", err)
 	}
 

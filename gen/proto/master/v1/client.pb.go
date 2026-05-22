@@ -631,6 +631,7 @@ type AllocateChunkRequest struct {
 	ObjectId      string                 `protobuf:"bytes,1,opt,name=object_id,json=objectId,proto3" json:"object_id,omitempty"`
 	ChunkKey      string                 `protobuf:"bytes,2,opt,name=chunk_key,json=chunkKey,proto3" json:"chunk_key,omitempty"`
 	ChunkSize     int64                  `protobuf:"varint,3,opt,name=chunk_size,json=chunkSize,proto3" json:"chunk_size,omitempty"`
+	ExcludeNodes  []*v1.NodeRef          `protobuf:"bytes,4,rep,name=exclude_nodes,json=excludeNodes,proto3" json:"exclude_nodes,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -684,6 +685,13 @@ func (x *AllocateChunkRequest) GetChunkSize() int64 {
 		return x.ChunkSize
 	}
 	return 0
+}
+
+func (x *AllocateChunkRequest) GetExcludeNodes() []*v1.NodeRef {
+	if x != nil {
+		return x.ExcludeNodes
+	}
+	return nil
 }
 
 type AllocateChunkResponse struct {
@@ -941,12 +949,13 @@ const file_master_v1_client_proto_rawDesc = "" +
 	"\vreplication\x18\x03 \x01(\x03R\vreplication\"2\n" +
 	"\x13CreateObjectRequest\x12\x1b\n" +
 	"\tobject_id\x18\x01 \x01(\tR\bobjectId\"\x16\n" +
-	"\x14CreateObjectResponse\"o\n" +
+	"\x14CreateObjectResponse\"\xa8\x01\n" +
 	"\x14AllocateChunkRequest\x12\x1b\n" +
 	"\tobject_id\x18\x01 \x01(\tR\bobjectId\x12\x1b\n" +
 	"\tchunk_key\x18\x02 \x01(\tR\bchunkKey\x12\x1d\n" +
 	"\n" +
-	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\"H\n" +
+	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\x127\n" +
+	"\rexclude_nodes\x18\x04 \x03(\v2\x12.common.v1.NodeRefR\fexcludeNodes\"H\n" +
 	"\x15AllocateChunkResponse\x12/\n" +
 	"\x05chunk\x18\x01 \x01(\v2\x19.master.v1.ChunkPlacementR\x05chunk\"5\n" +
 	"\x16GetObjectAccessRequest\x12\x1b\n" +
@@ -1010,28 +1019,29 @@ var file_master_v1_client_proto_depIdxs = []int32{
 	8,  // 0: master.v1.ListNodesResponse.nodes:type_name -> master.v1.NodeInfo
 	9,  // 1: master.v1.ListChunksResponse.chunks:type_name -> master.v1.ChunkInfo
 	10, // 2: master.v1.ListObjectsResponse.objects:type_name -> master.v1.ObjectInfo
-	17, // 3: master.v1.AllocateChunkResponse.chunk:type_name -> master.v1.ChunkPlacement
-	17, // 4: master.v1.GetObjectAccessResponse.chunks:type_name -> master.v1.ChunkPlacement
-	18, // 5: master.v1.ChunkPlacement.nodes:type_name -> common.v1.NodeRef
-	11, // 6: master.v1.MasterClientService.CreateObject:input_type -> master.v1.CreateObjectRequest
-	13, // 7: master.v1.MasterClientService.AllocateChunk:input_type -> master.v1.AllocateChunkRequest
-	15, // 8: master.v1.MasterClientService.GetObjectAccess:input_type -> master.v1.GetObjectAccessRequest
-	6,  // 9: master.v1.MasterClientService.ListObjects:input_type -> master.v1.ListObjectsRequest
-	4,  // 10: master.v1.MasterClientService.ListChunks:input_type -> master.v1.ListChunksRequest
-	2,  // 11: master.v1.MasterClientService.ListNodes:input_type -> master.v1.ListNodesRequest
-	0,  // 12: master.v1.MasterClientService.SetReplication:input_type -> master.v1.SetReplicationRequest
-	12, // 13: master.v1.MasterClientService.CreateObject:output_type -> master.v1.CreateObjectResponse
-	14, // 14: master.v1.MasterClientService.AllocateChunk:output_type -> master.v1.AllocateChunkResponse
-	16, // 15: master.v1.MasterClientService.GetObjectAccess:output_type -> master.v1.GetObjectAccessResponse
-	7,  // 16: master.v1.MasterClientService.ListObjects:output_type -> master.v1.ListObjectsResponse
-	5,  // 17: master.v1.MasterClientService.ListChunks:output_type -> master.v1.ListChunksResponse
-	3,  // 18: master.v1.MasterClientService.ListNodes:output_type -> master.v1.ListNodesResponse
-	1,  // 19: master.v1.MasterClientService.SetReplication:output_type -> master.v1.SetReplicationResponse
-	13, // [13:20] is the sub-list for method output_type
-	6,  // [6:13] is the sub-list for method input_type
-	6,  // [6:6] is the sub-list for extension type_name
-	6,  // [6:6] is the sub-list for extension extendee
-	0,  // [0:6] is the sub-list for field type_name
+	18, // 3: master.v1.AllocateChunkRequest.exclude_nodes:type_name -> common.v1.NodeRef
+	17, // 4: master.v1.AllocateChunkResponse.chunk:type_name -> master.v1.ChunkPlacement
+	17, // 5: master.v1.GetObjectAccessResponse.chunks:type_name -> master.v1.ChunkPlacement
+	18, // 6: master.v1.ChunkPlacement.nodes:type_name -> common.v1.NodeRef
+	11, // 7: master.v1.MasterClientService.CreateObject:input_type -> master.v1.CreateObjectRequest
+	13, // 8: master.v1.MasterClientService.AllocateChunk:input_type -> master.v1.AllocateChunkRequest
+	15, // 9: master.v1.MasterClientService.GetObjectAccess:input_type -> master.v1.GetObjectAccessRequest
+	6,  // 10: master.v1.MasterClientService.ListObjects:input_type -> master.v1.ListObjectsRequest
+	4,  // 11: master.v1.MasterClientService.ListChunks:input_type -> master.v1.ListChunksRequest
+	2,  // 12: master.v1.MasterClientService.ListNodes:input_type -> master.v1.ListNodesRequest
+	0,  // 13: master.v1.MasterClientService.SetReplication:input_type -> master.v1.SetReplicationRequest
+	12, // 14: master.v1.MasterClientService.CreateObject:output_type -> master.v1.CreateObjectResponse
+	14, // 15: master.v1.MasterClientService.AllocateChunk:output_type -> master.v1.AllocateChunkResponse
+	16, // 16: master.v1.MasterClientService.GetObjectAccess:output_type -> master.v1.GetObjectAccessResponse
+	7,  // 17: master.v1.MasterClientService.ListObjects:output_type -> master.v1.ListObjectsResponse
+	5,  // 18: master.v1.MasterClientService.ListChunks:output_type -> master.v1.ListChunksResponse
+	3,  // 19: master.v1.MasterClientService.ListNodes:output_type -> master.v1.ListNodesResponse
+	1,  // 20: master.v1.MasterClientService.SetReplication:output_type -> master.v1.SetReplicationResponse
+	14, // [14:21] is the sub-list for method output_type
+	7,  // [7:14] is the sub-list for method input_type
+	7,  // [7:7] is the sub-list for extension type_name
+	7,  // [7:7] is the sub-list for extension extendee
+	0,  // [0:7] is the sub-list for field type_name
 }
 
 func init() { file_master_v1_client_proto_init() }

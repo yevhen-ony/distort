@@ -85,7 +85,7 @@ func (s *LifecycleService) Remove(ctx context.Context, nodeID t.NodeID) ([]t.Chu
 	s.chunkNodeIndex.DetachNode(ctx, nodeID)
 	s.nodeReg.Unregister(ctx, nodeID)
 	for _, chunkID := range chunks {
-		s.chunkRepo.DecReplication(ctx, chunkID)
+		_ = s.chunkRepo.DecReplicaCount(ctx, chunkID)
 	}
 	s.metrics.RegisteredNodesCount.Add(-1)
 	return chunks, nil

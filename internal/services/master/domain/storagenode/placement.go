@@ -47,6 +47,9 @@ func (s *PlacementService) GetCandidates(
 ) ([]t.NodeRef, error) {
 
 	nodesToExclude := s.chunkNodeIndex.GetChunkNodes(ctx, query.ExcludeChunk)
+	for _, ref := range query.ExcludeNodes {
+		nodesToExclude = append(nodesToExclude, ref.ID)
+	}
 	nodes := s.nodeReg.Find(ctx, m.NodeQuery{
 		MinFreeBytes: query.MinFreeBytes + s.config.ChunkAllocationMarginBytes(),
 		ExcludeIDs:   nodesToExclude,

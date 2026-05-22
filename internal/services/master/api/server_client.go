@@ -73,13 +73,14 @@ func (s *ClientServer) AllocateChunk(
 		ObjectID:  t.ObjectID(req.GetObjectId()),
 		ChunkKey:  t.ChunkKey(req.GetChunkKey()),
 		ChunkSize: req.GetChunkSize(),
+		ExcludeNodes: utils.Map(req.GetExcludeNodes(), convert.NodeRefFromPB),
 	})
 	if err != nil {
 		return nil, err
 	}
 
 	rsp = &pb.AllocateChunkResponse{
-		Chunk: convert.ChunkPlacementToPB(chunk),
+		Chunk: convert.ChunkPlacementToPB(*chunk),
 	}
 	return rsp, nil
 }

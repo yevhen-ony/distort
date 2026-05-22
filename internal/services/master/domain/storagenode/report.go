@@ -106,7 +106,7 @@ func (s *ReportService) reportStagedReplica(
 		return err
 	}
 	if s.chunkNodeIndex.AttachChunk(ctx, nodeID, meta.ID) {
-		s.chunkRepo.IncReplication(ctx, meta.ID)
+		_ = s.chunkRepo.IncReplicaCount(ctx, meta.ID)
 		s.metrics.StagedReplicasAcceptedTotal.Inc()
 	}
 	return nil
@@ -120,6 +120,6 @@ func (s *ReportService) reportDeletedReplica(
 	s.metrics.DeletedReplicasTotal.Inc()
 
 	if s.chunkNodeIndex.DetachChunk(ctx, nodeID, chunkID) {
-		s.chunkRepo.DecReplication(ctx, chunkID)
+		s.chunkRepo.DecReplicaCount(ctx, chunkID)
 	}
 }

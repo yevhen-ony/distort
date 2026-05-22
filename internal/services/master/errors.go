@@ -13,6 +13,7 @@ var (
 	ErrChunkNotAvailable     = errors.New("chunk is not available")
 	ErrChunkKeyExists        = errors.New("chunk key already exists")
 	ErrChunkKeyNotFound      = errors.New("chunk key not found")
+	ErrChunkKeyOccupied      = errors.New("chunk key already occupied")
 	ErrChunkExists           = errors.New("chunk already exists")
 	ErrChunkNotFound         = errors.New("chunk not found")
 	ErrWrongChunkID          = errors.New("chunk id does not match")

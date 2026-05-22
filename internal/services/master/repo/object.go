@@ -19,7 +19,7 @@ func NewInMemObjectRepo() *InMemObjectRepo {
 	}
 }
 
-func (o *InMemObjectRepo) Create(_ context.Context, oid t.ObjectID, desiredReplication int) error {
+func (o *InMemObjectRepo) Create(_ context.Context, oid t.ObjectID, replicas int) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -30,11 +30,19 @@ func (o *InMemObjectRepo) Create(_ context.Context, oid t.ObjectID, desiredRepli
 	o.objects[oid] = &m.Object{
 		ID: oid,
 		Chunks: map[t.ChunkKey]t.ChunkID{},
-		Replication: desiredReplication,
+		Replication: replicas,
 	}
 	return nil
 }
 
+func (o *InMemObjectRepo) Exists(_ context.Context, oid t.ObjectID) (bool, error) {
+	o.mu.RLock()
+	defer o.mu.RUnlock()
+
+	_, ok := o.objects[oid]
+	return ok, nil
+}
+ 
 func (o *InMemObjectRepo) Get(_ context.Context, oid t.ObjectID) (m.Object, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
@@ -60,6 +68,7 @@ func (o *InMemObjectRepo) GetReplication(_ context.Context, oid t.ObjectID) (int
 func (o *InMemObjectRepo) SetReplication(_ context.Context, oid t.ObjectID, count int) error {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
+
 	if count < 0 {
 		return m.ErrInvalidArgument
 	}
@@ -83,6 +92,19 @@ func (o *InMemObjectRepo) List(_ context.Context) []m.Object {
 	return res
 }
 
+func (o *InMemObjectRepo) ExistsChunk(_ context.Context, oid t.ObjectID, key t.ChunkKey) (bool, error) {
+	
+	o.mu.RLock()
+	defer o.mu.RUnlock()
+	
+	obj, ok := o.objects[oid]
+	if !ok {
+		return false, m.ErrObjectNotFound
+	}
+	_, ok = obj.Chunks[key]
+	return ok, nil
+}
+
 func (o *InMemObjectRepo) AddChunk(_ context.Context, oid t.ObjectID, key t.ChunkKey, cid t.ChunkID) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
@@ -98,7 +120,22 @@ func (o *InMemObjectRepo) AddChunk(_ context.Context, oid t.ObjectID, key t.Chun
 	return nil
 }
 
-func (o *InMemObjectRepo) RemoveChunk(_ context.Context, objectID t.ObjectID, chunkKey t.ChunkKey) {
+func (o *InMemObjectRepo) GetChunk(_ context.Context, oid t.ObjectID, key t.ChunkKey) (t.ChunkID, error) {
+	o.mu.RLock()
+	defer o.mu.RUnlock()
+
+	obj, ok := o.objects[oid]
+	if !ok {
+		return "", m.ErrObjectNotFound
+	}
+	chunkID, ok := obj.Chunks[key]
+	if !ok {
+		return "", m.ErrChunkKeyNotFound
+	}
+	return chunkID, nil
+}
+
+func (o *InMemObjectRepo) DeleteChunk(_ context.Context, objectID t.ObjectID, chunkKey t.ChunkKey) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
@@ -110,7 +147,7 @@ func (o *InMemObjectRepo) RemoveChunk(_ context.Context, objectID t.ObjectID, ch
 	delete(obj.Chunks, chunkKey)
 }
 
-func (o *InMemObjectRepo) DeleteObject(_ context.Context, objectID t.ObjectID) error {
+func (o *InMemObjectRepo) Delete(_ context.Context, objectID t.ObjectID) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 

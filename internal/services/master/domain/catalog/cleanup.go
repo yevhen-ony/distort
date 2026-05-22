@@ -59,7 +59,7 @@ func NewCleanupService(deps CleanupDeps) (*CleanupService, error) {
 	return cleanup, nil
 }
 
-func (cc *CleanupService) RemoveUnwanted(ctx context.Context) []t.ObjectID {
+func (cc *CleanupService) DeleteUnwanted(ctx context.Context) []t.ObjectID {
 	removedObjectIDs := []t.ObjectID{}
 
 	objects := cc.objectRepo.List(ctx)
@@ -69,8 +69,8 @@ func (cc *CleanupService) RemoveUnwanted(ctx context.Context) []t.ObjectID {
 
 			cleaned := true
 			for chunkKey, chunkID := range object.Chunks {
-				if cc.chunkRepo.DeleteWithNoReplicas(ctx, chunkID) {
-					cc.objectRepo.RemoveChunk(ctx, object.ID, chunkKey)
+				if ok, _ := cc.chunkRepo.Delete(ctx, chunkID); ok {
+					cc.objectRepo.DeleteChunk(ctx, object.ID, chunkKey)
 					cc.metrics.ChunkCount.Add(-1)
 				} else {
 					cleaned = false
@@ -79,7 +79,7 @@ func (cc *CleanupService) RemoveUnwanted(ctx context.Context) []t.ObjectID {
 			if !cleaned {
 				continue
 			}
-			if err := cc.objectRepo.DeleteObject(ctx, object.ID); err != nil {
+			if err := cc.objectRepo.Delete(ctx, object.ID); err != nil {
 				slog.ErrorContext(ctx, "delete object failed", "object_id", object.ID, "error", err)
 			} else {
 				removedObjectIDs = append(removedObjectIDs, object.ID)
@@ -92,7 +92,7 @@ func (cc *CleanupService) RemoveUnwanted(ctx context.Context) []t.ObjectID {
 
 func (cc *CleanupService) RunLoop(ctx context.Context) {
 	cc.looper.Run(ctx, func(ctx context.Context) {
-		removed := cc.RemoveUnwanted(ctx)
+		removed := cc.DeleteUnwanted(ctx)
 		if len(removed) > 0 {
 			slog.DebugContext(ctx, "removed objects", "count", len(removed), "object_ids", removed)
 		}
