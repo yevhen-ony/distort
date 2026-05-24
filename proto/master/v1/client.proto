@@ -23,7 +23,7 @@ message DescribeChunkRequest {
 }
 
 message DescribeChunkResponse {
-  ChunkPlacement1 placement = 1;
+  ChunkDesc1 description = 1;
 }
 
 message SetReplicationRequest {
@@ -98,6 +98,10 @@ message GetObjectAccessResponse {
   string object_id = 1;
   int64 total_size = 2;
   repeated ChunkPlacement chunks = 3;
+}
+
+message ChunkDesc1 {
+  ChunkPlacement1 placement = 1;
 }
 
 message ChunkPlacement1 {

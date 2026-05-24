@@ -118,6 +118,12 @@ func ChunkPlacement1ToPB(p t.ChunkPlacement1) *mpb.ChunkPlacement1 {
 	}
 }
 
+func ChunkDesc1ToPB(d t.ChunkDesc1) *mpb.ChunkDesc1 {
+	return &mpb.ChunkDesc1 {
+		Placement: ChunkPlacement1ToPB(d.Placement),
+	}
+}
+
 
 func ReplicaReportToPB(rr t.StorageNodeReport) *mpb.ReplicaReport {
 	switch {

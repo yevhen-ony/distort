@@ -66,4 +66,3 @@ func NewReplicaDeleted(chunkID ChunkID) *ReplicaDeletedReport {
 func (rd *ReplicaDeletedReport) ToRecord() StorageNodeReport {
 	return StorageNodeReport{ReplicaDeleted: rd}
 }
-

@@ -1,9 +1,5 @@
 package types
 
-import (
-	"time"
-)
-
 type HealthStatus string
 
 const (
@@ -32,9 +28,6 @@ type ChunkPlacement1 struct {
 
 type ChunkDesc1 struct {
 	Placement ChunkPlacement1
-
-	ReplicaCount  int
-	LastTouchedAt time.Time
 }
 
 type ObjectDesc1 struct {
@@ -42,6 +35,5 @@ type ObjectDesc1 struct {
 	Size        int64
 	ChunkCount  int
 	Replication int
-	Status      HealthStatus
 	Chunks      []ChunkPlacement1
 }

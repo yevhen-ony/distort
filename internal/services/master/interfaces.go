@@ -31,11 +31,13 @@ type ClientFacade interface {
 	ListChunks(context.Context) []t.ChunkInfo
 	ListNodes(context.Context) []t.NodeInfo
 	SetReplication(context.Context, t.ObjectID, int) error
-	DescribeChunk(context.Context, t.ChunkID) (*t.ChunkPlacement1, error)
+	DescribeChunk(context.Context, t.ChunkID) (*t.ChunkDesc1, error)
 }
 
 type ObjectCatalog interface {
-	Create(context.Context, t.ObjectID, int) error
+	CreateObject(context.Context, t.ObjectID, int) error
+	GetObject(ctx context.Context, objectID t.ObjectID) (Object, error)
+
 	GetReplicaCount(context.Context, t.ObjectID) (int, error)
 	AllocateChunk(context.Context, t.ObjectID, t.ChunkKey, int64) (t.ChunkDesc, error)
 	GetChunks(ctx context.Context, objectID t.ObjectID) ([]t.ChunkDesc, error)

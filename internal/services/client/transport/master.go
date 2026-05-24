@@ -135,7 +135,7 @@ func (mt *MasterTransport) SetReplication(ctx context.Context, objectID t.Object
 func (mt *MasterTransport) DescribeChunk(
 	ctx context.Context,
 	chunkID t.ChunkID,
-) (*t.ChunkPlacement1, error) {
+) (*t.ChunkDesc1, error) {
 
 	req := &pb.DescribeChunkRequest{
 		ChunkId: string(chunkID),
@@ -146,7 +146,7 @@ func (mt *MasterTransport) DescribeChunk(
 		return nil, fmt.Errorf("transport: %w", err)
 	}
 
-	placement := convert.ChunkPlacement1FromPB(rsp.GetPlacement())
+	placement := convert.ChunkDesc1FromPB(rsp.GetDescription())
 	return placement, nil 
 }
 

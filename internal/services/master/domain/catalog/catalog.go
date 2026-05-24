@@ -42,7 +42,7 @@ func NewCatalogService(deps CatalogDeps) (*CatalogService, error) {
 	return service, nil
 }
 
-func (s *CatalogService) Create(ctx context.Context, objectID t.ObjectID, replicaCount int) error {
+func (s *CatalogService) CreateObject(ctx context.Context, objectID t.ObjectID, replicaCount int) error {
 
 	err := s.objectRepo.Create(ctx, objectID, replicaCount)
 	if err != nil {
@@ -50,6 +50,10 @@ func (s *CatalogService) Create(ctx context.Context, objectID t.ObjectID, replic
 	}
 	s.metrics.ObjectCount.Add(1)
 	return nil
+}
+
+func (s *CatalogService) GetObject(ctx context.Context, objectID t.ObjectID) (m.Object, error) {
+	return s.objectRepo.Get(ctx, objectID)
 }
 
 func (s *CatalogService) GetReplication(ctx context.Context, objectID t.ObjectID) (int, error) {

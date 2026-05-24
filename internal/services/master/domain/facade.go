@@ -64,13 +64,28 @@ func NewClientFacadeService(deps ClientFacadeDeps) (*ClientFacadeService, error)
 
 func (s *ClientFacadeService) CreateObject(ctx context.Context, oid t.ObjectID) error {
 
-	return s.catalog.Create(ctx, oid, s.config.ReplicationCount())
+	return s.catalog.CreateObject(ctx, oid, s.config.ReplicationCount())
 }
+
+func (s *ClientFacadeService) DescribeObject(
+	ctx context.Context,
+	objectID t.ObjectID,
+) (*t.ObjectDesc1, error) {
+	
+	// obj, err := s.catalog.GetObject(ctx, objectID)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("get object: %w", err)
+	// }
+
+	return  nil, nil
+
+}
+ 
 
 func (s *ClientFacadeService) DescribeChunk(
 	ctx context.Context,
 	chunkID t.ChunkID,
-) (*t.ChunkPlacement1, error) {
+) (*t.ChunkDesc1, error) {
 
 	chunk, err := s.catalog.GetChunk(ctx, chunkID)
 	if err != nil {
@@ -85,7 +100,8 @@ func (s *ClientFacadeService) DescribeChunk(
 		Slot:    chunk.Slot,
 		Sources: nodes,
 	}
-	return &placement, nil
+	desc := &t.ChunkDesc1{Placement: placement}
+	return desc, nil
 }
 
 func (s *ClientFacadeService) AllocateChunk(
@@ -106,12 +122,12 @@ func (s *ClientFacadeService) AllocateChunk(
 			return nil, fmt.Errorf("get chunk: %w", err)
 		}
 
-		placement, err := s.DescribeChunk(ctx, chunkID)
+		desc, err := s.DescribeChunk(ctx, chunkID)
 		if err != nil {
 			return nil, fmt.Errorf("describe chunk: %w", err)
 		}
 
-		if len(placement.Sources) > 0 {
+		if len(desc.Placement.Sources) > 0 {
 			return nil, m.ErrChunkKeyOccupied
 		}
 	} else {

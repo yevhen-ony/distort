@@ -10,10 +10,11 @@ import (
 )
 
 func (app *App) DescribeChunk(ctx context.Context, chunkID string) error {
-	placement, err := app.MasterTransport.DescribeChunk(ctx, t.ChunkID(chunkID))
+	desc, err := app.MasterTransport.DescribeChunk(ctx, t.ChunkID(chunkID))
 	if err != nil {
 		return err
 	}
+	placement := &desc.Placement
 
 	b := &strings.Builder{}
 	RenderChunkMeta(b, placement.Meta)

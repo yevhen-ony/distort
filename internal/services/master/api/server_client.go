@@ -199,13 +199,13 @@ func (s *ClientServer) DescribeChunk(
 	slog.DebugContext(ctx, "describe chunk requested", "chunk_id", req.GetChunkId())
 
 	chunkID := t.ChunkID(req.GetChunkId())
-	placement, err := s.facade.DescribeChunk(ctx, chunkID)
+	chunkDesc, err := s.facade.DescribeChunk(ctx, chunkID)
 	if err != nil {
 		return nil, err
 	}
 
 	rsp = &mpb.DescribeChunkResponse{
-		Placement: convert.ChunkPlacement1ToPB(*placement),
+		Description: convert.ChunkDesc1ToPB(*chunkDesc),
 	}
 	return rsp, nil
 }

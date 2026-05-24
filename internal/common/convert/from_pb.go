@@ -38,6 +38,12 @@ func ChunkPlacement1FromPB(pbP *mpb.ChunkPlacement1) *t.ChunkPlacement1 {
 	}
 }
 
+func ChunkDesc1FromPB(pbD *mpb.ChunkDesc1) *t.ChunkDesc1 {
+	return &t.ChunkDesc1 {
+		Placement: *ChunkPlacement1FromPB(pbD.GetPlacement()),
+	}
+}
+
 func ChunkPlacementFromPB(pbObj ChunkPlacementLike) *t.ChunkPlacement {
 	pbNodes := pbObj.GetNodes()
 	nodes := make([]t.NodeRef, 0, len(pbNodes))

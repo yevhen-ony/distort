@@ -289,6 +289,42 @@ func (x *ChunkPlacement) GetNodes() []*NodeRef {
 	return nil
 }
 
+type ChunkDesc1 struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *ChunkDesc1) Reset() {
+	*x = ChunkDesc1{}
+	mi := &file_common_v1_types_proto_msgTypes[5]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *ChunkDesc1) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*ChunkDesc1) ProtoMessage() {}
+
+func (x *ChunkDesc1) ProtoReflect() protoreflect.Message {
+	mi := &file_common_v1_types_proto_msgTypes[5]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use ChunkDesc1.ProtoReflect.Descriptor instead.
+func (*ChunkDesc1) Descriptor() ([]byte, []int) {
+	return file_common_v1_types_proto_rawDescGZIP(), []int{5}
+}
+
 type Digest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Checksum      string                 `protobuf:"bytes,1,opt,name=Checksum,proto3" json:"Checksum,omitempty"`
@@ -299,7 +335,7 @@ type Digest struct {
 
 func (x *Digest) Reset() {
 	*x = Digest{}
-	mi := &file_common_v1_types_proto_msgTypes[5]
+	mi := &file_common_v1_types_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -311,7 +347,7 @@ func (x *Digest) String() string {
 func (*Digest) ProtoMessage() {}
 
 func (x *Digest) ProtoReflect() protoreflect.Message {
-	mi := &file_common_v1_types_proto_msgTypes[5]
+	mi := &file_common_v1_types_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -324,7 +360,7 @@ func (x *Digest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Digest.ProtoReflect.Descriptor instead.
 func (*Digest) Descriptor() ([]byte, []int) {
-	return file_common_v1_types_proto_rawDescGZIP(), []int{5}
+	return file_common_v1_types_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *Digest) GetChecksum() string {
@@ -365,7 +401,9 @@ const file_common_v1_types_proto_rawDesc = "" +
 	"chunkCount\"U\n" +
 	"\x0eChunkPlacement\x12\x19\n" +
 	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12(\n" +
-	"\x05nodes\x18\x02 \x03(\v2\x12.common.v1.NodeRefR\x05nodes\"8\n" +
+	"\x05nodes\x18\x02 \x03(\v2\x12.common.v1.NodeRefR\x05nodes\"\f\n" +
+	"\n" +
+	"ChunkDesc1\"8\n" +
 	"\x06Digest\x12\x1a\n" +
 	"\bChecksum\x18\x01 \x01(\tR\bChecksum\x12\x12\n" +
 	"\x04Size\x18\x02 \x01(\x03R\x04SizeB Z\x1edos/gen/proto/common/v1;commonb\x06proto3"
@@ -382,17 +420,18 @@ func file_common_v1_types_proto_rawDescGZIP() []byte {
 	return file_common_v1_types_proto_rawDescData
 }
 
-var file_common_v1_types_proto_msgTypes = make([]protoimpl.MessageInfo, 6)
+var file_common_v1_types_proto_msgTypes = make([]protoimpl.MessageInfo, 7)
 var file_common_v1_types_proto_goTypes = []any{
 	(*ChunkMeta)(nil),      // 0: common.v1.ChunkMeta
 	(*ObjectSlot)(nil),     // 1: common.v1.ObjectSlot
 	(*NodeRef)(nil),        // 2: common.v1.NodeRef
 	(*NodeStats)(nil),      // 3: common.v1.NodeStats
 	(*ChunkPlacement)(nil), // 4: common.v1.ChunkPlacement
-	(*Digest)(nil),         // 5: common.v1.Digest
+	(*ChunkDesc1)(nil),     // 5: common.v1.ChunkDesc1
+	(*Digest)(nil),         // 6: common.v1.Digest
 }
 var file_common_v1_types_proto_depIdxs = []int32{
-	5, // 0: common.v1.ChunkMeta.digest:type_name -> common.v1.Digest
+	6, // 0: common.v1.ChunkMeta.digest:type_name -> common.v1.Digest
 	2, // 1: common.v1.ChunkPlacement.nodes:type_name -> common.v1.NodeRef
 	2, // [2:2] is the sub-list for method output_type
 	2, // [2:2] is the sub-list for method input_type
@@ -412,7 +451,7 @@ func file_common_v1_types_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_common_v1_types_proto_rawDesc), len(file_common_v1_types_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   6,
+			NumMessages:   7,
 			NumExtensions: 0,
 			NumServices:   0,
 		},
