@@ -17,10 +17,16 @@ type ChunkPlacementLike interface {
 }
 
 func NodeRefFromPB(pbNode *pb.NodeRef) t.NodeRef {
-
 	return t.NodeRef{
 		ID:   t.NodeID(pbNode.GetNodeId()),
 		Addr: pbNode.GetAddr(),
+	}
+}
+
+func ObjectSlotFromPB(pbSlot *pb.ObjectSlot) t.ObjectSlot {
+	return t.ObjectSlot {
+		ObjectID: t.ObjectID(pbSlot.GetObjectId()),
+		ChunkKey: t.ChunkKey(pbSlot.GetChunkKey()),
 	}
 }
 

@@ -15,6 +15,13 @@ func NodeRefToPB(ref t.NodeRef) *cpb.NodeRef {
 	}
 }
 
+func ObjectSlotToPB(ref t.ObjectSlot) *cpb.ObjectSlot {
+	return &cpb.ObjectSlot{
+		ObjectId: string(ref.ObjectID),
+		ChunkKey: string(ref.ChunkKey),
+	}
+}
+
 func ChunkPlacementToPB(cp t.ChunkPlacement) *mpb.ChunkPlacement {
 	return &mpb.ChunkPlacement{
 		ChunkId:   string(cp.ChunkID),

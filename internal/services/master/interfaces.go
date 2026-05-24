@@ -24,7 +24,7 @@ type StorageNodeReport interface {
 
 type ClientFacade interface {
 	CreateObject(context.Context, t.ObjectID) error
-	AllocateChunk(context.Context, AllocateChunkCommand) (*t.ChunkPlacement, error)
+	AllocateChunk(context.Context, AllocateChunkCommand) (*t.ChunkAllocation1, error)
 	GetObjectAccess(context.Context, t.ObjectID) (t.ObjectAccess, error)
 
 	ListObjects(context.Context) []t.ObjectInfo
@@ -41,27 +41,26 @@ type ObjectCatalog interface {
 }
 
 type ObjectRepo interface {
-
 	Create(context.Context, t.ObjectID, int) error
 	Delete(context.Context, t.ObjectID) error
 
 	List(context.Context) []Object
 	Get(context.Context, t.ObjectID) (Object, error)
 	Exists(context.Context, t.ObjectID) (bool, error)
-	
+
 	GetReplication(context.Context, t.ObjectID) (int, error)
 	SetReplication(context.Context, t.ObjectID, int) error
 
-	ExistsChunk(context.Context, t.ObjectID, t.ChunkKey) (bool, error)
-	AddChunk(context.Context, t.ObjectID, t.ChunkKey, t.ChunkID) error
-	GetChunk(context.Context, t.ObjectID, t.ChunkKey) (t.ChunkID, error)
-	DeleteChunk(context.Context, t.ObjectID, t.ChunkKey)
+	ExistsChunk(context.Context, t.ObjectSlot) (bool, error)
+	AddChunk(context.Context, t.ObjectSlot, t.ChunkID) error
+	GetChunk(context.Context, t.ObjectSlot) (t.ChunkID, error)
+	DeleteChunk(context.Context, t.ObjectSlot)
 }
 
 type ChunkRepo interface {
 	NewChunkID() t.ChunkID
 
-	Create(context.Context, t.ChunkID, t.ObjectID, t.ChunkKey) error
+	Create(context.Context, t.ChunkID, t.ObjectSlot) error
 	Delete(context.Context, t.ChunkID) (bool, error)
 	Touch(context.Context, t.ChunkID) error
 
@@ -117,9 +116,8 @@ type PlacementPolicy interface {
 }
 
 type AllocateChunkCommand struct {
-	ObjectID     t.ObjectID
-	ChunkKey     t.ChunkKey
-	ChunkSize    int64
+	Slot         t.ObjectSlot
+	Size         int64
 	ExcludeNodes []t.NodeRef
 }
 

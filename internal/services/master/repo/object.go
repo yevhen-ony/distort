@@ -92,59 +92,59 @@ func (o *InMemObjectRepo) List(_ context.Context) []m.Object {
 	return res
 }
 
-func (o *InMemObjectRepo) ExistsChunk(_ context.Context, oid t.ObjectID, key t.ChunkKey) (bool, error) {
+func (o *InMemObjectRepo) ExistsChunk(_ context.Context, slot t.ObjectSlot) (bool, error) {
 	
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 	
-	obj, ok := o.objects[oid]
+	obj, ok := o.objects[slot.ObjectID]
 	if !ok {
 		return false, m.ErrObjectNotFound
 	}
-	_, ok = obj.Chunks[key]
+	_, ok = obj.Chunks[slot.ChunkKey]
 	return ok, nil
 }
 
-func (o *InMemObjectRepo) AddChunk(_ context.Context, oid t.ObjectID, key t.ChunkKey, cid t.ChunkID) error {
+func (o *InMemObjectRepo) AddChunk(_ context.Context, slot t.ObjectSlot, cid t.ChunkID) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	obj, ok := o.objects[oid]
+	obj, ok := o.objects[slot.ObjectID]
 	if !ok {
 		return m.ErrObjectNotFound
 	}
-	if _, ok := obj.Chunks[key]; ok {
+	if _, ok := obj.Chunks[slot.ChunkKey]; ok {
 		return m.ErrChunkKeyExists
 	}
-	obj.Chunks[key] = cid 
+	obj.Chunks[slot.ChunkKey] = cid 
 	return nil
 }
 
-func (o *InMemObjectRepo) GetChunk(_ context.Context, oid t.ObjectID, key t.ChunkKey) (t.ChunkID, error) {
+func (o *InMemObjectRepo) GetChunk(_ context.Context, slot t.ObjectSlot) (t.ChunkID, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
 
-	obj, ok := o.objects[oid]
+	obj, ok := o.objects[slot.ObjectID]
 	if !ok {
 		return "", m.ErrObjectNotFound
 	}
-	chunkID, ok := obj.Chunks[key]
+	chunkID, ok := obj.Chunks[slot.ChunkKey]
 	if !ok {
 		return "", m.ErrChunkKeyNotFound
 	}
 	return chunkID, nil
 }
 
-func (o *InMemObjectRepo) DeleteChunk(_ context.Context, objectID t.ObjectID, chunkKey t.ChunkKey) {
+func (o *InMemObjectRepo) DeleteChunk(_ context.Context, slot t.ObjectSlot) {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	obj, ok := o.objects[objectID]
+	obj, ok := o.objects[slot.ObjectID]
 	if !ok {
 		return 
 	}
 
-	delete(obj.Chunks, chunkKey)
+	delete(obj.Chunks, slot.ChunkKey)
 }
 
 func (o *InMemObjectRepo) Delete(_ context.Context, objectID t.ObjectID) error {

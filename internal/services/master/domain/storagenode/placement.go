@@ -68,7 +68,7 @@ func (s *PlacementService) GetCandidates(
 func (s *PlacementService) GetChunkNodes(ctx context.Context, chunkID t.ChunkID) ([]t.NodeRef, error) {
 	nodeIDs := s.chunkNodeIndex.GetChunkNodes(ctx, chunkID)
 	if len(nodeIDs) == 0 {
-		return nil, m.ErrNodeNotFound
+		return nil, nil 
 	}
 	nodes := s.nodeReg.GetMany(ctx, nodeIDs...)
 	nodeRefs := utils.Map(nodes, func(n m.Node) t.NodeRef { return n.NodeRef })

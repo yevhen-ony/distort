@@ -116,10 +116,10 @@ func (r *ExecutorService) ReplicateChunk(ctx context.Context, chunk m.Chunk) err
 func (r *ExecutorService) decideReplication(ctx context.Context, chunk m.Chunk) (int, error) {
 
 	actual := chunk.ReplicaCount
-	wanted, err := r.objectRepo.GetReplication(ctx, chunk.ObjectID)
+	wanted, err := r.objectRepo.GetReplication(ctx, chunk.Slot.ObjectID)
 	if err != nil {
-		slog.ErrorContext(ctx, "access object failed", "object_id", chunk.ObjectID)
-		return 0, fmt.Errorf("read object %s: %w", chunk.ObjectID, err)
+		slog.ErrorContext(ctx, "access object failed", "object_id", chunk.Slot.ObjectID)
+		return 0, fmt.Errorf("read object %s: %w", chunk.Slot.ObjectID, err)
 	}
 
 	delta := wanted - actual

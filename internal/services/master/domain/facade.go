@@ -67,47 +67,63 @@ func (s *ClientFacadeService) CreateObject(ctx context.Context, oid t.ObjectID) 
 	return s.catalog.Create(ctx, oid, s.config.ReplicationCount())
 }
 
+func (s *ClientFacadeService) DescribeChunk(ctx context.Context, chunkID t.ChunkID) (*t.ChunkPlacement1, error) {
+	chunk, err := s.catalog.GetChunk(ctx, chunkID)
+	if err != nil {
+		return nil, fmt.Errorf("get chunk: %w", err)
+	}
+	nodes, err := s.placement.GetChunkNodes(ctx, chunkID)
+	if err != nil {
+		return nil, fmt.Errorf("get chunk's nodes: %w", err)
+	}
+	placement := t.ChunkPlacement1{
+		Meta:    chunk.Meta,
+		Slot:    chunk.Slot,
+		Sources: nodes,
+	}
+	return &placement, nil
+}
+
 func (s *ClientFacadeService) AllocateChunk(
 	ctx context.Context, cmd m.AllocateChunkCommand,
-) (*t.ChunkPlacement, error) {
+) (*t.ChunkAllocation1, error) {
 
-	exists, err := s.catalog.ExistsChunk(ctx, cmd.ObjectID, cmd.ChunkKey)
+	exists, err := s.catalog.ExistsChunk(ctx, cmd.Slot)
 	if err != nil {
 		return nil, fmt.Errorf("exists chunk: %w", err)
 	}
 
-	var chunkDesc t.ChunkDesc
-
+	var chunkID t.ChunkID
 	if exists {
 
-		chunkID, err := s.catalog.GetChunk(ctx, cmd.ObjectID, cmd.ChunkKey)
+		chunkID, err = s.catalog.GetChunkID(ctx, cmd.Slot)
 		if err != nil {
-			return nil, fmt.Errorf("get chunk: %w", err) 
+			return nil, fmt.Errorf("get chunk: %w", err)
 		}
 
-		chunkDesc, err = s.catalog.DescribeChunk(ctx, chunkID)
+		placement, err := s.DescribeChunk(ctx, chunkID)
 		if err != nil {
-			return nil,  fmt.Errorf("describe chunk: %w", err)
+			return nil, fmt.Errorf("describe chunk: %w", err)
 		}
-		
-		if chunkDesc.ChunkSize > 0 {
+
+		if len(placement.Sources) > 0 {
 			return nil, m.ErrChunkKeyOccupied
 		}
 	} else {
 
-		chunkDesc, err = s.catalog.AddChunk(ctx, cmd.ObjectID, cmd.ChunkKey, cmd.ChunkSize)
+		chunkID, err = s.catalog.AddChunk(ctx, cmd.Slot, cmd.Size)
 		if err != nil {
 			return nil, fmt.Errorf("add chunk: %w", err)
 		}
 	}
 
-	replicaCount, err := s.catalog.GetReplication(ctx, cmd.ObjectID)
+	replicaCount, err := s.catalog.GetReplication(ctx, cmd.Slot.ObjectID)
 	if err != nil {
 		return nil, err
 	}
 
 	candidates, err := s.placement.GetCandidates(ctx, m.CandidateNodesQuery{
-		MinFreeBytes: cmd.ChunkSize,
+		MinFreeBytes: cmd.Size,
 		MaxCount:     replicaCount,
 		ExcludeNodes: cmd.ExcludeNodes,
 	})
@@ -115,9 +131,10 @@ func (s *ClientFacadeService) AllocateChunk(
 		return nil, fmt.Errorf("get candidate nodes: %w", err)
 	}
 
-	res := &t.ChunkPlacement{
-		ChunkDesc: chunkDesc,
-		Nodes:     candidates,
+	res := &t.ChunkAllocation1{
+		ID:      chunkID,
+		Slot:    cmd.Slot,
+		Targets: candidates,
 	}
 	return res, nil
 }

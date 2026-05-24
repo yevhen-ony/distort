@@ -101,22 +101,24 @@ func (d *ObjectDelivery) Upload(ctx context.Context, source ChunkSource) error {
 func (d *ObjectDelivery) uploadChunk(ctx context.Context, chunkKey t.ChunkKey, data []byte) error {
 
 	loc, err := d.masterT.AllocateChunk(ctx, &transport.AllocateChunkCommand{
-		ObjectID:  d.objectID,
-		ChunkKey:  chunkKey,
+		Slot:  t.ObjectSlot{
+			ObjectID: d.objectID, 
+			ChunkKey: chunkKey,
+		},
 		ChunkSize: int64(len(data)),
 	})
 	if err != nil {
 		return fmt.Errorf("alloc chunk: %w", err)
 	}
 
-	chunk := t.NewChunk(loc.ChunkID, data)
+	chunk := t.NewChunk(loc.ID, data)
 
 	opt := chunkrpc.WithProgress(func(cp chunkrpc.Progress) {
 		d.progress.UpdateChunk(chunkKey, cp)
 		d.emitProgress()
 	})
 
-	session := d.chunkT.NewTransferSession(loc.Nodes, opt)
+	session := d.chunkT.NewTransferSession(loc.Targets, opt)
 	if _, err := session.Upload(ctx, &chunk); err != nil {
 		return err
 	}

@@ -14,7 +14,7 @@ import (
 )
 
 type ClientServer struct {
-pb.UnimplementedMasterClientServiceServer
+	pb.UnimplementedMasterClientServiceServer
 	facade m.ClientFacade
 }
 
@@ -51,28 +51,28 @@ func (s *ClientServer) CreateObject(
 func (s *ClientServer) AllocateChunk(
 	ctx context.Context, req *pb.AllocateChunkRequest,
 ) (rsp *pb.AllocateChunkResponse, err error) {
-
+	
+	slot := req.GetObjectSlot()
 	defer func() {
 		if err != nil {
 			slog.ErrorContext(ctx, "allocate chunk failed",
-				"object_id", req.GetObjectId(),
-				"chunk_key", req.GetChunkKey(),
+				"object_id", slot.GetObjectId(),
+				"chunk_key", slot.GetChunkKey(),
 				"chunk_size", req.GetChunkSize(),
 				"error", err,
 			)
 			err = toStatus(err)
 		}
 	}()
-	slog.Info("allocate chunk requested", "object_id", req.GetObjectId())
+	slog.Info("allocate chunk requested", "object_id", slot.GetObjectId())
 
 	if err = validateAllocateChunkRequest(req); err != nil {
 		return nil, err
 	}
 
-	chunk, err := s.facade.AllocateChunk(ctx, m.AllocateChunkCommand{
-		ObjectID:  t.ObjectID(req.GetObjectId()),
-		ChunkKey:  t.ChunkKey(req.GetChunkKey()),
-		ChunkSize: req.GetChunkSize(),
+	alloc, err := s.facade.AllocateChunk(ctx, m.AllocateChunkCommand{
+		Slot:         convert.ObjectSlotFromPB(req.GetObjectSlot()),
+		Size:         req.GetChunkSize(),
 		ExcludeNodes: utils.Map(req.GetExcludeNodes(), convert.NodeRefFromPB),
 	})
 	if err != nil {
@@ -80,7 +80,9 @@ func (s *ClientServer) AllocateChunk(
 	}
 
 	rsp = &pb.AllocateChunkResponse{
-		Chunk: convert.ChunkPlacementToPB(*chunk),
+		ChunkId:    string(alloc.ID),
+		ObjectSlot: convert.ObjectSlotToPB(alloc.Slot),
+		Targets:    utils.Map(alloc.Targets, convert.NodeRefToPB),
 	}
 	return rsp, nil
 }
@@ -110,17 +112,16 @@ func (s *ClientServer) GetObjectAccess(
 	rsp = &pb.GetObjectAccessResponse{
 		ObjectId:  string(object.ID),
 		TotalSize: object.TotalSize,
-		Chunks:    utils.Map(object.Chunks, func(cp t.ChunkPlacement) *pb.ChunkPlacement { 
-			return convert.ChunkPlacementToPB(cp) 
+		Chunks: utils.Map(object.Chunks, func(cp t.ChunkPlacement) *pb.ChunkPlacement {
+			return convert.ChunkPlacementToPB(cp)
 		}),
-		
 	}
 	return rsp, nil
 }
 
 func (s *ClientServer) ListObjects(
 	ctx context.Context, req *pb.ListObjectsRequest,
-) ( *pb.ListObjectsResponse, error) {
+) (*pb.ListObjectsResponse, error) {
 
 	slog.DebugContext(ctx, "list objects requested")
 
@@ -128,7 +129,7 @@ func (s *ClientServer) ListObjects(
 	rsp := &mpb.ListObjectsResponse{
 		Objects: utils.Map(objects, convert.ObjectInfoToPB),
 	}
-	return rsp, nil	
+	return rsp, nil
 }
 
 func (s *ClientServer) ListChunks(
@@ -161,7 +162,7 @@ func (s *ClientServer) ListNodes(
 func (s *ClientServer) SetReplication(
 	ctx context.Context, req *pb.SetReplicationRequest,
 ) (rsp *pb.SetReplicationResponse, err error) {
-	
+
 	defer func() {
 		if err != nil {
 			slog.ErrorContext(ctx, "set replication failed",
@@ -182,5 +183,3 @@ func (s *ClientServer) SetReplication(
 	rsp = &pb.SetReplicationResponse{}
 	return rsp, nil
 }
-
-

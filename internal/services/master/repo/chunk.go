@@ -27,7 +27,7 @@ func NewInMemChunkRepo() *InMemChunkRepo {
 }
 
 func (r *InMemChunkRepo) Create(
-	_ context.Context, chunkID t.ChunkID, objectID t.ObjectID, chunkKey t.ChunkKey) error {
+	_ context.Context, chunkID t.ChunkID, objectSlot t.ObjectSlot) error {
 
 	r.mu.Lock()
 	defer r.mu.Unlock()
@@ -37,8 +37,7 @@ func (r *InMemChunkRepo) Create(
 	}
 	r.chunks[chunkID] = &m.Chunk{
 		Meta:          t.ChunkMeta{ID: chunkID},
-		ObjectID:      objectID,
-		ChunkKey:      chunkKey,
+		Slot:          objectSlot,
 		LastTouchedAt: time.Now(),
 	}
 	return nil
@@ -88,7 +87,7 @@ func (r *InMemChunkRepo) SetDigest(_ context.Context, id t.ChunkID, digest *dige
 func (r *InMemChunkRepo) GetDigest(_ context.Context, id t.ChunkID) (*digest.Digest, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	chunk, ok := r.chunks[id]
 	if !ok {
 		return nil, m.ErrChunkNotFound
@@ -99,7 +98,7 @@ func (r *InMemChunkRepo) GetDigest(_ context.Context, id t.ChunkID) (*digest.Dig
 func (r *InMemChunkRepo) Exists(_ context.Context, chunkID t.ChunkID) (bool, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	_, ok := r.chunks[chunkID]
 	return ok, nil
 }
@@ -122,7 +121,7 @@ func (r *InMemChunkRepo) IncReplicaCount(ctx context.Context, chunkID t.ChunkID)
 	chunk, ok := r.chunks[chunkID]
 	if !ok {
 		slog.WarnContext(ctx, "try increment replication of non-existing chunk", "chunk_id", chunkID)
-		return m.ErrChunkNotFound 
+		return m.ErrChunkNotFound
 	}
 	chunk.ReplicaCount++
 	chunk.LastTouchedAt = time.Now()
@@ -164,11 +163,11 @@ func (r *InMemChunkRepo) Delete(_ context.Context, chunkID t.ChunkID) (bool, err
 
 	chunk, ok := r.chunks[chunkID]
 	if !ok {
-		return false, nil 
+		return false, nil
 	}
 
 	if chunk.ReplicaCount > 0 {
-		return false, errors.New("delete not empty chunk") 
+		return false, errors.New("delete not empty chunk")
 	}
 
 	delete(r.chunks, chunkID)
@@ -181,7 +180,7 @@ func (r *InMemChunkRepo) Touch(_ context.Context, chunkID t.ChunkID) error {
 
 	chunk, ok := r.chunks[chunkID]
 	if !ok {
-		return m.ErrChunkNotFound 
+		return m.ErrChunkNotFound
 	}
 	chunk.LastTouchedAt = time.Now()
 	return nil
@@ -190,7 +189,7 @@ func (r *InMemChunkRepo) Touch(_ context.Context, chunkID t.ChunkID) error {
 func (r *InMemChunkRepo) ForEach(_ context.Context, fn func(m.Chunk)) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
-	
+
 	for _, chunk := range r.chunks {
 		fn(*chunk.Clone())
 	}

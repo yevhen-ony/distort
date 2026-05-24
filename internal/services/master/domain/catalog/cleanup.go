@@ -70,7 +70,10 @@ func (cc *CleanupService) DeleteUnwanted(ctx context.Context) []t.ObjectID {
 			cleaned := true
 			for chunkKey, chunkID := range object.Chunks {
 				if ok, _ := cc.chunkRepo.Delete(ctx, chunkID); ok {
-					cc.objectRepo.DeleteChunk(ctx, object.ID, chunkKey)
+					cc.objectRepo.DeleteChunk(ctx, t.ObjectSlot{
+						ObjectID: object.ID,
+						ChunkKey: chunkKey,
+					})
 					cc.metrics.ChunkCount.Add(-1)
 				} else {
 					cleaned = false

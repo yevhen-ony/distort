@@ -30,8 +30,7 @@ func (o *Object) Clone() *Object {
 type Chunk struct {
 	Meta          t.ChunkMeta
 	ReplicaCount  int
-	ObjectID      t.ObjectID
-	ChunkKey      t.ChunkKey
+	Slot          t.ObjectSlot
 	LastTouchedAt time.Time
 }
 
@@ -43,8 +42,7 @@ func (c *Chunk) Clone() *Chunk {
 	return &Chunk{
 		Meta:          *c.Meta.Clone(),
 		ReplicaCount:  c.ReplicaCount,
-		ObjectID:      c.ObjectID,
-		ChunkKey:      c.ChunkKey,
+		Slot:          c.Slot,
 		LastTouchedAt: c.LastTouchedAt,
 	}
 }

@@ -66,12 +66,12 @@ func NewPlannerService(deps PlannerDeps) (*PlannerService, error) {
 func (p *PlannerService) ScheduleStaleChunks(ctx context.Context) {
 	now := time.Now()
 	p.chunkRepo.ForEach(ctx, func(chunk m.Chunk) {
-		desired, err := p.objectRepo.GetReplication(ctx, chunk.ObjectID)
+		desired, err := p.objectRepo.GetReplication(ctx, chunk.Slot.ObjectID)
 		if err != nil {
 			slog.ErrorContext(ctx,
 				"read object replication for chunk failed",
 				"chunk_id", chunk.Meta.ID,
-				"object_id", chunk.ObjectID,
+				"object_id", chunk.Slot.ObjectID,
 				"error", err,
 			)
 			return

@@ -14,10 +14,13 @@ func validateCreateObjectRequest(req *pb.CreateObjectRequest) error {
 	return nil
 }
 
-
 func validateAllocateChunkRequest(req *pb.AllocateChunkRequest) error {
-	if req.GetObjectId() == "" {
+	slot := req.GetObjectSlot()
+	if slot.GetObjectId() == "" {
 		return status.Error(codes.InvalidArgument, "missing object id")
+	}
+	if slot.GetChunkKey() == "" {
+		return status.Error(codes.InvalidArgument, "missing chunk key")
 	}
 	if req.GetChunkSize() <= 0 {
 		return status.Error(codes.InvalidArgument, "invalid chunk size")

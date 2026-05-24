@@ -9,6 +9,11 @@ message ChunkMeta {
   common.v1.Digest digest = 2;
 }
 
+message ObjectSlot {
+  string object_id = 1;
+  string chunk_key = 2;
+}
+
 message NodeRef {
   string node_id = 1;
   string addr = 2;

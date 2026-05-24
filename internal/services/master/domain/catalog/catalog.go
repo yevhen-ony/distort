@@ -61,54 +61,51 @@ func (s *CatalogService) SetReplication(ctx context.Context, objectID t.ObjectID
 }
 
 func (s *CatalogService) ExistsChunk(
-	ctx context.Context, objectID t.ObjectID, chunkKey t.ChunkKey,
+	ctx context.Context, slot t.ObjectSlot,
 ) (bool, error) {
-	obj, err := s.objectRepo.Get(ctx, objectID)
+	obj, err := s.objectRepo.Get(ctx, slot.ObjectID)
 	if err != nil {
 		return false, fmt.Errorf("get object: %w", err)
 	}
-	_, ok := obj.Chunks[chunkKey]
+	_, ok := obj.Chunks[slot.ChunkKey]
 	return ok, nil
 }
 
-func (s *CatalogService) GetChunk(
-	ctx context.Context, objectID t.ObjectID, chunkKey t.ChunkKey,
-) (t.ChunkID, error) {
+func (s *CatalogService) GetChunkID(ctx context.Context, slot t.ObjectSlot) (t.ChunkID, error) {
 
-	obj, err := s.objectRepo.Get(ctx, objectID)
+	obj, err := s.objectRepo.Get(ctx, slot.ObjectID)
 	if err != nil {
 		return "", fmt.Errorf("get object: %w", err)
 	}
-	chunkID, ok := obj.Chunks[chunkKey]
+	chunkID, ok := obj.Chunks[slot.ChunkKey]
 	if !ok {
 		return "", m.ErrChunkNotFound
 	}
 	return chunkID, nil
 }
 
+func (s *CatalogService) GetChunk(ctx context.Context, chunkID t.ChunkID) (m.Chunk, error) {
+	return s.chunkRepo.Get(ctx, chunkID)
+}
+
 func (s *CatalogService) AddChunk(
-	ctx context.Context, objectID t.ObjectID, chunkKey t.ChunkKey, chunkSize int64,
-) (t.ChunkDesc, error) {
+	ctx context.Context, slot t.ObjectSlot, chunkSize int64,
+) (t.ChunkID, error) {
 
 	chunkID := s.chunkRepo.NewChunkID()
-	err := s.chunkRepo.Create(ctx, chunkID, objectID, chunkKey)
+	err := s.chunkRepo.Create(ctx, chunkID, slot)
 	if err != nil {
-		return t.ChunkDesc{}, fmt.Errorf("create chunk: %w", err)
+		return "", fmt.Errorf("create chunk: %w", err)
 	}
 
-	err = s.objectRepo.AddChunk(ctx, objectID, chunkKey, chunkID)
+	err = s.objectRepo.AddChunk(ctx, slot, chunkID)
 	if err != nil {
 		s.chunkRepo.Delete(ctx, chunkID)
-		return t.ChunkDesc{}, fmt.Errorf("add chunk to object %s: %w", objectID, err)
+		return "", fmt.Errorf("add chunk to object %s: %w", slot.ObjectID, err)
 	}
-
-	desc := t.ChunkDesc{
-		ChunkID:   chunkID,
-		ChunkKey:  chunkKey,
-		ChunkSize: chunkSize,
-	}
+	
 	s.metrics.ChunkCount.Add(1)
-	return desc, nil
+	return chunkID, nil
 }
 
 func (s *CatalogService) GetObjectChunks(ctx context.Context, objectID t.ObjectID) ([]t.ChunkID, error) {
@@ -138,7 +135,7 @@ func (s *CatalogService) DescribeChunk(ctx context.Context, chunkID t.ChunkID) (
 	}
 	desc := t.ChunkDesc{
 		ChunkID:   chunk.Meta.ID,
-		ChunkKey:  chunk.ChunkKey,
+		ChunkKey:  chunk.Slot.ChunkKey,
 		ChunkSize: size,
 	}
 	return desc, nil
@@ -165,7 +162,7 @@ func (s *CatalogService) ListChunks(ctx context.Context) []t.ChunkInfo {
 			ID:           c.Meta.ID,
 			Size:         size,
 			ReplicaCount: c.ReplicaCount,
-			ObjectID:     c.ObjectID,
+			ObjectID:     c.Slot.ObjectID,
 		}
 	})
 }
