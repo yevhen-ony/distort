@@ -33,7 +33,7 @@ func ChunkPlacementToPB(cp t.ChunkPlacement) *mpb.ChunkPlacement {
 	}
 }
 
-func DigestToPB(d *digest.Digest) *cpb.Digest {
+func DigestToPB(d digest.Digest) *cpb.Digest {
 	return &cpb.Digest{
 		Checksum: string(d.Checksum),
 		Size:     d.Size,
@@ -121,6 +121,15 @@ func ChunkPlacement1ToPB(p t.ChunkPlacement1) *mpb.ChunkPlacement1 {
 func ChunkDesc1ToPB(d t.ChunkDesc1) *mpb.ChunkDesc1 {
 	return &mpb.ChunkDesc1 {
 		Placement: ChunkPlacement1ToPB(d.Placement),
+	}
+}
+
+func ObjectDesc1ToPB(d t.ObjectDesc1) *mpb.ObjectDesc1 {
+	return &mpb.ObjectDesc1{
+		ObjectId: string(d.ID),
+		Size: d.Size,
+		Replication: int64(d.Replication),
+		Chunks: utils.Map(d.Chunks, ChunkPlacement1ToPB),
 	}
 }
 

@@ -31,7 +31,9 @@ type ClientFacade interface {
 	ListChunks(context.Context) []t.ChunkInfo
 	ListNodes(context.Context) []t.NodeInfo
 	SetReplication(context.Context, t.ObjectID, int) error
+
 	DescribeChunk(context.Context, t.ChunkID) (*t.ChunkDesc1, error)
+	DescribeObject(context.Context, t.ObjectID) (*t.ObjectDesc1, error)
 }
 
 type ObjectCatalog interface {
@@ -71,8 +73,8 @@ type ChunkRepo interface {
 	Get(context.Context, t.ChunkID) (Chunk, error)
 	List(context.Context) ([]Chunk, error)
 
-	SetDigest(context.Context, t.ChunkID, *digest.Digest) error
-	GetDigest(context.Context, t.ChunkID) (*digest.Digest, error)
+	SetDigest(context.Context, t.ChunkID, digest.Digest) error
+	GetDigest(context.Context, t.ChunkID) (digest.Digest, error)
 
 	IncReplicaCount(context.Context, t.ChunkID) error
 	DecReplicaCount(context.Context, t.ChunkID) error

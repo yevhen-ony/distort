@@ -72,16 +72,32 @@ func (s *ClientFacadeService) DescribeObject(
 	objectID t.ObjectID,
 ) (*t.ObjectDesc1, error) {
 	
-	// obj, err := s.catalog.GetObject(ctx, objectID)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("get object: %w", err)
-	// }
+	obj, err := s.catalog.GetObject(ctx, objectID)
+	if err != nil {
+		return nil, fmt.Errorf("get object: %w", err)
+	}
+	
+	placements := make([]t.ChunkPlacement1, 0, len(obj.Chunks))
+	size := int64(0)
+	for _, chunkID := range obj.Chunks {
+		desc, err := s.DescribeChunk(ctx, chunkID)
+		if err != nil {
+			return nil, fmt.Errorf("describe chunk %s: %w", chunkID, err)
+		}
+		placements = append(placements, desc.Placement)
+		size += desc.Placement.Meta.Digest.Size
+	}
 
-	return  nil, nil
+	objDesc := t.ObjectDesc1 {
+		ID: obj.ID,
+		Size: size,
+		Replication: obj.Replication,
+		Chunks: placements,
+	}
 
+	return &objDesc, nil
 }
  
-
 func (s *ClientFacadeService) DescribeChunk(
 	ctx context.Context,
 	chunkID t.ChunkID,

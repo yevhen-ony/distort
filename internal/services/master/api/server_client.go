@@ -210,3 +210,30 @@ func (s *ClientServer) DescribeChunk(
 	return rsp, nil
 }
 
+func (s *ClientServer) DescribeObject(
+	ctx context.Context,
+	req *mpb.DescribeObjectRequest,
+) (rsp *mpb.DescribeObjectResponse, err error) {
+
+	defer func() {
+		if err != nil {
+			slog.ErrorContext(ctx, "describe objcet failed", 
+				"object_id", req.GetObjectId(), "error", err,
+			)
+			err = toStatus(err)
+		}
+	}()
+	slog.DebugContext(ctx, "describe object requested", "object_id", req.GetObjectId())
+
+	objectID := t.ObjectID(req.GetObjectId())
+	objectDesc, err := s.facade.DescribeObject(ctx, objectID)
+	if err != nil {
+		return nil, err
+	}
+	
+	rsp = &mpb.DescribeObjectResponse{
+		Description: convert.ObjectDesc1ToPB(*objectDesc),
+	}
+	return rsp, nil
+}
+

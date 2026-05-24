@@ -33,7 +33,6 @@ type ChunkDesc1 struct {
 type ObjectDesc1 struct {
 	ID          ObjectID
 	Size        int64
-	ChunkCount  int
 	Replication int
 	Chunks      []ChunkPlacement1
 }

@@ -171,7 +171,7 @@ func (cs *StorageService) commitUpload(
 
 	ctx = dosctx.WithOperation(ctx, "commit_upload")
 
-	if err := meta.Digest.Match(chunk.Meta.Digest); err != nil {
+	if err := meta.Digest.Match(&chunk.Meta.Digest); err != nil {
 		return err
 	}
 

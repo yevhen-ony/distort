@@ -59,10 +59,7 @@ func (op *ObjectProgress) String() string {
   			continue
   		}
 
-  		var sizeMB float64
-  		if ch.Meta.Digest != nil {
-  			sizeMB = float64(ch.Meta.Digest.Size) / (1024 * 1024)
-  		}
+		sizeMB := float64(ch.Meta.Digest.Size) / (1024 * 1024)
   		sentMB := float64(ch.SentBytes) / (1024 * 1024)
 
   		fmt.Fprintf(

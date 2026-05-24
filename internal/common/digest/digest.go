@@ -38,11 +38,11 @@ func (d *Digest) Match(other *Digest) error {
 	return nil
 }
 
-func (d *Digest) Clone() *Digest {
+func (d *Digest) Clone() Digest {
 	if d == nil {
-		return nil
+		return Digest{}
 	}
-	return &Digest{
+	return Digest{
 		Checksum: d.Checksum,
 		Size: d.Size,
 	}
@@ -67,8 +67,8 @@ func (d *Digester) Write(p []byte) (int, error) {
 	return n, err
 }
 
-func (d *Digester) Digest() *Digest {
-	return &Digest{
+func (d *Digester) Digest() Digest {
+	return Digest{
 		Size: d.total,
 		Checksum: d.Checksum(),
 	}

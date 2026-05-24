@@ -30,17 +30,26 @@ func ObjectSlotFromPB(pbSlot *pb.ObjectSlot) t.ObjectSlot {
 	}
 }
 
-func ChunkPlacement1FromPB(pbP *mpb.ChunkPlacement1) *t.ChunkPlacement1 {
-	return &t.ChunkPlacement1{
+func ChunkPlacement1FromPB(pbP *mpb.ChunkPlacement1) t.ChunkPlacement1 {
+	return t.ChunkPlacement1{
 		Meta: ChunkMetaFromPB(pbP.GetChunkMeta()),
 		Slot: ObjectSlotFromPB(pbP.GetObjectSlot()),
 		Sources: utils.Map(pbP.GetSources(), NodeRefFromPB),
 	}
 }
 
-func ChunkDesc1FromPB(pbD *mpb.ChunkDesc1) *t.ChunkDesc1 {
-	return &t.ChunkDesc1 {
-		Placement: *ChunkPlacement1FromPB(pbD.GetPlacement()),
+func ChunkDesc1FromPB(pbD *mpb.ChunkDesc1) t.ChunkDesc1 {
+	return t.ChunkDesc1 {
+		Placement: ChunkPlacement1FromPB(pbD.GetPlacement()),
+	}
+}
+
+func ObjectDesc1FromPB(pbD *mpb.ObjectDesc1) t.ObjectDesc1 {
+	return t.ObjectDesc1{
+		ID: t.ObjectID(pbD.GetObjectId()), 
+		Size: pbD.GetSize(),
+		Replication: int(pbD.GetReplication()),
+		Chunks: utils.Map(pbD.GetChunks(), ChunkPlacement1FromPB),
 	}
 }
 
@@ -119,7 +128,7 @@ func ChunkMetaFromPB(pbObj ChunkDescLike) t.ChunkMeta {
 	digest := DigestFromPB(pbObj.GetDigest())
 	return t.ChunkMeta{
 		ID:     t.ChunkID(pbObj.GetChunkId()),
-		Digest: &digest,
+		Digest: digest,
 	}
 }
 

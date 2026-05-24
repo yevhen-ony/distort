@@ -5,7 +5,6 @@ import (
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"log/slog"
 	"sync"
 	"time"
@@ -61,38 +60,35 @@ func genChunkID() t.ChunkID {
 	return t.ChunkID(hex.EncodeToString(b[:]))
 }
 
-func (r *InMemChunkRepo) SetDigest(_ context.Context, id t.ChunkID, digest *digest.Digest) error {
+func (r *InMemChunkRepo) SetDigest(_ context.Context, id t.ChunkID, digest digest.Digest) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if digest == nil {
-		return fmt.Errorf("set nil digest")
-	}
 	chunk, ok := r.chunks[id]
 	if !ok {
 		return m.ErrChunkNotFound
 	}
-	if chunk.Meta.Digest == nil {
+	if chunk.ReplicaCount == 0 {
 		chunk.Meta.Digest = digest.Clone()
 		chunk.LastTouchedAt = time.Now()
 		return nil
 	}
-	if err := chunk.Meta.Digest.Match(digest); err != nil {
+	if err := chunk.Meta.Digest.Match(&digest); err != nil {
 		return err
 	}
 	chunk.LastTouchedAt = time.Now()
 	return nil
 }
 
-func (r *InMemChunkRepo) GetDigest(_ context.Context, id t.ChunkID) (*digest.Digest, error) {
+func (r *InMemChunkRepo) GetDigest(_ context.Context, id t.ChunkID) (digest.Digest, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
 	chunk, ok := r.chunks[id]
 	if !ok {
-		return nil, m.ErrChunkNotFound
+		return digest.Digest{}, m.ErrChunkNotFound
 	}
-	return chunk.Meta.Digest, nil
+	return chunk.Meta.Digest.Clone(), nil
 }
 
 func (r *InMemChunkRepo) Exists(_ context.Context, chunkID t.ChunkID) (bool, error) {

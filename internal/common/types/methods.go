@@ -18,7 +18,7 @@ func (m ChunkMeta) Match(other ChunkMeta) error {
 		return fmt.Errorf("id mismatch: %w", ErrChunkMetaMismatch)
 	}
 
-	if err := m.Digest.Match(other.Digest); err != nil {
+	if err := m.Digest.Match(&other.Digest); err != nil {
 		return errors.Join(err, ErrChunkMetaMismatch) 
 	}
 

@@ -183,6 +183,7 @@ func MakeDescribeCmd(cfg *Config) *cobra.Command {
 	}
 	describeCmd.AddCommand(
 		MakeDescribeChunkCmd(cfg),
+		MakeDescribeObjectCmd(cfg),
 	)
 
 	return describeCmd 
@@ -216,6 +217,36 @@ func MakeDescribeChunkCmd(cfg *Config) *cobra.Command {
 		},
 	}
 	return descChunkCmd
+}
+
+func MakeDescribeObjectCmd(cfg *Config) *cobra.Command {
+	descObjectCmd := &cobra.Command{
+		Use: "object [object-id]",
+		Aliases: []string{"o"},
+		Short: "describe object",
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer stop()
+
+			if err := cfg.ApplyFlags(cmd); err != nil {
+				return fmt.Errorf("apply config flags: %w", err)
+			}
+			
+			objectID := args[0]
+			if objectID == "" {
+				return errors.New("missing object id")
+			}
+			
+			app, err := NewApp(cfg)
+			if err != nil {
+				return fmt.Errorf("init app: %w", err)
+			}
+			defer app.Close()
+			return app.DescribeObject(ctx, objectID)
+		},
+	}
+	return descObjectCmd
 }
 
 func MakeListNodesCmd(cfg *Config) *cobra.Command {

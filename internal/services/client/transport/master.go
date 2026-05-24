@@ -146,7 +146,25 @@ func (mt *MasterTransport) DescribeChunk(
 		return nil, fmt.Errorf("transport: %w", err)
 	}
 
-	placement := convert.ChunkDesc1FromPB(rsp.GetDescription())
-	return placement, nil 
+	description := convert.ChunkDesc1FromPB(rsp.GetDescription())
+	return &description, nil 
+}
+
+func (mt *MasterTransport) DescribeObject(
+	ctx context.Context,
+	objectID t.ObjectID,
+) (*t.ObjectDesc1, error) {
+
+	req := &pb.DescribeObjectRequest{
+		ObjectId: string(objectID),
+	}
+
+	rsp, err := mt.client.DescribeObject(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("transport: %w", err)
+	}
+
+	description := convert.ObjectDesc1FromPB(rsp.GetDescription())
+	return &description, nil
 }
 

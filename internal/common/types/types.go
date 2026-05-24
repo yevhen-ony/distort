@@ -49,7 +49,7 @@ type NodeStats struct {
 
 type ChunkMeta struct {
 	ID     ChunkID
-	Digest *digest.Digest
+	Digest digest.Digest
 }
 
 type Chunk struct {

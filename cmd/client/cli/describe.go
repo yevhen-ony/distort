@@ -27,18 +27,10 @@ func (app *App) DescribeChunk(ctx context.Context, chunkID string) error {
 }
 
 func RenderChunkMeta(out io.Writer, meta t. ChunkMeta) {
-	
-	checksum := ""
-	size := int64(0)
-	if meta.Digest != nil {
-		checksum = string(meta.Digest.Checksum)
-		size = meta.Digest.Size
-	}
-	
 	fmt.Fprintln(out, "CHUNK META:")
 	fmt.Fprintf(out, "\t * chunk_id: %s\n", meta.ID)
-	fmt.Fprintf(out, "\t * checksum: %s\n", checksum)
-	fmt.Fprintf(out, "\t * size    : %8.1fMB\n", toMB(size))
+	fmt.Fprintf(out, "\t * checksum: %s\n", meta.Digest.Checksum)
+	fmt.Fprintf(out, "\t * size    : %.1fMB\n", toMB(meta.Digest.Size))
 }
 
 func RenderObjectSlot(out io.Writer, slot t.ObjectSlot) {
@@ -52,5 +44,43 @@ func RenderSources(out io.Writer, sources []t.NodeRef) {
 	for _, ref := range sources {
 		fmt.Fprintf(out, "\t * node_id: %s | node_addr: %s\n", ref.ID, ref.Addr)
 	}
+}
+
+func (app *App) DescribeObject(ctx context.Context, objectID string) error {
+
+	desc, err := app.MasterTransport.DescribeObject(ctx, t.ObjectID(objectID))
+	if err != nil {
+		return err
+	}
+
+	b := &strings.Builder{}
+
+ 	fmt.Fprintln(b, "OBJECT:")
+  	fmt.Fprintf(b, "\t * object_id  : %s\n", desc.ID)
+  	fmt.Fprintf(b, "\t * total_size : %.1fMB\n", toMB(desc.Size))
+  	fmt.Fprintf(b, "\t * chunks     : %d\n", len(desc.Chunks))
+  	fmt.Fprintf(b, "\t * replication: %d\n", desc.Replication)
+
+	fmt.Fprintln(b, "CHUNKS:")
+  	fmt.Fprintf(b, "%-10s %-18s %11s %8s\n",
+  		"KEY",
+  		"CHUNK_ID",
+  		"SIZE",
+  		"REPLICAS",
+  	)
+
+  	for _, chunk := range desc.Chunks {
+
+  		fmt.Fprintf(b, "%-10s %-18s %8.1fMB %8d\n",
+  			chunk.Slot.ChunkKey,
+  			chunk.Meta.ID,
+  			toMB(chunk.Meta.Digest.Size),
+  			len(chunk.Sources),
+  		)
+  	}
+
+	fmt.Print(b.String())
+
+	return nil
 }
 
