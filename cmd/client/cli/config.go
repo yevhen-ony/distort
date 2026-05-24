@@ -2,6 +2,7 @@ package main
 
 import (
 	"dos/internal/common/config"
+	"time"
 
 	"github.com/spf13/cobra"
 )
@@ -18,6 +19,8 @@ type ClientConfig struct {
 	MasterAddr string `yaml:"master_addr"`
 	ChunkSize config.Size `yaml:"chunk_size"`
 	FrameSize config.Size `yaml:"frame_size"`
+	TransferConcurrency int `yaml:"concurrency"`
+	RenderRefreshInterval time.Duration `yaml:"render_refresh"`
 }
 
 func (cfg *Config) BindFlags(cmd *cobra.Command) {
@@ -49,4 +52,12 @@ func (c *Config) ChunkSize() int64 {
 
 func (c *Config) FrameSize() int64 {
 	return int64(c.Client.FrameSize)
+}
+
+func (c *Config) TransferConcurrency() int {
+	return c.Client.TransferConcurrency
+}
+
+func (c *Config) RenderRefreshInterval() time.Duration {
+	return c.Client.RenderRefreshInterval
 }

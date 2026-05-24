@@ -1,13 +1,11 @@
 package main
 
 import (
+	"errors"
 	"fmt"
-
-	"github.com/gosuri/uilive"
 
 	"dos/internal/common/connect"
 	"dos/internal/common/transport/chunkrpc"
-	"dos/internal/services/client/domain"
 	"dos/internal/services/client/transport"
 )
 
@@ -17,9 +15,6 @@ type App struct {
 	Conn             *connect.ConnCache
 	MasterTransport  *transport.MasterTransport
 	StorageTransport *chunkrpc.Transport
-	ClientService    *domain.Service
-
-	progressOutput *uilive.Writer
 }
 
 func (app *App) Close() error {
@@ -29,41 +24,35 @@ func (app *App) Close() error {
 	return app.Conn.Close()
 }
 
-func NewApp(cfg *Config) (*App, error) {
+func NewApp(config *Config) (*App, error) {
 	conn := connect.NewConnCache()
 
-	masterTransport, err := transport.NewMasterTransport(conn, cfg)
+	if config == nil {
+		return nil, errors.New("missing config")
+	}
+
+	masterT, err := transport.NewMasterTransport(conn, config)
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("init master transport: %w", err)
 	}
 
-	storageTransport, err := chunkrpc.NewTransport(conn, cfg)
+	chunkT, err := chunkrpc.NewTransport(conn, config)
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("init storage transport: %w", err)
 	}
 
-	output := uilive.New()
-	opt := domain.WithProgressHandler(func(op *domain.ObjectProgress) {
-		fmt.Fprint(output, op.String())
-		_ = output.Flush()
-	})
-
-	service, err := domain.NewService(masterTransport, storageTransport, opt)
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("init service: %w", err)
 	}
 
 	app := &App{
-		Config:           cfg,
+		Config:           config,
 		Conn:             conn,
-		MasterTransport:  masterTransport,
-		StorageTransport: storageTransport,
-		ClientService:    service,
-
-		progressOutput: output,
+		MasterTransport:  masterT,
+		StorageTransport: chunkT,
 	}
 	return app, nil
 }

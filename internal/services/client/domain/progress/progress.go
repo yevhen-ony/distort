@@ -1,4 +1,4 @@
-package domain
+package progress
 
 import (
 	"dos/internal/common/transport/chunkrpc"
@@ -7,6 +7,10 @@ import (
 	"strings"
 	"sync"
 )
+
+type ProgressHandler func(*ObjectProgress)
+
+func NOPProgressHanler(*ObjectProgress) {}
 
 type ObjectProgress struct {
 	ObjectID t.ObjectID
@@ -23,6 +27,7 @@ func NewObjectProgress(objectID t.ObjectID) *ObjectProgress {
 		Chunks: make(map[t.ChunkKey]chunkrpc.Progress),
 	}
 }
+
 
 func (op *ObjectProgress) UpdateChunk(key t.ChunkKey, chunk chunkrpc.Progress) {
   	op.mu.Lock()
@@ -45,7 +50,7 @@ func (op *ObjectProgress) String() string {
   	fmt.Fprintf(
   		&b,
   		"%-10s %-20s %-10s %-10s %-6s\n",
-  		"KEY", "ID", "SIZE", "SENT", "DONE",
+  		"KEY", "ID", "SIZE", "SENT", "STATUS",
   	)
 
   	for _, key := range op.ChunksOrder {
@@ -62,8 +67,8 @@ func (op *ObjectProgress) String() string {
 
   		fmt.Fprintf(
   			&b,
-  			"%-10s %-20s %8.1fMB %8.1fMB %-6t\n",
-  			key, ch.Meta.ID, sizeMB, sentMB, ch.Done,
+  			"%-10s %-20s %8.1fMB %8.1fMB %-10s\n",
+  			key, ch.Meta.ID, sizeMB, sentMB, ch.Status,
   		)
   	}
 

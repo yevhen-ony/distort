@@ -2,4 +2,5 @@ client:
   master_addr: localhost:10000
   frame_size: 1MB 
   chunk_size: 5MB
-  
+  concurrency: 4  
+  render_refresh: 0.2s

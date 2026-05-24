@@ -33,7 +33,7 @@ func NewTransport(conn *connect.ConnCache, config Config) (*Transport, error) {
 
 type SessionOption func(*Session)
 
-func WithProgressHandler(h ProgressHandler) SessionOption {
+func WithProgress(h ProgressHandler) SessionOption {
 	return func(s *Session) {
 		s.onProgress = h
 	}

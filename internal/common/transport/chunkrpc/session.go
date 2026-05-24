@@ -8,6 +8,7 @@ import (
 	"dos/internal/common/connect"
 	"dos/internal/common/convert"
 	t "dos/internal/common/types"
+	"dos/internal/common/utils"
 	"errors"
 	"fmt"
 	"io"
@@ -67,38 +68,41 @@ func (s *Session) uploadToNode(
 
 	s.progress = NewProgress(chunk.Meta, target)
 	s.emitProgress()
+	defer s.emitProgress()
 
 	err = stream.Send(&spb.PutChunkRequest{Header: header})
 	if err != nil {
+		s.progress.Fail()
 		return fmt.Errorf("send header: %w", err)
 	}
 
 	if err = s.uploadData(stream, chunk.Data); err != nil {
+		s.progress.Fail()
 		return fmt.Errorf("send data: %w", err)
 	}
 
 	if _, err := stream.CloseAndRecv(); err != nil {
+		s.progress.Fail()
 		return fmt.Errorf("close stream: %w", err)
 	}
 
-	s.progress.Done = true
-	s.emitProgress()
+	s.progress.Done()
 
 	return nil
 }
 
 func (s *Session) uploadData(stream spb.ChunkService_PutChunkClient, data []byte) error {
-	for len(data) > 0 {
-		n := min(int64(s.config.FrameSize()), int64(len(data)))
-		err := stream.Send(&spb.PutChunkRequest{Data: data[:n]})
+
+	frames := utils.SplitFrames(data, s.config.FrameSize())
+	for _, frame := range frames {
+
+		err := stream.Send(&spb.PutChunkRequest{Data: frame})
 		if err != nil {
 			return err
 		}
 		
-		s.progress.SentBytes += n
+		s.progress.SentBytes += int64(len(frame))
 		s.emitProgress()
-
-		data = data[n:]
 	}
 	return nil
 }
@@ -153,19 +157,20 @@ func (s *Session) downloadFromNode(
 
 	s.progress = NewProgress(headerMeta, nodeRef)
 	s.emitProgress()
+	defer s.emitProgress()
 
 	chunk, err := s.downloadData(stream, chunkID)
 	if err != nil {
+		s.progress.Fail()
 		return t.Chunk{}, fmt.Errorf("recv data: %w", err)
 	}
 	
 	if err := headerMeta.Match(chunk.Meta); err != nil {
+		s.progress.Fail()
 		return t.Chunk{}, err
 	}
 
-	s.progress.Done = true
-	s.emitProgress()
-
+	s.progress.Done()
 	return chunk, nil
 }
 

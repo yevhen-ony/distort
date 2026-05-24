@@ -31,7 +31,7 @@ func run() error {
 	}
 	cfg.BindFlags(root)
 
-	root.AddCommand(MakePushCmd(cfg))
+	root.AddCommand(MakeUploadCmd(cfg))
 	root.AddCommand(MakePullCmd(cfg))
 	root.AddCommand(MakeListCmd(cfg))
 	root.AddCommand(MakeScaleObjectCmd(cfg))
@@ -42,10 +42,11 @@ func run() error {
 	return nil
 }
 
-func MakePushCmd(cfg *Config) *cobra.Command {
+func MakeUploadCmd(cfg *Config) *cobra.Command {
 	pushCmd := &cobra.Command{
-		Use:   "push [path]",
-		Short: "push file to the object storage",
+		Use:   "upload [path]",
+		Aliases: []string{"ul"},
+		Short: "upload file to the object storage",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
@@ -53,9 +54,9 @@ func MakePushCmd(cfg *Config) *cobra.Command {
 			defer stop()
 
 			path := args[0]
-			objectID, err := cmd.Flags().GetString("object-id")
+			objectID, err := cmd.Flags().GetString("id")
 			if err != nil {
-				return fmt.Errorf("read object-id flag: %w", err)
+				return fmt.Errorf("read id flag: %w", err)
 			}
 			if objectID == "" {
 				objectID = filepath.Base(path)
@@ -71,17 +72,18 @@ func MakePushCmd(cfg *Config) *cobra.Command {
 			}
 			defer app.Close()
 
-			return app.Push(ctx, objectID, path)
+			return app.Upload(ctx, objectID, path)
 		},
 	}
-	pushCmd.Flags().String("object-id", "", "object id of the file being pushed")
+	pushCmd.Flags().String("id", "", "object id of the file being pushed")
 	return pushCmd
 }
 
 func MakePullCmd(cfg *Config) *cobra.Command {
 	pullCmd := &cobra.Command{
-		Use: "pull [object-id]",
-		Short: "pull object from the object store",
+		Use: "download [object-id]",
+		Aliases: []string{"dl"},
+		Short: "download object from the object store",
 		Args: cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			
@@ -104,7 +106,7 @@ func MakePullCmd(cfg *Config) *cobra.Command {
 			}
 			defer app.Close()
 			
-			return app.Pull(ctx, objectID, destPath)
+			return app.Download(ctx, objectID, destPath)
 		},
 	}
 	pullCmd.Flags().String("dest", "", "dest file or dir the object to be stored")
