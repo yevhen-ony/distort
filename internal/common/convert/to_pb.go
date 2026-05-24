@@ -110,6 +110,14 @@ func ReplicaDeletedReportToPB(r t.ReplicaDeletedReport) *mpb.ReplicaDeleted {
 	}
 }
 
+func ChunkPlacement1ToPB(p t.ChunkPlacement1) *mpb.ChunkPlacement1 {
+	return &mpb.ChunkPlacement1{
+		ChunkMeta: ChunkMetaToPB(p.Meta),
+		ObjectSlot: ObjectSlotToPB(p.Slot),
+		Sources: utils.Map(p.Sources, NodeRefToPB), 
+	}
+}
+
 
 func ReplicaReportToPB(rr t.StorageNodeReport) *mpb.ReplicaReport {
 	switch {
@@ -136,4 +144,6 @@ func ReplicaReportToPB(rr t.StorageNodeReport) *mpb.ReplicaReport {
 		return &mpb.ReplicaReport{}
 	}
 }
+
+
 

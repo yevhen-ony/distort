@@ -30,6 +30,14 @@ func ObjectSlotFromPB(pbSlot *pb.ObjectSlot) t.ObjectSlot {
 	}
 }
 
+func ChunkPlacement1FromPB(pbP *mpb.ChunkPlacement1) *t.ChunkPlacement1 {
+	return &t.ChunkPlacement1{
+		Meta: ChunkMetaFromPB(pbP.GetChunkMeta()),
+		Slot: ObjectSlotFromPB(pbP.GetObjectSlot()),
+		Sources: utils.Map(pbP.GetSources(), NodeRefFromPB),
+	}
+}
+
 func ChunkPlacementFromPB(pbObj ChunkPlacementLike) *t.ChunkPlacement {
 	pbNodes := pbObj.GetNodes()
 	nodes := make([]t.NodeRef, 0, len(pbNodes))

@@ -34,6 +34,7 @@ func run() error {
 	root.AddCommand(MakeUploadCmd(cfg))
 	root.AddCommand(MakePullCmd(cfg))
 	root.AddCommand(MakeListCmd(cfg))
+	root.AddCommand(MakeDescribeCmd(cfg))
 	root.AddCommand(MakeScaleObjectCmd(cfg))
 
 	if err := root.Execute(); err != nil {
@@ -173,6 +174,48 @@ func MakeListChunksCmd(cfg *Config) *cobra.Command {
 		},
 	}
 	return listChunksCmd
+}
+
+func MakeDescribeCmd(cfg *Config) *cobra.Command {
+	describeCmd := &cobra.Command{
+		Use: "describe",
+		Short: "describe resources",
+	}
+	describeCmd.AddCommand(
+		MakeDescribeChunkCmd(cfg),
+	)
+
+	return describeCmd 
+}
+
+func MakeDescribeChunkCmd(cfg *Config) *cobra.Command {
+	descChunkCmd := &cobra.Command{
+		Use: "chunk [chunk-id]",
+		Aliases: []string{"c"},
+		Short: "describe chunk",
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer stop()
+
+			if err := cfg.ApplyFlags(cmd); err != nil {
+				return fmt.Errorf("apply config flags: %w", err)
+			}
+			
+			chunkID := args[0]
+			if chunkID == "" {
+				return errors.New("missing chunk id")
+			}
+			
+			app, err := NewApp(cfg)
+			if err != nil {
+				return fmt.Errorf("init app: %w", err)
+			}
+			defer app.Close()
+			return app.DescribeChunk(ctx, chunkID)
+		},
+	}
+	return descChunkCmd
 }
 
 func MakeListNodesCmd(cfg *Config) *cobra.Command {

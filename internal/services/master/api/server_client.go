@@ -183,3 +183,30 @@ func (s *ClientServer) SetReplication(
 	rsp = &pb.SetReplicationResponse{}
 	return rsp, nil
 }
+
+func (s *ClientServer) DescribeChunk(
+	ctx context.Context, req *mpb.DescribeChunkRequest,
+) (rsp *mpb.DescribeChunkResponse, err error) {
+
+	defer func() {
+		if err != nil {
+			slog.ErrorContext(ctx, "describe chunk failed", 
+				"chunk_id", req.GetChunkId(), "error", err,
+			)
+			err = toStatus(err)
+		}
+	}()
+	slog.DebugContext(ctx, "describe chunk requested", "chunk_id", req.GetChunkId())
+
+	chunkID := t.ChunkID(req.GetChunkId())
+	placement, err := s.facade.DescribeChunk(ctx, chunkID)
+	if err != nil {
+		return nil, err
+	}
+
+	rsp = &mpb.DescribeChunkResponse{
+		Placement: convert.ChunkPlacement1ToPB(*placement),
+	}
+	return rsp, nil
+}
+

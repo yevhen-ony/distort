@@ -67,7 +67,11 @@ func (s *ClientFacadeService) CreateObject(ctx context.Context, oid t.ObjectID) 
 	return s.catalog.Create(ctx, oid, s.config.ReplicationCount())
 }
 
-func (s *ClientFacadeService) DescribeChunk(ctx context.Context, chunkID t.ChunkID) (*t.ChunkPlacement1, error) {
+func (s *ClientFacadeService) DescribeChunk(
+	ctx context.Context,
+	chunkID t.ChunkID,
+) (*t.ChunkPlacement1, error) {
+
 	chunk, err := s.catalog.GetChunk(ctx, chunkID)
 	if err != nil {
 		return nil, fmt.Errorf("get chunk: %w", err)
@@ -85,7 +89,8 @@ func (s *ClientFacadeService) DescribeChunk(ctx context.Context, chunkID t.Chunk
 }
 
 func (s *ClientFacadeService) AllocateChunk(
-	ctx context.Context, cmd m.AllocateChunkCommand,
+	ctx context.Context,
+	cmd m.AllocateChunkCommand,
 ) (*t.ChunkAllocation1, error) {
 
 	exists, err := s.catalog.ExistsChunk(ctx, cmd.Slot)

@@ -26,6 +26,7 @@ const (
 	MasterClientService_ListChunks_FullMethodName      = "/master.v1.MasterClientService/ListChunks"
 	MasterClientService_ListNodes_FullMethodName       = "/master.v1.MasterClientService/ListNodes"
 	MasterClientService_SetReplication_FullMethodName  = "/master.v1.MasterClientService/SetReplication"
+	MasterClientService_DescribeChunk_FullMethodName   = "/master.v1.MasterClientService/DescribeChunk"
 )
 
 // MasterClientServiceClient is the client API for MasterClientService service.
@@ -39,6 +40,7 @@ type MasterClientServiceClient interface {
 	ListChunks(ctx context.Context, in *ListChunksRequest, opts ...grpc.CallOption) (*ListChunksResponse, error)
 	ListNodes(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error)
 	SetReplication(ctx context.Context, in *SetReplicationRequest, opts ...grpc.CallOption) (*SetReplicationResponse, error)
+	DescribeChunk(ctx context.Context, in *DescribeChunkRequest, opts ...grpc.CallOption) (*DescribeChunkResponse, error)
 }
 
 type masterClientServiceClient struct {
@@ -119,6 +121,16 @@ func (c *masterClientServiceClient) SetReplication(ctx context.Context, in *SetR
 	return out, nil
 }
 
+func (c *masterClientServiceClient) DescribeChunk(ctx context.Context, in *DescribeChunkRequest, opts ...grpc.CallOption) (*DescribeChunkResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(DescribeChunkResponse)
+	err := c.cc.Invoke(ctx, MasterClientService_DescribeChunk_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // MasterClientServiceServer is the server API for MasterClientService service.
 // All implementations must embed UnimplementedMasterClientServiceServer
 // for forward compatibility.
@@ -130,6 +142,7 @@ type MasterClientServiceServer interface {
 	ListChunks(context.Context, *ListChunksRequest) (*ListChunksResponse, error)
 	ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error)
 	SetReplication(context.Context, *SetReplicationRequest) (*SetReplicationResponse, error)
+	DescribeChunk(context.Context, *DescribeChunkRequest) (*DescribeChunkResponse, error)
 	mustEmbedUnimplementedMasterClientServiceServer()
 }
 
@@ -160,6 +173,9 @@ func (UnimplementedMasterClientServiceServer) ListNodes(context.Context, *ListNo
 }
 func (UnimplementedMasterClientServiceServer) SetReplication(context.Context, *SetReplicationRequest) (*SetReplicationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetReplication not implemented")
+}
+func (UnimplementedMasterClientServiceServer) DescribeChunk(context.Context, *DescribeChunkRequest) (*DescribeChunkResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method DescribeChunk not implemented")
 }
 func (UnimplementedMasterClientServiceServer) mustEmbedUnimplementedMasterClientServiceServer() {}
 func (UnimplementedMasterClientServiceServer) testEmbeddedByValue()                             {}
@@ -308,6 +324,24 @@ func _MasterClientService_SetReplication_Handler(srv interface{}, ctx context.Co
 	return interceptor(ctx, in, info, handler)
 }
 
+func _MasterClientService_DescribeChunk_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(DescribeChunkRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(MasterClientServiceServer).DescribeChunk(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: MasterClientService_DescribeChunk_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(MasterClientServiceServer).DescribeChunk(ctx, req.(*DescribeChunkRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // MasterClientService_ServiceDesc is the grpc.ServiceDesc for MasterClientService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -342,6 +376,10 @@ var MasterClientService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "SetReplication",
 			Handler:    _MasterClientService_SetReplication_Handler,
+		},
+		{
+			MethodName: "DescribeChunk",
+			Handler:    _MasterClientService_DescribeChunk_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

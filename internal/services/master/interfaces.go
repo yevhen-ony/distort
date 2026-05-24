@@ -31,6 +31,7 @@ type ClientFacade interface {
 	ListChunks(context.Context) []t.ChunkInfo
 	ListNodes(context.Context) []t.NodeInfo
 	SetReplication(context.Context, t.ObjectID, int) error
+	DescribeChunk(context.Context, t.ChunkID) (*t.ChunkPlacement1, error)
 }
 
 type ObjectCatalog interface {

@@ -15,6 +15,15 @@ service MasterClientService {
   rpc ListChunks(ListChunksRequest) returns (ListChunksResponse);
   rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
   rpc SetReplication(SetReplicationRequest) returns (SetReplicationResponse);
+  rpc DescribeChunk(DescribeChunkRequest) returns (DescribeChunkResponse);
+}
+
+message DescribeChunkRequest {
+  string chunk_id = 1;
+}
+
+message DescribeChunkResponse {
+  ChunkPlacement1 placement = 1;
 }
 
 message SetReplicationRequest {
@@ -79,7 +88,6 @@ message AllocateChunkResponse {
   string chunk_id = 1;
   common.v1.ObjectSlot object_slot = 2;
   repeated common.v1.NodeRef targets = 3;
-
 }
 
 message GetObjectAccessRequest {
@@ -90,6 +98,12 @@ message GetObjectAccessResponse {
   string object_id = 1;
   int64 total_size = 2;
   repeated ChunkPlacement chunks = 3;
+}
+
+message ChunkPlacement1 {
+  common.v1.ChunkMeta chunk_meta = 1;
+  common.v1.ObjectSlot object_slot = 2;
+  repeated common.v1.NodeRef sources = 3;
 }
 
 message ChunkPlacement {

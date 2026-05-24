@@ -131,3 +131,22 @@ func (mt *MasterTransport) SetReplication(ctx context.Context, objectID t.Object
 	}
 	return nil
 }
+
+func (mt *MasterTransport) DescribeChunk(
+	ctx context.Context,
+	chunkID t.ChunkID,
+) (*t.ChunkPlacement1, error) {
+
+	req := &pb.DescribeChunkRequest{
+		ChunkId: string(chunkID),
+	}
+
+	rsp, err := mt.client.DescribeChunk(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("transport: %w", err)
+	}
+
+	placement := convert.ChunkPlacement1FromPB(rsp.GetPlacement())
+	return placement, nil 
+}
+
