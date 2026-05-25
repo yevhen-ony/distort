@@ -1,4 +1,4 @@
-package main
+package app
 
 import (
 	"errors"
@@ -6,15 +6,17 @@ import (
 
 	"dos/internal/common/connect"
 	"dos/internal/common/transport/chunkrpc"
+	"dos/internal/common/transport/healthrpc"
 	"dos/internal/services/client/transport"
 )
 
 type App struct {
 	Config *Config
 
-	Conn             *connect.ConnCache
-	MasterTransport  *transport.MasterTransport
-	StorageTransport *chunkrpc.Transport
+	Conn    *connect.ConnCache
+	MasterT *transport.MasterTransport
+	ChunkT  *chunkrpc.Transport
+	HealthT *healthrpc.HealthTransport
 }
 
 func (app *App) Close() error {
@@ -37,6 +39,12 @@ func NewApp(config *Config) (*App, error) {
 		return nil, fmt.Errorf("init master transport: %w", err)
 	}
 
+	healthT, err := healthrpc.NewHealthTransport(conn)
+	if err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("init health transport: %w", err)
+	}
+
 	chunkT, err := chunkrpc.NewTransport(conn, config)
 	if err != nil {
 		conn.Close()
@@ -49,10 +57,11 @@ func NewApp(config *Config) (*App, error) {
 	}
 
 	app := &App{
-		Config:           config,
-		Conn:             conn,
-		MasterTransport:  masterT,
-		StorageTransport: chunkT,
+		Config:  config,
+		Conn:    conn,
+		MasterT: masterT,
+		ChunkT:  chunkT,
+		HealthT: healthT,
 	}
 	return app, nil
 }

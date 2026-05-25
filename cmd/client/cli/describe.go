@@ -2,85 +2,87 @@ package main
 
 import (
 	"context"
+	"errors"
 	"fmt"
-	"io"
-	"strings"
+	"os"
+	"os/signal"
 
-	t "dos/internal/common/types"
+	"github.com/spf13/cobra"
+
+	"dos/cmd/client/app"
 )
 
-func (app *App) DescribeChunk(ctx context.Context, chunkID string) error {
-	desc, err := app.MasterTransport.DescribeChunk(ctx, t.ChunkID(chunkID))
-	if err != nil {
-		return err
+
+func MakeDescribeCmd(cfg *app.Config) *cobra.Command {
+	describeCmd := &cobra.Command{
+		Use: "describe",
+		Short: "describe resources",
 	}
-	placement := &desc.Placement
+	describeCmd.AddCommand(
+		MakeDescribeChunkCmd(cfg),
+		MakeDescribeObjectCmd(cfg),
+	)
 
-	b := &strings.Builder{}
-	RenderChunkMeta(b, placement.Meta)
-	RenderObjectSlot(b, placement.Slot)
-	RenderSources(b, placement.Sources)
-
-	fmt.Print(b.String())
-
-	return nil
+	return describeCmd 
 }
 
-func RenderChunkMeta(out io.Writer, meta t. ChunkMeta) {
-	fmt.Fprintln(out, "CHUNK META:")
-	fmt.Fprintf(out, "\t * chunk_id: %s\n", meta.ID)
-	fmt.Fprintf(out, "\t * checksum: %s\n", meta.Digest.Checksum)
-	fmt.Fprintf(out, "\t * size    : %.1fMB\n", toMB(meta.Digest.Size))
-}
+func MakeDescribeChunkCmd(cfg *app.Config) *cobra.Command {
+	descChunkCmd := &cobra.Command{
+		Use: "chunk [chunk-id]",
+		Aliases: []string{"c"},
+		Short: "describe chunk",
+		RunE: func(cmd *cobra.Command, args []string) error {
 
-func RenderObjectSlot(out io.Writer, slot t.ObjectSlot) {
-	fmt.Fprintln(out, "OBJECT SLOT:")
-	fmt.Fprintf(out, "\t * object_id: %s\n", slot.ObjectID)
-	fmt.Fprintf(out, "\t * chunk_key: %s\n", slot.ChunkKey)
-}
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer stop()
 
-func RenderSources(out io.Writer, sources []t.NodeRef) {
-	fmt.Fprintf(out, "SOURCES (STORAGE NODES) %d:\n", len(sources))
-	for _, ref := range sources {
-		fmt.Fprintf(out, "\t * node_id: %s | node_addr: %s\n", ref.ID, ref.Addr)
+			if err := ApplyFlags(cfg, cmd); err != nil {
+				return fmt.Errorf("apply config flags: %w", err)
+			}
+			
+			chunkID := args[0]
+			if chunkID == "" {
+				return errors.New("missing chunk id")
+			}
+			
+			app, err := app.NewApp(cfg)
+			if err != nil {
+				return fmt.Errorf("init app: %w", err)
+			}
+			defer app.Close()
+			return app.DescribeChunk(ctx, chunkID)
+		},
 	}
+	return descChunkCmd
 }
 
-func (app *App) DescribeObject(ctx context.Context, objectID string) error {
+func MakeDescribeObjectCmd(cfg *app.Config) *cobra.Command {
+	descObjectCmd := &cobra.Command{
+		Use: "object [object-id]",
+		Aliases: []string{"o"},
+		Short: "describe object",
+		RunE: func(cmd *cobra.Command, args []string) error {
 
-	desc, err := app.MasterTransport.DescribeObject(ctx, t.ObjectID(objectID))
-	if err != nil {
-		return err
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer stop()
+
+			if err := ApplyFlags(cfg, cmd); err != nil {
+				return fmt.Errorf("apply config flags: %w", err)
+			}
+			
+			objectID := args[0]
+			if objectID == "" {
+				return errors.New("missing object id")
+			}
+			
+			app, err := app.NewApp(cfg)
+			if err != nil {
+				return fmt.Errorf("init app: %w", err)
+			}
+			defer app.Close()
+			return app.DescribeObject(ctx, objectID)
+		},
 	}
-
-	b := &strings.Builder{}
-
- 	fmt.Fprintln(b, "OBJECT:")
-  	fmt.Fprintf(b, "\t * object_id  : %s\n", desc.ID)
-  	fmt.Fprintf(b, "\t * total_size : %.1fMB\n", toMB(desc.Size))
-  	fmt.Fprintf(b, "\t * chunks     : %d\n", len(desc.Chunks))
-  	fmt.Fprintf(b, "\t * replication: %d\n", desc.Replication)
-
-	fmt.Fprintln(b, "CHUNKS:")
-  	fmt.Fprintf(b, "%-10s %-18s %11s %8s\n",
-  		"KEY",
-  		"CHUNK_ID",
-  		"SIZE",
-  		"REPLICAS",
-  	)
-
-  	for _, chunk := range desc.Chunks {
-
-  		fmt.Fprintf(b, "%-10s %-18s %8.1fMB %8d\n",
-  			chunk.Slot.ChunkKey,
-  			chunk.Meta.ID,
-  			toMB(chunk.Meta.Digest.Size),
-  			len(chunk.Sources),
-  		)
-  	}
-
-	fmt.Print(b.String())
-
-	return nil
+	return descObjectCmd
 }
 

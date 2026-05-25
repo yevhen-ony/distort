@@ -11,6 +11,8 @@ import (
 	"log/slog"
 )
 
+var _ mpb.MasterStorageServiceServer = (*StorageServer)(nil)
+
 type StorageServer struct {
 	mpb.UnimplementedMasterStorageServiceServer
 	

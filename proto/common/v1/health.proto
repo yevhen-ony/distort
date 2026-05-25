@@ -1,0 +1,26 @@
+syntax = "proto3";
+
+package common.v1;
+
+option go_package = "dos/gen/proto/common/v1;common";
+
+service HealthService {
+  rpc Ready(ReadyRequest) returns (HealthResponse);
+  rpc VerifyIdentity(VerifyIdentityRequest) returns (HealthResponse);
+}
+
+message ReadyRequest {}
+
+message VerifyIdentityRequest {
+    string expected_id = 1;
+}
+
+enum Component {
+    COMPONENT_UNSPECIFIED = 0;
+    COMPONENT_MASTER = 1;
+    COMPONENT_STORAGE = 2;
+}
+
+message HealthResponse {
+  Component component = 1;
+}

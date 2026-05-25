@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 
+	cpb "dos/gen/proto/common/v1"
 	spb "dos/gen/proto/storage/v1"
 	"dos/internal/common/connect"
 	"dos/internal/common/listener"
@@ -36,6 +37,7 @@ type App struct {
 	storageS   *storage.StorageService
 
 	apiServer *api.Server
+	apiHealth *api.HealthServer
 }
 
 func NewApp(config *Config) (*App, error) {
@@ -107,7 +109,21 @@ func NewApp(config *Config) (*App, error) {
 		return nil, fmt.Errorf("storage service init: %w", err)
 	}
 
-	apiServer := api.New(identityS, storageS, config)
+	apiServer, err := api.NewServer(api.ServerDeps{
+		Identity: identityS,
+		Storage:  storageS,
+		Config:   config,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("api server init: %w", err)
+	}
+
+	apiHealth, err := api.NewHealthServer(api.HealthDeps{
+		Identity: identityS,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("api health init: %w", err)
+	}
 
 	app := &App{
 		config: config,
@@ -126,6 +142,7 @@ func NewApp(config *Config) (*App, error) {
 		storageS: storageS,
 
 		apiServer: apiServer,
+		apiHealth: apiHealth,
 	}
 	return app, nil
 }
@@ -151,6 +168,7 @@ func (app *App) Start(ctx context.Context) error {
 func (app *App) runGrpcServer(ctx context.Context) {
 	_ = listener.RunGRPCServer(ctx, &app.config.Listen, func(s *grpc.Server) {
 		spb.RegisterChunkServiceServer(s, app.apiServer)
+		cpb.RegisterHealthServiceServer(s, app.apiHealth)
 	})
 }
 

@@ -2,40 +2,49 @@ package main
 
 import (
 	"context"
-	t "dos/internal/common/types"
-	"dos/internal/services/client/domain/delivery"
-	"dos/internal/services/client/domain/progress"
-	"dos/internal/services/client/io/file"
+	"dos/cmd/client/app"
 	"fmt"
+	"os"
+	"os/signal"
+	"path/filepath"
+
+	"github.com/spf13/cobra"
 )
 
-func (app *App) Upload(ctx context.Context, objectID string, path string) error {
+func MakeUploadCmd(cfg *app.Config) *cobra.Command {
+	pushCmd := &cobra.Command{
+		Use:   "upload [path]",
+		Aliases: []string{"ul"},
+		Short: "upload file to the object storage",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
 
-	chunker, err := file.NewObjectChunker(path, app.Config)
-	if err != nil {
-		return fmt.Errorf("init chunker: %w", err)
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer stop()
+
+			path := args[0]
+			objectID, err := cmd.Flags().GetString("id")
+			if err != nil {
+				return fmt.Errorf("read id flag: %w", err)
+			}
+			if objectID == "" {
+				objectID = filepath.Base(path)
+			}
+
+			if err := ApplyFlags(cfg, cmd); err != nil {
+				return fmt.Errorf("apply config flags: %w", err)
+			}
+
+			a, err := app.NewApp(cfg)
+			if err != nil {
+				return fmt.Errorf("init app: %w", err)
+			}
+			defer a.Close()
+
+			_ = a.Upload(ctx, objectID, path)
+			return nil
+		},
 	}
-	defer chunker.Close()
-
-
-	uploader, err := delivery.NewObjectDelivery(delivery.ObjectDeliveryDeps{
-		ObjectID: t.ObjectID(objectID),
-		MasterT: app.MasterTransport,
-		ChunkT: app.StorageTransport,
-		Config: app.Config,
-	})
-	if err != nil {
-		return fmt.Errorf("uploader init: %w", err) 
-	}
-
-	render := NewProgressRender(app.Config.RenderRefreshInterval())	
-	defer render.Close()
-
-	go render.RunLoop(ctx)
-
-	uploader.WithProgress(func(p *progress.ObjectProgress) {
-		render.Update(p)
-	})
-
-	return uploader.Upload(ctx, chunker)
+	pushCmd.Flags().String("id", "", "object id of the file being pushed")
+	return pushCmd
 }

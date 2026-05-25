@@ -11,13 +11,13 @@ service MasterClientService {
   rpc AllocateChunk(AllocateChunkRequest) returns (AllocateChunkResponse);
   rpc GetObjectAccess(GetObjectAccessRequest) returns (GetObjectAccessResponse);
 
-  rpc ListObjects(ListObjectsRequest) returns (ListObjectsResponse);
-  rpc ListChunks(ListChunksRequest) returns (ListChunksResponse);
-  rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
   rpc SetReplication(SetReplicationRequest) returns (SetReplicationResponse);
-  rpc DescribeChunk(DescribeChunkRequest) returns (DescribeChunkResponse);
+
   rpc DescribeObject(DescribeObjectRequest) returns (DescribeObjectResponse);
+  rpc DescribeChunk(DescribeChunkRequest) returns (DescribeChunkResponse);
 }
+
+
 
 message DescribeObjectRequest {
   string object_id = 1;
@@ -43,43 +43,6 @@ message SetReplicationRequest {
 message SetReplicationResponse {
 }
 
-message ListNodesRequest {}
-
-message ListNodesResponse {
-  repeated NodeInfo nodes = 1;
-}
-
-message ListChunksRequest {}
-
-message ListChunksResponse {
-  repeated ChunkInfo chunks = 1;
-}
-
-message ListObjectsRequest {}
-
-message ListObjectsResponse {
-  repeated ObjectInfo objects = 1;
-}
-
-message NodeInfo {
-  string node_id = 1;
-  string addr = 2;
-  int64 chunk_count = 3;
-  int64 used_bytes = 4;
-}
-
-message ChunkInfo {
-  string chunk_id = 1;
-  int64 chunk_size = 3;
-  int64 replica_count = 2;
-  string object_id = 4;
-}
-
-message ObjectInfo {
-  string object_id = 1;
-  int64 chunk_count = 2;
-  int64 replication = 3;
-}
 
 message CreateObjectRequest {
   string object_id = 1;
@@ -125,7 +88,6 @@ message ObjectDesc1 {
   int64 replication = 4;
   repeated ChunkPlacement1 chunks = 5;
 }
-
 
 message ChunkPlacement {
   string chunk_id = 1;

@@ -2,77 +2,96 @@ package main
 
 import (
 	"context"
+	"dos/cmd/client/app"
 	"fmt"
-	"strings"
+	"os"
+	"os/signal"
+
+	"github.com/spf13/cobra"
 )
 
-func (app *App) ListObjects(ctx context.Context) error {
-	infos, err := app.MasterTransport.ListObjects(ctx)
-	if err != nil {
-		return err
+func MakeListCmd(cfg *app.Config) *cobra.Command {
+	listCmd := &cobra.Command{
+		Use: "list",
+		Short: "list resources",
 	}
-
-	b := &strings.Builder{}
-	fmt.Fprintf(b, "%-20s %11s %11s\n", "OBJECT_ID", "CHUNK_COUNT", "REPLICATION")
-	for _, info := range infos {
-		fmt.Fprintf(b, "%-20s %11d %11d\n", info.ID, info.ChunkCount, info.Replication)
-	}
-
-	fmt.Print(b.String())
-	return nil
-}
-
-func (app *App) ListChunks(ctx context.Context) error {
-	infos, err := app.MasterTransport.ListChunks(ctx)
-	if err != nil {
-		return err
-	}
-
-	b := &strings.Builder{}
-	fmt.Fprintf(b,
-		"%-18s %-8s %-8s %-20s\n",
-		"CHUNK_ID", "SIZE", "REPLICAS", "OBJECT_ID",
+	listCmd.AddCommand(
+		MakeListObjectsCmd(cfg),
+		MakeListChunksCmd(cfg),
+		MakeListNodesCmd(cfg),
 	)
-	for _, info := range infos {
-		fmt.Fprintf(b,
-			"%-18s %8s %8d %-20s\n",
-			info.ID,
-			ToMBStr(info.Size),
-			info.ReplicaCount,
-			info.ObjectID,
-		)
-	}
 
-	fmt.Print(b.String())
-	return nil
+	return listCmd
 }
 
-func (app *App) ListNodes(ctx context.Context) error {
-	infos, err := app.MasterTransport.ListNodes(ctx)
-	if err != nil {
-		return err
-	}
+func MakeListObjectsCmd(cfg *app.Config) *cobra.Command {
+	listObjectsCmd := &cobra.Command{
+		Use: "objects",
+		Short: "list objects",
+		RunE: func(cmd *cobra.Command, args []string) error {
 
-	b := &strings.Builder{}
-	fmt.Fprintf(b,
-		"%-18s %-18s %-6s %-8s\n",
-		"NODE_ID", "ADDR", "CHUNKS", "SIZE",
-	)
-	for _, info := range infos {
-		fmt.Fprintf(b,
-			"%-18s %-18s %6d %8s\n",
-			info.ID,
-			info.Addr,
-			info.ChunkCount,
-			ToMBStr(info.UsedBytes),
-		)
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer stop()
+
+			if err := ApplyFlags(cfg, cmd); err != nil {
+				return fmt.Errorf("apply config flags: %w", err)
+			}
+
+			app, err := app.NewApp(cfg)
+			if err != nil {
+				return fmt.Errorf("init app: %w", err)
+			}
+			defer app.Close()
+			return app.ListObjects(ctx)
+		},
 	}
-	fmt.Print(b.String())
-	return nil
+	return listObjectsCmd
 }
 
-func ToMBStr(bytes int64) string {
-	mb := float64(bytes) / float64(1024 * 1024)
-	return fmt.Sprintf("%5.1fMB", mb)
+func MakeListChunksCmd(cfg *app.Config) *cobra.Command {
+	listChunksCmd := &cobra.Command{
+		Use: "chunks",
+		Short: "list chunks",
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer stop()
+
+			if err := ApplyFlags(cfg, cmd); err != nil {
+				return fmt.Errorf("apply config flags: %w", err)
+			}
+
+			app, err := app.NewApp(cfg)
+			if err != nil {
+				return fmt.Errorf("init app: %w", err)
+			}
+			defer app.Close()
+			return app.ListChunks(ctx)
+		},
+	}
+	return listChunksCmd
 }
 
+func MakeListNodesCmd(cfg *app.Config) *cobra.Command {
+	listNodesCmd := &cobra.Command{
+		Use: "nodes",
+		Short: "list nodes",
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer stop()
+
+			if err := ApplyFlags(cfg, cmd); err != nil {
+				return fmt.Errorf("apply config flags: %w", err)
+			}
+			
+			app, err := app.NewApp(cfg)
+			if err != nil {
+				return fmt.Errorf("init app: %w", err)
+			}
+			defer app.Close()
+			return app.ListNodes(ctx)
+		},
+	}
+	return listNodesCmd
+}

@@ -13,6 +13,9 @@ import (
 	m "dos/internal/services/master"
 )
 
+
+var _ mpb.MasterClientServiceServer = (*ClientServer)(nil)
+
 type ClientServer struct {
 	pb.UnimplementedMasterClientServiceServer
 	facade m.ClientFacade
@@ -115,46 +118,6 @@ func (s *ClientServer) GetObjectAccess(
 		Chunks: utils.Map(object.Chunks, func(cp t.ChunkPlacement) *pb.ChunkPlacement {
 			return convert.ChunkPlacementToPB(cp)
 		}),
-	}
-	return rsp, nil
-}
-
-func (s *ClientServer) ListObjects(
-	ctx context.Context, req *pb.ListObjectsRequest,
-) (*pb.ListObjectsResponse, error) {
-
-	slog.DebugContext(ctx, "list objects requested")
-
-	objects := s.facade.ListObjects(ctx)
-	rsp := &mpb.ListObjectsResponse{
-		Objects: utils.Map(objects, convert.ObjectInfoToPB),
-	}
-	return rsp, nil
-}
-
-func (s *ClientServer) ListChunks(
-	ctx context.Context, req *pb.ListChunksRequest,
-) (*pb.ListChunksResponse, error) {
-
-	slog.DebugContext(ctx, "list chunks requested")
-
-	chunks := s.facade.ListChunks(ctx)
-	rsp := &mpb.ListChunksResponse{
-		Chunks: utils.Map(chunks, convert.ChunkInfoToPB),
-	}
-	return rsp, nil
-}
-
-func (s *ClientServer) ListNodes(
-	ctx context.Context, req *pb.ListNodesRequest,
-) (*pb.ListNodesResponse, error) {
-
-	slog.DebugContext(ctx, "list objects requested")
-
-	nodes := s.facade.ListNodes(ctx)
-
-	rsp := &mpb.ListNodesResponse{
-		Nodes: utils.Map(nodes, convert.NodeInfoToPB),
 	}
 	return rsp, nil
 }

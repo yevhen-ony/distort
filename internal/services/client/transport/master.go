@@ -18,6 +18,8 @@ type MasterTransportConfig interface {
 
 type MasterTransport struct {
 	client pb.MasterClientServiceClient
+	admin pb.AdminServiceClient
+
 	config MasterTransportConfig
 }
 
@@ -34,8 +36,14 @@ func NewMasterTransport(conn *connect.ConnCache, config MasterTransportConfig) (
 		return nil, fmt.Errorf("get conn: %w", err)
 	}
 	client := pb.NewMasterClientServiceClient(c)
+	admin := pb.NewAdminServiceClient(c)
 
-	return &MasterTransport{client: client, config: config}, nil
+	mt := &MasterTransport{
+		client: client,
+		admin: admin,
+		config: config,
+	}
+	return mt, nil
 }
 
 func (mt *MasterTransport) CreateObject(ctx context.Context, oid t.ObjectID) error {
@@ -91,7 +99,7 @@ func (mt *MasterTransport) GetObjectAccess(
 
 func (mt *MasterTransport) ListObjects(ctx context.Context) ([]t.ObjectInfo, error) {
 
-	rsp, err := mt.client.ListObjects(ctx, &pb.ListObjectsRequest{})
+	rsp, err := mt.admin.ListObjects(ctx, &pb.ListObjectsRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("transport: %w", err)
 	}
@@ -101,7 +109,7 @@ func (mt *MasterTransport) ListObjects(ctx context.Context) ([]t.ObjectInfo, err
 
 func (mt *MasterTransport) ListChunks(ctx context.Context) ([]t.ChunkInfo, error) {
 
-	rsp, err := mt.client.ListChunks(ctx, &pb.ListChunksRequest{})
+	rsp, err := mt.admin.ListChunks(ctx, &pb.ListChunksRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("transport: %w", err)
 	}
@@ -111,7 +119,7 @@ func (mt *MasterTransport) ListChunks(ctx context.Context) ([]t.ChunkInfo, error
 
 func (mt *MasterTransport) ListNodes(ctx context.Context) ([]t.NodeInfo, error) {
 
-	rsp, err := mt.client.ListNodes(ctx, &pb.ListNodesRequest{})
+	rsp, err := mt.admin.ListNodes(ctx, &pb.ListNodesRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("transport: %w", err)
 	}

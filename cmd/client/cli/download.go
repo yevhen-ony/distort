@@ -4,62 +4,44 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
-	"strings"
+	"os/signal"
 
-	t "dos/internal/common/types"
-	"dos/internal/services/client/domain/delivery"
-	"dos/internal/services/client/domain/progress"
-	"dos/internal/services/client/io/file"
+	"github.com/spf13/cobra"
+
+	"dos/cmd/client/app"
 )
 
-func (app *App) Download(ctx context.Context, objectID string, destPath string) error {
-	comparer := func (lhs, rhs t.ChunkKey) int {
-		if lhs < rhs { return -1 }
-		if lhs > rhs { return 1 }
-		return 0
+func MakeDownloadCmd(cfg *app.Config) *cobra.Command {
+	downloadCmd := &cobra.Command{
+		Use: "download [object-id]",
+		Aliases: []string{"dl"},
+		Short: "download object from the object store",
+		Args: cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer stop()
 
+			objectID := args[0]
+			destPath, err := cmd.Flags().GetString("dest")
+			if err != nil {
+				return fmt.Errorf("dest flag: %w", err)
+			}
+			
+			if err := ApplyFlags(cfg, cmd); err != nil {
+				return fmt.Errorf("apply config flags: %w", err)
+			}
+
+			app, err := app.NewApp(cfg)
+			if err != nil {
+				return fmt.Errorf("init app: %w", err)
+			}
+			defer app.Close()
+			
+			_ = app.Download(ctx, objectID, destPath)
+			return nil
+		},
 	}
-	destPath = ResolveOutputPath(destPath, objectID)
-	asm, err := file.NewFileObjectAssembler(destPath, comparer)
-	if err != nil {
-		return fmt.Errorf("create assembler: %w", err)
-	}
-	
-	downloader, err := delivery.NewObjectDelivery(delivery.ObjectDeliveryDeps{
-		ObjectID: t.ObjectID(objectID),
-		MasterT: app.MasterTransport,
-		ChunkT: app.StorageTransport,
-		Config: app.Config,
-	})
-	if err != nil {
-		return fmt.Errorf("uploader init: %w", err) 
-	}
-
-	render := NewProgressRender(app.Config.RenderRefreshInterval())	
-	defer render.Close()
-
-	downloader.WithProgress(func(p *progress.ObjectProgress) {
-		render.Update(p)
-	})
-
-	go render.RunLoop(ctx)
-
-	if err := downloader.Download(ctx, asm); err != nil {
-		return fmt.Errorf("download object %s: %w", objectID, err)
-	}
-	return nil
-}
-
-func ResolveOutputPath(path string, objectID string) string {
-	if path == "" || strings.HasSuffix(path, string(os.PathSeparator)) {
-		return filepath.Join(path, objectID)
-	}
-
-	info, err := os.Stat(path)
-	if err == nil && info.IsDir() {
-		return filepath.Join(path, objectID)
-	}
-
-	return path
+	downloadCmd.Flags().String("dest", "", "dest file or dir the object to be stored")
+	return downloadCmd
 }

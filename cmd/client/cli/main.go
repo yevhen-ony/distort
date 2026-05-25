@@ -1,15 +1,12 @@
 package main
 
 import (
-	"context"
-	"errors"
 	"fmt"
 	"os"
-	"os/signal"
-	"path/filepath"
 
 	"github.com/spf13/cobra"
 
+	"dos/cmd/client/app"
 	"dos/internal/common/config"
 )
 
@@ -21,7 +18,7 @@ func main() {
 }
 
 func run() error {
-	cfg := &Config{}
+	cfg := &app.Config{}
 	if err := config.LoadConfig("config.yml", &cfg); err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
@@ -29,13 +26,14 @@ func run() error {
 	root := &cobra.Command{
 		Use: "dos",
 	}
-	cfg.BindFlags(root)
+	BindFlags(cfg, root)
 
 	root.AddCommand(MakeUploadCmd(cfg))
 	root.AddCommand(MakeDownloadCmd(cfg))
 	root.AddCommand(MakeListCmd(cfg))
 	root.AddCommand(MakeDescribeCmd(cfg))
 	root.AddCommand(MakeScaleObjectCmd(cfg))
+	root.AddCommand(MakePingCmd(cfg))
 
 	if err := root.Execute(); err != nil {
 		return fmt.Errorf("execute: %w")
@@ -43,272 +41,25 @@ func run() error {
 	return nil
 }
 
-func MakeUploadCmd(cfg *Config) *cobra.Command {
-	pushCmd := &cobra.Command{
-		Use:   "upload [path]",
-		Aliases: []string{"ul"},
-		Short: "upload file to the object storage",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
 
-			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-			defer stop()
-
-			path := args[0]
-			objectID, err := cmd.Flags().GetString("id")
-			if err != nil {
-				return fmt.Errorf("read id flag: %w", err)
-			}
-			if objectID == "" {
-				objectID = filepath.Base(path)
-			}
-
-			if err := cfg.ApplyFlags(cmd); err != nil {
-				return fmt.Errorf("apply config flags: %w", err)
-			}
-
-			app, err := NewApp(cfg)
-			if err != nil {
-				return fmt.Errorf("init app: %w", err)
-			}
-			defer app.Close()
-
-			_ = app.Upload(ctx, objectID, path)
-			return nil
-		},
+func ApplyFlags(config *app.Config, cmd *cobra.Command) error {
+	if cmd == nil {
+		return nil
 	}
-	pushCmd.Flags().String("id", "", "object id of the file being pushed")
-	return pushCmd
+
+	if flag := cmd.Flag(masterAddrKey); flag != nil && flag.Changed {
+		v, err := cmd.Flags().GetString(masterAddrKey)
+		if err != nil {
+			return err
+		}
+		config.Client.MasterAddr = v
+	}
+	return nil
 }
 
-func MakeDownloadCmd(cfg *Config) *cobra.Command {
-	downloadCmd := &cobra.Command{
-		Use: "download [object-id]",
-		Aliases: []string{"dl"},
-		Short: "download object from the object store",
-		Args: cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			
-			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-			defer stop()
-
-			objectID := args[0]
-			destPath, err := cmd.Flags().GetString("dest")
-			if err != nil {
-				return fmt.Errorf("dest flag: %w", err)
-			}
-			
-			if err := cfg.ApplyFlags(cmd); err != nil {
-				return fmt.Errorf("apply config flags: %w", err)
-			}
-
-			app, err := NewApp(cfg)
-			if err != nil {
-				return fmt.Errorf("init app: %w", err)
-			}
-			defer app.Close()
-			
-			_ = app.Download(ctx, objectID, destPath)
-			return nil
-		},
-	}
-	downloadCmd.Flags().String("dest", "", "dest file or dir the object to be stored")
-	return downloadCmd
+func BindFlags(config *app.Config, cmd *cobra.Command) {
+	cmd.PersistentFlags().String(masterAddrKey, "", "master address")
 }
 
-func MakeListCmd(cfg *Config) *cobra.Command {
-	listCmd := &cobra.Command{
-		Use: "list",
-		Short: "list resources",
-	}
-	listCmd.AddCommand(
-		MakeListObjectsCmd(cfg),
-		MakeListChunksCmd(cfg),
-		MakeListNodesCmd(cfg),
-	)
 
-	return listCmd
-}
-
-func MakeListObjectsCmd(cfg *Config) *cobra.Command {
-	listObjectsCmd := &cobra.Command{
-		Use: "objects",
-		Short: "list objects",
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-			defer stop()
-
-			if err := cfg.ApplyFlags(cmd); err != nil {
-				return fmt.Errorf("apply config flags: %w", err)
-			}
-
-			app, err := NewApp(cfg)
-			if err != nil {
-				return fmt.Errorf("init app: %w", err)
-			}
-			defer app.Close()
-			return app.ListObjects(ctx)
-		},
-	}
-	return listObjectsCmd
-}
-
-func MakeListChunksCmd(cfg *Config) *cobra.Command {
-	listChunksCmd := &cobra.Command{
-		Use: "chunks",
-		Short: "list chunks",
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-			defer stop()
-
-			if err := cfg.ApplyFlags(cmd); err != nil {
-				return fmt.Errorf("apply config flags: %w", err)
-			}
-
-			app, err := NewApp(cfg)
-			if err != nil {
-				return fmt.Errorf("init app: %w", err)
-			}
-			defer app.Close()
-			return app.ListChunks(ctx)
-		},
-	}
-	return listChunksCmd
-}
-
-func MakeDescribeCmd(cfg *Config) *cobra.Command {
-	describeCmd := &cobra.Command{
-		Use: "describe",
-		Short: "describe resources",
-	}
-	describeCmd.AddCommand(
-		MakeDescribeChunkCmd(cfg),
-		MakeDescribeObjectCmd(cfg),
-	)
-
-	return describeCmd 
-}
-
-func MakeDescribeChunkCmd(cfg *Config) *cobra.Command {
-	descChunkCmd := &cobra.Command{
-		Use: "chunk [chunk-id]",
-		Aliases: []string{"c"},
-		Short: "describe chunk",
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-			defer stop()
-
-			if err := cfg.ApplyFlags(cmd); err != nil {
-				return fmt.Errorf("apply config flags: %w", err)
-			}
-			
-			chunkID := args[0]
-			if chunkID == "" {
-				return errors.New("missing chunk id")
-			}
-			
-			app, err := NewApp(cfg)
-			if err != nil {
-				return fmt.Errorf("init app: %w", err)
-			}
-			defer app.Close()
-			return app.DescribeChunk(ctx, chunkID)
-		},
-	}
-	return descChunkCmd
-}
-
-func MakeDescribeObjectCmd(cfg *Config) *cobra.Command {
-	descObjectCmd := &cobra.Command{
-		Use: "object [object-id]",
-		Aliases: []string{"o"},
-		Short: "describe object",
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-			defer stop()
-
-			if err := cfg.ApplyFlags(cmd); err != nil {
-				return fmt.Errorf("apply config flags: %w", err)
-			}
-			
-			objectID := args[0]
-			if objectID == "" {
-				return errors.New("missing object id")
-			}
-			
-			app, err := NewApp(cfg)
-			if err != nil {
-				return fmt.Errorf("init app: %w", err)
-			}
-			defer app.Close()
-			return app.DescribeObject(ctx, objectID)
-		},
-	}
-	return descObjectCmd
-}
-
-func MakeListNodesCmd(cfg *Config) *cobra.Command {
-	listNodesCmd := &cobra.Command{
-		Use: "nodes",
-		Short: "list nodes",
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-			defer stop()
-
-			if err := cfg.ApplyFlags(cmd); err != nil {
-				return fmt.Errorf("apply config flags: %w", err)
-			}
-			
-			app, err := NewApp(cfg)
-			if err != nil {
-				return fmt.Errorf("init app: %w", err)
-			}
-			defer app.Close()
-			return app.ListNodes(ctx)
-		},
-	}
-	return listNodesCmd
-}
-
-func MakeScaleObjectCmd(cfg *Config) *cobra.Command {
-	scaleObjectCmd := &cobra.Command{
-		Use: "scale [object-id] --replicas [N]",
-		Short: "scale replication object",
-		RunE: func(cmd *cobra.Command, args []string) error {
-
-			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-			defer stop()
-
-			if err := cfg.ApplyFlags(cmd); err != nil {
-				return fmt.Errorf("apply config flags: %w", err)
-			}
-			
-			objectID := args[0]
-			if objectID == "" {
-				return errors.New("missing object id")
-			}
-			replicaCount, err := cmd.Flags().GetInt("replicas")
-			if err != nil {
-				return fmt.Errorf("replicas flag: %w", err)
-			}
-			if replicaCount < 0 {
-				return fmt.Errorf("missing or invalid replica count")
-			}
-			
-			app, err := NewApp(cfg)
-			if err != nil {
-				return fmt.Errorf("init app: %w", err)
-			}
-			defer app.Close()
-			return app.ScaleObjects(ctx, objectID, replicaCount)
-		},
-	}
-	scaleObjectCmd.Flags().Int("replicas", -1, "desired replication count")
-	return scaleObjectCmd
-}
 

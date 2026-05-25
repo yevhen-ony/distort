@@ -100,6 +100,7 @@ func (is *IdentityService) RequestNewID(ctx context.Context) error {
 func (is *IdentityService) Validate(nodeID t.NodeID) error {
 	is.mu.RLock()
 	defer is.mu.RUnlock()
+
 	if nodeID != is.nodeID {
 		return ErrInvalidNodeID
 	}

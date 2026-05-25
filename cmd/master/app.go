@@ -39,6 +39,7 @@ type App struct {
 	clientFacade      *domain.ClientFacadeService
 
 	clientAPI  *api.ClientServer
+	adminAPI   *api.AdminServer
 	storageAPI *api.StorageServer
 
 	config *Config
@@ -149,6 +150,7 @@ func NewApp(config *Config) (*App, error) {
 		return nil, fmt.Errorf("client facade service init: %w", err)
 	}
 
+	adminAPI := api.NewAdminServer(clientFacade)
 	clientAPI := api.NewClientServer(clientFacade)
 	storageAPI := api.NewStorageServer(nodeLifecycle, nodeReport)
 
@@ -170,8 +172,9 @@ func NewApp(config *Config) (*App, error) {
 		replicateExecutor: replicateExecutor,
 		replicatePlanner:  replicatePlanner,
 
-		storageAPI: storageAPI,
+		adminAPI:   adminAPI,
 		clientAPI:  clientAPI,
+		storageAPI: storageAPI,
 
 		config: config,
 	}
@@ -189,8 +192,9 @@ func (app *App) Run(ctx context.Context) error {
 	go app.metricsService.Serve(ctx)
 
 	err := listener.RunGRPCServer(ctx, &app.config.Listen, func(s *grpc.Server) {
-		mpb.RegisterMasterStorageServiceServer(s, app.storageAPI)
+		mpb.RegisterAdminServiceServer(s, app.adminAPI)
 		mpb.RegisterMasterClientServiceServer(s, app.clientAPI)
+		mpb.RegisterMasterStorageServiceServer(s, app.storageAPI)
 	})
 	return err
 }

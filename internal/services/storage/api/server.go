@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"log/slog"
@@ -21,6 +22,12 @@ type Config interface {
 	FrameSize() int64
 }
 
+type ServerDeps struct {
+	Identity *identity.IdentityService
+	Storage *storage.StorageService
+	Config Config
+}
+
 type Server struct {
 	spb.UnimplementedChunkServiceServer
 
@@ -29,12 +36,23 @@ type Server struct {
 	config   Config
 }
 
-func New(identity *identity.IdentityService, storage *storage.StorageService, config Config) *Server {
-	return &Server{
-		identity: identity,
-		storage:  storage,
-		config:   config,
+func NewServer(deps ServerDeps) (*Server, error) {
+	if deps.Identity == nil {
+		return nil, errors.New("missing identity")
 	}
+	if deps.Storage == nil {
+		return nil, errors.New("missing storage")
+	}
+	if deps.Config == nil {
+		return nil, errors.New("missing config")
+	}
+
+	server := &Server{
+		identity: deps.Identity,
+		storage:  deps.Storage,
+		config:   deps.Config,
+	}
+	return server, nil
 }
 
 func (srv *Server) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) {

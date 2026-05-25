@@ -286,442 +286,6 @@ func (*SetReplicationResponse) Descriptor() ([]byte, []int) {
 	return file_master_v1_client_proto_rawDescGZIP(), []int{5}
 }
 
-type ListNodesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListNodesRequest) Reset() {
-	*x = ListNodesRequest{}
-	mi := &file_master_v1_client_proto_msgTypes[6]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListNodesRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListNodesRequest) ProtoMessage() {}
-
-func (x *ListNodesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[6]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListNodesRequest.ProtoReflect.Descriptor instead.
-func (*ListNodesRequest) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{6}
-}
-
-type ListNodesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Nodes         []*NodeInfo            `protobuf:"bytes,1,rep,name=nodes,proto3" json:"nodes,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListNodesResponse) Reset() {
-	*x = ListNodesResponse{}
-	mi := &file_master_v1_client_proto_msgTypes[7]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListNodesResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListNodesResponse) ProtoMessage() {}
-
-func (x *ListNodesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[7]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListNodesResponse.ProtoReflect.Descriptor instead.
-func (*ListNodesResponse) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{7}
-}
-
-func (x *ListNodesResponse) GetNodes() []*NodeInfo {
-	if x != nil {
-		return x.Nodes
-	}
-	return nil
-}
-
-type ListChunksRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListChunksRequest) Reset() {
-	*x = ListChunksRequest{}
-	mi := &file_master_v1_client_proto_msgTypes[8]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListChunksRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListChunksRequest) ProtoMessage() {}
-
-func (x *ListChunksRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[8]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListChunksRequest.ProtoReflect.Descriptor instead.
-func (*ListChunksRequest) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{8}
-}
-
-type ListChunksResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Chunks        []*ChunkInfo           `protobuf:"bytes,1,rep,name=chunks,proto3" json:"chunks,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListChunksResponse) Reset() {
-	*x = ListChunksResponse{}
-	mi := &file_master_v1_client_proto_msgTypes[9]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListChunksResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListChunksResponse) ProtoMessage() {}
-
-func (x *ListChunksResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[9]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListChunksResponse.ProtoReflect.Descriptor instead.
-func (*ListChunksResponse) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{9}
-}
-
-func (x *ListChunksResponse) GetChunks() []*ChunkInfo {
-	if x != nil {
-		return x.Chunks
-	}
-	return nil
-}
-
-type ListObjectsRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListObjectsRequest) Reset() {
-	*x = ListObjectsRequest{}
-	mi := &file_master_v1_client_proto_msgTypes[10]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListObjectsRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListObjectsRequest) ProtoMessage() {}
-
-func (x *ListObjectsRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[10]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListObjectsRequest.ProtoReflect.Descriptor instead.
-func (*ListObjectsRequest) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{10}
-}
-
-type ListObjectsResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Objects       []*ObjectInfo          `protobuf:"bytes,1,rep,name=objects,proto3" json:"objects,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ListObjectsResponse) Reset() {
-	*x = ListObjectsResponse{}
-	mi := &file_master_v1_client_proto_msgTypes[11]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ListObjectsResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ListObjectsResponse) ProtoMessage() {}
-
-func (x *ListObjectsResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[11]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ListObjectsResponse.ProtoReflect.Descriptor instead.
-func (*ListObjectsResponse) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{11}
-}
-
-func (x *ListObjectsResponse) GetObjects() []*ObjectInfo {
-	if x != nil {
-		return x.Objects
-	}
-	return nil
-}
-
-type NodeInfo struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	NodeId        string                 `protobuf:"bytes,1,opt,name=node_id,json=nodeId,proto3" json:"node_id,omitempty"`
-	Addr          string                 `protobuf:"bytes,2,opt,name=addr,proto3" json:"addr,omitempty"`
-	ChunkCount    int64                  `protobuf:"varint,3,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
-	UsedBytes     int64                  `protobuf:"varint,4,opt,name=used_bytes,json=usedBytes,proto3" json:"used_bytes,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *NodeInfo) Reset() {
-	*x = NodeInfo{}
-	mi := &file_master_v1_client_proto_msgTypes[12]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *NodeInfo) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*NodeInfo) ProtoMessage() {}
-
-func (x *NodeInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[12]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use NodeInfo.ProtoReflect.Descriptor instead.
-func (*NodeInfo) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{12}
-}
-
-func (x *NodeInfo) GetNodeId() string {
-	if x != nil {
-		return x.NodeId
-	}
-	return ""
-}
-
-func (x *NodeInfo) GetAddr() string {
-	if x != nil {
-		return x.Addr
-	}
-	return ""
-}
-
-func (x *NodeInfo) GetChunkCount() int64 {
-	if x != nil {
-		return x.ChunkCount
-	}
-	return 0
-}
-
-func (x *NodeInfo) GetUsedBytes() int64 {
-	if x != nil {
-		return x.UsedBytes
-	}
-	return 0
-}
-
-type ChunkInfo struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ChunkId       string                 `protobuf:"bytes,1,opt,name=chunk_id,json=chunkId,proto3" json:"chunk_id,omitempty"`
-	ChunkSize     int64                  `protobuf:"varint,3,opt,name=chunk_size,json=chunkSize,proto3" json:"chunk_size,omitempty"`
-	ReplicaCount  int64                  `protobuf:"varint,2,opt,name=replica_count,json=replicaCount,proto3" json:"replica_count,omitempty"`
-	ObjectId      string                 `protobuf:"bytes,4,opt,name=object_id,json=objectId,proto3" json:"object_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ChunkInfo) Reset() {
-	*x = ChunkInfo{}
-	mi := &file_master_v1_client_proto_msgTypes[13]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ChunkInfo) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ChunkInfo) ProtoMessage() {}
-
-func (x *ChunkInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[13]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ChunkInfo.ProtoReflect.Descriptor instead.
-func (*ChunkInfo) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{13}
-}
-
-func (x *ChunkInfo) GetChunkId() string {
-	if x != nil {
-		return x.ChunkId
-	}
-	return ""
-}
-
-func (x *ChunkInfo) GetChunkSize() int64 {
-	if x != nil {
-		return x.ChunkSize
-	}
-	return 0
-}
-
-func (x *ChunkInfo) GetReplicaCount() int64 {
-	if x != nil {
-		return x.ReplicaCount
-	}
-	return 0
-}
-
-func (x *ChunkInfo) GetObjectId() string {
-	if x != nil {
-		return x.ObjectId
-	}
-	return ""
-}
-
-type ObjectInfo struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	ObjectId      string                 `protobuf:"bytes,1,opt,name=object_id,json=objectId,proto3" json:"object_id,omitempty"`
-	ChunkCount    int64                  `protobuf:"varint,2,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
-	Replication   int64                  `protobuf:"varint,3,opt,name=replication,proto3" json:"replication,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ObjectInfo) Reset() {
-	*x = ObjectInfo{}
-	mi := &file_master_v1_client_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ObjectInfo) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ObjectInfo) ProtoMessage() {}
-
-func (x *ObjectInfo) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ObjectInfo.ProtoReflect.Descriptor instead.
-func (*ObjectInfo) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *ObjectInfo) GetObjectId() string {
-	if x != nil {
-		return x.ObjectId
-	}
-	return ""
-}
-
-func (x *ObjectInfo) GetChunkCount() int64 {
-	if x != nil {
-		return x.ChunkCount
-	}
-	return 0
-}
-
-func (x *ObjectInfo) GetReplication() int64 {
-	if x != nil {
-		return x.Replication
-	}
-	return 0
-}
-
 type CreateObjectRequest struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ObjectId      string                 `protobuf:"bytes,1,opt,name=object_id,json=objectId,proto3" json:"object_id,omitempty"`
@@ -731,7 +295,7 @@ type CreateObjectRequest struct {
 
 func (x *CreateObjectRequest) Reset() {
 	*x = CreateObjectRequest{}
-	mi := &file_master_v1_client_proto_msgTypes[15]
+	mi := &file_master_v1_client_proto_msgTypes[6]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -743,7 +307,7 @@ func (x *CreateObjectRequest) String() string {
 func (*CreateObjectRequest) ProtoMessage() {}
 
 func (x *CreateObjectRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[15]
+	mi := &file_master_v1_client_proto_msgTypes[6]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -756,7 +320,7 @@ func (x *CreateObjectRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateObjectRequest.ProtoReflect.Descriptor instead.
 func (*CreateObjectRequest) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{15}
+	return file_master_v1_client_proto_rawDescGZIP(), []int{6}
 }
 
 func (x *CreateObjectRequest) GetObjectId() string {
@@ -774,7 +338,7 @@ type CreateObjectResponse struct {
 
 func (x *CreateObjectResponse) Reset() {
 	*x = CreateObjectResponse{}
-	mi := &file_master_v1_client_proto_msgTypes[16]
+	mi := &file_master_v1_client_proto_msgTypes[7]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -786,7 +350,7 @@ func (x *CreateObjectResponse) String() string {
 func (*CreateObjectResponse) ProtoMessage() {}
 
 func (x *CreateObjectResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[16]
+	mi := &file_master_v1_client_proto_msgTypes[7]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -799,7 +363,7 @@ func (x *CreateObjectResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CreateObjectResponse.ProtoReflect.Descriptor instead.
 func (*CreateObjectResponse) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{16}
+	return file_master_v1_client_proto_rawDescGZIP(), []int{7}
 }
 
 type AllocateChunkRequest struct {
@@ -813,7 +377,7 @@ type AllocateChunkRequest struct {
 
 func (x *AllocateChunkRequest) Reset() {
 	*x = AllocateChunkRequest{}
-	mi := &file_master_v1_client_proto_msgTypes[17]
+	mi := &file_master_v1_client_proto_msgTypes[8]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -825,7 +389,7 @@ func (x *AllocateChunkRequest) String() string {
 func (*AllocateChunkRequest) ProtoMessage() {}
 
 func (x *AllocateChunkRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[17]
+	mi := &file_master_v1_client_proto_msgTypes[8]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -838,7 +402,7 @@ func (x *AllocateChunkRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AllocateChunkRequest.ProtoReflect.Descriptor instead.
 func (*AllocateChunkRequest) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{17}
+	return file_master_v1_client_proto_rawDescGZIP(), []int{8}
 }
 
 func (x *AllocateChunkRequest) GetObjectSlot() *v1.ObjectSlot {
@@ -873,7 +437,7 @@ type AllocateChunkResponse struct {
 
 func (x *AllocateChunkResponse) Reset() {
 	*x = AllocateChunkResponse{}
-	mi := &file_master_v1_client_proto_msgTypes[18]
+	mi := &file_master_v1_client_proto_msgTypes[9]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -885,7 +449,7 @@ func (x *AllocateChunkResponse) String() string {
 func (*AllocateChunkResponse) ProtoMessage() {}
 
 func (x *AllocateChunkResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[18]
+	mi := &file_master_v1_client_proto_msgTypes[9]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -898,7 +462,7 @@ func (x *AllocateChunkResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use AllocateChunkResponse.ProtoReflect.Descriptor instead.
 func (*AllocateChunkResponse) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{18}
+	return file_master_v1_client_proto_rawDescGZIP(), []int{9}
 }
 
 func (x *AllocateChunkResponse) GetChunkId() string {
@@ -931,7 +495,7 @@ type GetObjectAccessRequest struct {
 
 func (x *GetObjectAccessRequest) Reset() {
 	*x = GetObjectAccessRequest{}
-	mi := &file_master_v1_client_proto_msgTypes[19]
+	mi := &file_master_v1_client_proto_msgTypes[10]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -943,7 +507,7 @@ func (x *GetObjectAccessRequest) String() string {
 func (*GetObjectAccessRequest) ProtoMessage() {}
 
 func (x *GetObjectAccessRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[19]
+	mi := &file_master_v1_client_proto_msgTypes[10]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -956,7 +520,7 @@ func (x *GetObjectAccessRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetObjectAccessRequest.ProtoReflect.Descriptor instead.
 func (*GetObjectAccessRequest) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{19}
+	return file_master_v1_client_proto_rawDescGZIP(), []int{10}
 }
 
 func (x *GetObjectAccessRequest) GetObjectId() string {
@@ -977,7 +541,7 @@ type GetObjectAccessResponse struct {
 
 func (x *GetObjectAccessResponse) Reset() {
 	*x = GetObjectAccessResponse{}
-	mi := &file_master_v1_client_proto_msgTypes[20]
+	mi := &file_master_v1_client_proto_msgTypes[11]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -989,7 +553,7 @@ func (x *GetObjectAccessResponse) String() string {
 func (*GetObjectAccessResponse) ProtoMessage() {}
 
 func (x *GetObjectAccessResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[20]
+	mi := &file_master_v1_client_proto_msgTypes[11]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1002,7 +566,7 @@ func (x *GetObjectAccessResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetObjectAccessResponse.ProtoReflect.Descriptor instead.
 func (*GetObjectAccessResponse) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{20}
+	return file_master_v1_client_proto_rawDescGZIP(), []int{11}
 }
 
 func (x *GetObjectAccessResponse) GetObjectId() string {
@@ -1035,7 +599,7 @@ type ChunkDesc1 struct {
 
 func (x *ChunkDesc1) Reset() {
 	*x = ChunkDesc1{}
-	mi := &file_master_v1_client_proto_msgTypes[21]
+	mi := &file_master_v1_client_proto_msgTypes[12]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1047,7 +611,7 @@ func (x *ChunkDesc1) String() string {
 func (*ChunkDesc1) ProtoMessage() {}
 
 func (x *ChunkDesc1) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[21]
+	mi := &file_master_v1_client_proto_msgTypes[12]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1060,7 +624,7 @@ func (x *ChunkDesc1) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChunkDesc1.ProtoReflect.Descriptor instead.
 func (*ChunkDesc1) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{21}
+	return file_master_v1_client_proto_rawDescGZIP(), []int{12}
 }
 
 func (x *ChunkDesc1) GetPlacement() *ChunkPlacement1 {
@@ -1081,7 +645,7 @@ type ChunkPlacement1 struct {
 
 func (x *ChunkPlacement1) Reset() {
 	*x = ChunkPlacement1{}
-	mi := &file_master_v1_client_proto_msgTypes[22]
+	mi := &file_master_v1_client_proto_msgTypes[13]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1093,7 +657,7 @@ func (x *ChunkPlacement1) String() string {
 func (*ChunkPlacement1) ProtoMessage() {}
 
 func (x *ChunkPlacement1) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[22]
+	mi := &file_master_v1_client_proto_msgTypes[13]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1106,7 +670,7 @@ func (x *ChunkPlacement1) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChunkPlacement1.ProtoReflect.Descriptor instead.
 func (*ChunkPlacement1) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{22}
+	return file_master_v1_client_proto_rawDescGZIP(), []int{13}
 }
 
 func (x *ChunkPlacement1) GetChunkMeta() *v1.ChunkMeta {
@@ -1134,7 +698,6 @@ type ObjectDesc1 struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	ObjectId      string                 `protobuf:"bytes,1,opt,name=object_id,json=objectId,proto3" json:"object_id,omitempty"`
 	Size          int64                  `protobuf:"varint,2,opt,name=size,proto3" json:"size,omitempty"`
-	ChunkCount    int64                  `protobuf:"varint,3,opt,name=chunk_count,json=chunkCount,proto3" json:"chunk_count,omitempty"`
 	Replication   int64                  `protobuf:"varint,4,opt,name=replication,proto3" json:"replication,omitempty"`
 	Chunks        []*ChunkPlacement1     `protobuf:"bytes,5,rep,name=chunks,proto3" json:"chunks,omitempty"`
 	unknownFields protoimpl.UnknownFields
@@ -1143,7 +706,7 @@ type ObjectDesc1 struct {
 
 func (x *ObjectDesc1) Reset() {
 	*x = ObjectDesc1{}
-	mi := &file_master_v1_client_proto_msgTypes[23]
+	mi := &file_master_v1_client_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1155,7 +718,7 @@ func (x *ObjectDesc1) String() string {
 func (*ObjectDesc1) ProtoMessage() {}
 
 func (x *ObjectDesc1) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[23]
+	mi := &file_master_v1_client_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1168,7 +731,7 @@ func (x *ObjectDesc1) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ObjectDesc1.ProtoReflect.Descriptor instead.
 func (*ObjectDesc1) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{23}
+	return file_master_v1_client_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *ObjectDesc1) GetObjectId() string {
@@ -1181,13 +744,6 @@ func (x *ObjectDesc1) GetObjectId() string {
 func (x *ObjectDesc1) GetSize() int64 {
 	if x != nil {
 		return x.Size
-	}
-	return 0
-}
-
-func (x *ObjectDesc1) GetChunkCount() int64 {
-	if x != nil {
-		return x.ChunkCount
 	}
 	return 0
 }
@@ -1218,7 +774,7 @@ type ChunkPlacement struct {
 
 func (x *ChunkPlacement) Reset() {
 	*x = ChunkPlacement{}
-	mi := &file_master_v1_client_proto_msgTypes[24]
+	mi := &file_master_v1_client_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1230,7 +786,7 @@ func (x *ChunkPlacement) String() string {
 func (*ChunkPlacement) ProtoMessage() {}
 
 func (x *ChunkPlacement) ProtoReflect() protoreflect.Message {
-	mi := &file_master_v1_client_proto_msgTypes[24]
+	mi := &file_master_v1_client_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1243,7 +799,7 @@ func (x *ChunkPlacement) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChunkPlacement.ProtoReflect.Descriptor instead.
 func (*ChunkPlacement) Descriptor() ([]byte, []int) {
-	return file_master_v1_client_proto_rawDescGZIP(), []int{24}
+	return file_master_v1_client_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *ChunkPlacement) GetChunkId() string {
@@ -1290,35 +846,7 @@ const file_master_v1_client_proto_rawDesc = "" +
 	"\x15SetReplicationRequest\x12\x1b\n" +
 	"\tobject_id\x18\x01 \x01(\tR\bobjectId\x12\x14\n" +
 	"\x05count\x18\x02 \x01(\x03R\x05count\"\x18\n" +
-	"\x16SetReplicationResponse\"\x12\n" +
-	"\x10ListNodesRequest\">\n" +
-	"\x11ListNodesResponse\x12)\n" +
-	"\x05nodes\x18\x01 \x03(\v2\x13.master.v1.NodeInfoR\x05nodes\"\x13\n" +
-	"\x11ListChunksRequest\"B\n" +
-	"\x12ListChunksResponse\x12,\n" +
-	"\x06chunks\x18\x01 \x03(\v2\x14.master.v1.ChunkInfoR\x06chunks\"\x14\n" +
-	"\x12ListObjectsRequest\"F\n" +
-	"\x13ListObjectsResponse\x12/\n" +
-	"\aobjects\x18\x01 \x03(\v2\x15.master.v1.ObjectInfoR\aobjects\"w\n" +
-	"\bNodeInfo\x12\x17\n" +
-	"\anode_id\x18\x01 \x01(\tR\x06nodeId\x12\x12\n" +
-	"\x04addr\x18\x02 \x01(\tR\x04addr\x12\x1f\n" +
-	"\vchunk_count\x18\x03 \x01(\x03R\n" +
-	"chunkCount\x12\x1d\n" +
-	"\n" +
-	"used_bytes\x18\x04 \x01(\x03R\tusedBytes\"\x87\x01\n" +
-	"\tChunkInfo\x12\x19\n" +
-	"\bchunk_id\x18\x01 \x01(\tR\achunkId\x12\x1d\n" +
-	"\n" +
-	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\x12#\n" +
-	"\rreplica_count\x18\x02 \x01(\x03R\freplicaCount\x12\x1b\n" +
-	"\tobject_id\x18\x04 \x01(\tR\bobjectId\"l\n" +
-	"\n" +
-	"ObjectInfo\x12\x1b\n" +
-	"\tobject_id\x18\x01 \x01(\tR\bobjectId\x12\x1f\n" +
-	"\vchunk_count\x18\x02 \x01(\x03R\n" +
-	"chunkCount\x12 \n" +
-	"\vreplication\x18\x03 \x01(\x03R\vreplication\"2\n" +
+	"\x16SetReplicationResponse\"2\n" +
 	"\x13CreateObjectRequest\x12\x1b\n" +
 	"\tobject_id\x18\x01 \x01(\tR\bobjectId\"\x16\n" +
 	"\x14CreateObjectResponse\"\xa6\x01\n" +
@@ -1348,12 +876,10 @@ const file_master_v1_client_proto_rawDesc = "" +
 	"chunk_meta\x18\x01 \x01(\v2\x14.common.v1.ChunkMetaR\tchunkMeta\x126\n" +
 	"\vobject_slot\x18\x02 \x01(\v2\x15.common.v1.ObjectSlotR\n" +
 	"objectSlot\x12,\n" +
-	"\asources\x18\x03 \x03(\v2\x12.common.v1.NodeRefR\asources\"\xb5\x01\n" +
+	"\asources\x18\x03 \x03(\v2\x12.common.v1.NodeRefR\asources\"\x94\x01\n" +
 	"\vObjectDesc1\x12\x1b\n" +
 	"\tobject_id\x18\x01 \x01(\tR\bobjectId\x12\x12\n" +
-	"\x04size\x18\x02 \x01(\x03R\x04size\x12\x1f\n" +
-	"\vchunk_count\x18\x03 \x01(\x03R\n" +
-	"chunkCount\x12 \n" +
+	"\x04size\x18\x02 \x01(\x03R\x04size\x12 \n" +
 	"\vreplication\x18\x04 \x01(\x03R\vreplication\x122\n" +
 	"\x06chunks\x18\x05 \x03(\v2\x1a.master.v1.ChunkPlacement1R\x06chunks\"\x91\x01\n" +
 	"\x0eChunkPlacement\x12\x19\n" +
@@ -1361,18 +887,14 @@ const file_master_v1_client_proto_rawDesc = "" +
 	"\tchunk_key\x18\x02 \x01(\tR\bchunkKey\x12\x1d\n" +
 	"\n" +
 	"chunk_size\x18\x03 \x01(\x03R\tchunkSize\x12(\n" +
-	"\x05nodes\x18\x04 \x03(\v2\x12.common.v1.NodeRefR\x05nodes2\xf7\x05\n" +
+	"\x05nodes\x18\x04 \x03(\v2\x12.common.v1.NodeRefR\x05nodes2\x96\x04\n" +
 	"\x13MasterClientService\x12O\n" +
 	"\fCreateObject\x12\x1e.master.v1.CreateObjectRequest\x1a\x1f.master.v1.CreateObjectResponse\x12R\n" +
 	"\rAllocateChunk\x12\x1f.master.v1.AllocateChunkRequest\x1a .master.v1.AllocateChunkResponse\x12X\n" +
-	"\x0fGetObjectAccess\x12!.master.v1.GetObjectAccessRequest\x1a\".master.v1.GetObjectAccessResponse\x12L\n" +
-	"\vListObjects\x12\x1d.master.v1.ListObjectsRequest\x1a\x1e.master.v1.ListObjectsResponse\x12I\n" +
-	"\n" +
-	"ListChunks\x12\x1c.master.v1.ListChunksRequest\x1a\x1d.master.v1.ListChunksResponse\x12F\n" +
-	"\tListNodes\x12\x1b.master.v1.ListNodesRequest\x1a\x1c.master.v1.ListNodesResponse\x12U\n" +
-	"\x0eSetReplication\x12 .master.v1.SetReplicationRequest\x1a!.master.v1.SetReplicationResponse\x12R\n" +
-	"\rDescribeChunk\x12\x1f.master.v1.DescribeChunkRequest\x1a .master.v1.DescribeChunkResponse\x12U\n" +
-	"\x0eDescribeObject\x12 .master.v1.DescribeObjectRequest\x1a!.master.v1.DescribeObjectResponseB Z\x1edos/gen/proto/master/v1;masterb\x06proto3"
+	"\x0fGetObjectAccess\x12!.master.v1.GetObjectAccessRequest\x1a\".master.v1.GetObjectAccessResponse\x12U\n" +
+	"\x0eSetReplication\x12 .master.v1.SetReplicationRequest\x1a!.master.v1.SetReplicationResponse\x12U\n" +
+	"\x0eDescribeObject\x12 .master.v1.DescribeObjectRequest\x1a!.master.v1.DescribeObjectResponse\x12R\n" +
+	"\rDescribeChunk\x12\x1f.master.v1.DescribeChunkRequest\x1a .master.v1.DescribeChunkResponseB Z\x1edos/gen/proto/master/v1;masterb\x06proto3"
 
 var (
 	file_master_v1_client_proto_rawDescOnce sync.Once
@@ -1386,7 +908,7 @@ func file_master_v1_client_proto_rawDescGZIP() []byte {
 	return file_master_v1_client_proto_rawDescData
 }
 
-var file_master_v1_client_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_master_v1_client_proto_msgTypes = make([]protoimpl.MessageInfo, 16)
 var file_master_v1_client_proto_goTypes = []any{
 	(*DescribeObjectRequest)(nil),   // 0: master.v1.DescribeObjectRequest
 	(*DescribeObjectResponse)(nil),  // 1: master.v1.DescribeObjectResponse
@@ -1394,69 +916,51 @@ var file_master_v1_client_proto_goTypes = []any{
 	(*DescribeChunkResponse)(nil),   // 3: master.v1.DescribeChunkResponse
 	(*SetReplicationRequest)(nil),   // 4: master.v1.SetReplicationRequest
 	(*SetReplicationResponse)(nil),  // 5: master.v1.SetReplicationResponse
-	(*ListNodesRequest)(nil),        // 6: master.v1.ListNodesRequest
-	(*ListNodesResponse)(nil),       // 7: master.v1.ListNodesResponse
-	(*ListChunksRequest)(nil),       // 8: master.v1.ListChunksRequest
-	(*ListChunksResponse)(nil),      // 9: master.v1.ListChunksResponse
-	(*ListObjectsRequest)(nil),      // 10: master.v1.ListObjectsRequest
-	(*ListObjectsResponse)(nil),     // 11: master.v1.ListObjectsResponse
-	(*NodeInfo)(nil),                // 12: master.v1.NodeInfo
-	(*ChunkInfo)(nil),               // 13: master.v1.ChunkInfo
-	(*ObjectInfo)(nil),              // 14: master.v1.ObjectInfo
-	(*CreateObjectRequest)(nil),     // 15: master.v1.CreateObjectRequest
-	(*CreateObjectResponse)(nil),    // 16: master.v1.CreateObjectResponse
-	(*AllocateChunkRequest)(nil),    // 17: master.v1.AllocateChunkRequest
-	(*AllocateChunkResponse)(nil),   // 18: master.v1.AllocateChunkResponse
-	(*GetObjectAccessRequest)(nil),  // 19: master.v1.GetObjectAccessRequest
-	(*GetObjectAccessResponse)(nil), // 20: master.v1.GetObjectAccessResponse
-	(*ChunkDesc1)(nil),              // 21: master.v1.ChunkDesc1
-	(*ChunkPlacement1)(nil),         // 22: master.v1.ChunkPlacement1
-	(*ObjectDesc1)(nil),             // 23: master.v1.ObjectDesc1
-	(*ChunkPlacement)(nil),          // 24: master.v1.ChunkPlacement
-	(*v1.ObjectSlot)(nil),           // 25: common.v1.ObjectSlot
-	(*v1.NodeRef)(nil),              // 26: common.v1.NodeRef
-	(*v1.ChunkMeta)(nil),            // 27: common.v1.ChunkMeta
+	(*CreateObjectRequest)(nil),     // 6: master.v1.CreateObjectRequest
+	(*CreateObjectResponse)(nil),    // 7: master.v1.CreateObjectResponse
+	(*AllocateChunkRequest)(nil),    // 8: master.v1.AllocateChunkRequest
+	(*AllocateChunkResponse)(nil),   // 9: master.v1.AllocateChunkResponse
+	(*GetObjectAccessRequest)(nil),  // 10: master.v1.GetObjectAccessRequest
+	(*GetObjectAccessResponse)(nil), // 11: master.v1.GetObjectAccessResponse
+	(*ChunkDesc1)(nil),              // 12: master.v1.ChunkDesc1
+	(*ChunkPlacement1)(nil),         // 13: master.v1.ChunkPlacement1
+	(*ObjectDesc1)(nil),             // 14: master.v1.ObjectDesc1
+	(*ChunkPlacement)(nil),          // 15: master.v1.ChunkPlacement
+	(*v1.ObjectSlot)(nil),           // 16: common.v1.ObjectSlot
+	(*v1.NodeRef)(nil),              // 17: common.v1.NodeRef
+	(*v1.ChunkMeta)(nil),            // 18: common.v1.ChunkMeta
 }
 var file_master_v1_client_proto_depIdxs = []int32{
-	23, // 0: master.v1.DescribeObjectResponse.description:type_name -> master.v1.ObjectDesc1
-	21, // 1: master.v1.DescribeChunkResponse.description:type_name -> master.v1.ChunkDesc1
-	12, // 2: master.v1.ListNodesResponse.nodes:type_name -> master.v1.NodeInfo
-	13, // 3: master.v1.ListChunksResponse.chunks:type_name -> master.v1.ChunkInfo
-	14, // 4: master.v1.ListObjectsResponse.objects:type_name -> master.v1.ObjectInfo
-	25, // 5: master.v1.AllocateChunkRequest.object_slot:type_name -> common.v1.ObjectSlot
-	26, // 6: master.v1.AllocateChunkRequest.exclude_nodes:type_name -> common.v1.NodeRef
-	25, // 7: master.v1.AllocateChunkResponse.object_slot:type_name -> common.v1.ObjectSlot
-	26, // 8: master.v1.AllocateChunkResponse.targets:type_name -> common.v1.NodeRef
-	24, // 9: master.v1.GetObjectAccessResponse.chunks:type_name -> master.v1.ChunkPlacement
-	22, // 10: master.v1.ChunkDesc1.placement:type_name -> master.v1.ChunkPlacement1
-	27, // 11: master.v1.ChunkPlacement1.chunk_meta:type_name -> common.v1.ChunkMeta
-	25, // 12: master.v1.ChunkPlacement1.object_slot:type_name -> common.v1.ObjectSlot
-	26, // 13: master.v1.ChunkPlacement1.sources:type_name -> common.v1.NodeRef
-	22, // 14: master.v1.ObjectDesc1.chunks:type_name -> master.v1.ChunkPlacement1
-	26, // 15: master.v1.ChunkPlacement.nodes:type_name -> common.v1.NodeRef
-	15, // 16: master.v1.MasterClientService.CreateObject:input_type -> master.v1.CreateObjectRequest
-	17, // 17: master.v1.MasterClientService.AllocateChunk:input_type -> master.v1.AllocateChunkRequest
-	19, // 18: master.v1.MasterClientService.GetObjectAccess:input_type -> master.v1.GetObjectAccessRequest
-	10, // 19: master.v1.MasterClientService.ListObjects:input_type -> master.v1.ListObjectsRequest
-	8,  // 20: master.v1.MasterClientService.ListChunks:input_type -> master.v1.ListChunksRequest
-	6,  // 21: master.v1.MasterClientService.ListNodes:input_type -> master.v1.ListNodesRequest
-	4,  // 22: master.v1.MasterClientService.SetReplication:input_type -> master.v1.SetReplicationRequest
-	2,  // 23: master.v1.MasterClientService.DescribeChunk:input_type -> master.v1.DescribeChunkRequest
-	0,  // 24: master.v1.MasterClientService.DescribeObject:input_type -> master.v1.DescribeObjectRequest
-	16, // 25: master.v1.MasterClientService.CreateObject:output_type -> master.v1.CreateObjectResponse
-	18, // 26: master.v1.MasterClientService.AllocateChunk:output_type -> master.v1.AllocateChunkResponse
-	20, // 27: master.v1.MasterClientService.GetObjectAccess:output_type -> master.v1.GetObjectAccessResponse
-	11, // 28: master.v1.MasterClientService.ListObjects:output_type -> master.v1.ListObjectsResponse
-	9,  // 29: master.v1.MasterClientService.ListChunks:output_type -> master.v1.ListChunksResponse
-	7,  // 30: master.v1.MasterClientService.ListNodes:output_type -> master.v1.ListNodesResponse
-	5,  // 31: master.v1.MasterClientService.SetReplication:output_type -> master.v1.SetReplicationResponse
-	3,  // 32: master.v1.MasterClientService.DescribeChunk:output_type -> master.v1.DescribeChunkResponse
-	1,  // 33: master.v1.MasterClientService.DescribeObject:output_type -> master.v1.DescribeObjectResponse
-	25, // [25:34] is the sub-list for method output_type
-	16, // [16:25] is the sub-list for method input_type
-	16, // [16:16] is the sub-list for extension type_name
-	16, // [16:16] is the sub-list for extension extendee
-	0,  // [0:16] is the sub-list for field type_name
+	14, // 0: master.v1.DescribeObjectResponse.description:type_name -> master.v1.ObjectDesc1
+	12, // 1: master.v1.DescribeChunkResponse.description:type_name -> master.v1.ChunkDesc1
+	16, // 2: master.v1.AllocateChunkRequest.object_slot:type_name -> common.v1.ObjectSlot
+	17, // 3: master.v1.AllocateChunkRequest.exclude_nodes:type_name -> common.v1.NodeRef
+	16, // 4: master.v1.AllocateChunkResponse.object_slot:type_name -> common.v1.ObjectSlot
+	17, // 5: master.v1.AllocateChunkResponse.targets:type_name -> common.v1.NodeRef
+	15, // 6: master.v1.GetObjectAccessResponse.chunks:type_name -> master.v1.ChunkPlacement
+	13, // 7: master.v1.ChunkDesc1.placement:type_name -> master.v1.ChunkPlacement1
+	18, // 8: master.v1.ChunkPlacement1.chunk_meta:type_name -> common.v1.ChunkMeta
+	16, // 9: master.v1.ChunkPlacement1.object_slot:type_name -> common.v1.ObjectSlot
+	17, // 10: master.v1.ChunkPlacement1.sources:type_name -> common.v1.NodeRef
+	13, // 11: master.v1.ObjectDesc1.chunks:type_name -> master.v1.ChunkPlacement1
+	17, // 12: master.v1.ChunkPlacement.nodes:type_name -> common.v1.NodeRef
+	6,  // 13: master.v1.MasterClientService.CreateObject:input_type -> master.v1.CreateObjectRequest
+	8,  // 14: master.v1.MasterClientService.AllocateChunk:input_type -> master.v1.AllocateChunkRequest
+	10, // 15: master.v1.MasterClientService.GetObjectAccess:input_type -> master.v1.GetObjectAccessRequest
+	4,  // 16: master.v1.MasterClientService.SetReplication:input_type -> master.v1.SetReplicationRequest
+	0,  // 17: master.v1.MasterClientService.DescribeObject:input_type -> master.v1.DescribeObjectRequest
+	2,  // 18: master.v1.MasterClientService.DescribeChunk:input_type -> master.v1.DescribeChunkRequest
+	7,  // 19: master.v1.MasterClientService.CreateObject:output_type -> master.v1.CreateObjectResponse
+	9,  // 20: master.v1.MasterClientService.AllocateChunk:output_type -> master.v1.AllocateChunkResponse
+	11, // 21: master.v1.MasterClientService.GetObjectAccess:output_type -> master.v1.GetObjectAccessResponse
+	5,  // 22: master.v1.MasterClientService.SetReplication:output_type -> master.v1.SetReplicationResponse
+	1,  // 23: master.v1.MasterClientService.DescribeObject:output_type -> master.v1.DescribeObjectResponse
+	3,  // 24: master.v1.MasterClientService.DescribeChunk:output_type -> master.v1.DescribeChunkResponse
+	19, // [19:25] is the sub-list for method output_type
+	13, // [13:19] is the sub-list for method input_type
+	13, // [13:13] is the sub-list for extension type_name
+	13, // [13:13] is the sub-list for extension extendee
+	0,  // [0:13] is the sub-list for field type_name
 }
 
 func init() { file_master_v1_client_proto_init() }
@@ -1470,7 +974,7 @@ func file_master_v1_client_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_master_v1_client_proto_rawDesc), len(file_master_v1_client_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   25,
+			NumMessages:   16,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
