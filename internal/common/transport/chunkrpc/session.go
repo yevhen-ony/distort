@@ -36,7 +36,12 @@ func (s *Session) Upload(ctx context.Context, chunk *t.Chunk) (t.NodeRef, error)
 		if err == nil {
 			return target, nil
 		}
-		slog.WarnContext(ctx, "send chunk failed", "addr", target.Addr, "chunk", chunk.Meta.ID, "error", err)
+		slog.WarnContext(ctx,
+			"send chunk failed",
+			"addr", target.Addr,
+			"chunk", chunk.Meta.ID,
+			"error", err,
+		)
 		errs = append(errs, fmt.Errorf("send chunk %s to %s failed: %w", chunk.Meta.ID, target.Addr, err))
 	}
 	return t.NodeRef{}, fmt.Errorf("all candidate nodes failed: %w", errors.Join(errs...))
@@ -72,17 +77,17 @@ func (s *Session) uploadToNode(
 
 	err = stream.Send(&spb.PutChunkRequest{Header: header})
 	if err != nil {
-		s.progress.Fail()
+		s.progress.Fail("send header failed")
 		return fmt.Errorf("send header: %w", err)
 	}
 
 	if err = s.uploadData(stream, chunk.Data); err != nil {
-		s.progress.Fail()
+		s.progress.Fail("send data failed")
 		return fmt.Errorf("send data: %w", err)
 	}
 
 	if _, err := stream.CloseAndRecv(); err != nil {
-		s.progress.Fail()
+		s.progress.Fail("close stream failed")
 		return fmt.Errorf("close stream: %w", err)
 	}
 
@@ -161,12 +166,12 @@ func (s *Session) downloadFromNode(
 
 	chunk, err := s.downloadData(stream, chunkID)
 	if err != nil {
-		s.progress.Fail()
+		s.progress.Fail(err.Error())
 		return t.Chunk{}, fmt.Errorf("recv data: %w", err)
 	}
 	
 	if err := headerMeta.Match(chunk.Meta); err != nil {
-		s.progress.Fail()
+		s.progress.Fail(err.Error())
 		return t.Chunk{}, err
 	}
 

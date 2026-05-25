@@ -32,7 +32,7 @@ func run() error {
 	cfg.BindFlags(root)
 
 	root.AddCommand(MakeUploadCmd(cfg))
-	root.AddCommand(MakePullCmd(cfg))
+	root.AddCommand(MakeDownloadCmd(cfg))
 	root.AddCommand(MakeListCmd(cfg))
 	root.AddCommand(MakeDescribeCmd(cfg))
 	root.AddCommand(MakeScaleObjectCmd(cfg))
@@ -73,15 +73,16 @@ func MakeUploadCmd(cfg *Config) *cobra.Command {
 			}
 			defer app.Close()
 
-			return app.Upload(ctx, objectID, path)
+			_ = app.Upload(ctx, objectID, path)
+			return nil
 		},
 	}
 	pushCmd.Flags().String("id", "", "object id of the file being pushed")
 	return pushCmd
 }
 
-func MakePullCmd(cfg *Config) *cobra.Command {
-	pullCmd := &cobra.Command{
+func MakeDownloadCmd(cfg *Config) *cobra.Command {
+	downloadCmd := &cobra.Command{
 		Use: "download [object-id]",
 		Aliases: []string{"dl"},
 		Short: "download object from the object store",
@@ -107,11 +108,12 @@ func MakePullCmd(cfg *Config) *cobra.Command {
 			}
 			defer app.Close()
 			
-			return app.Download(ctx, objectID, destPath)
+			_ = app.Download(ctx, objectID, destPath)
+			return nil
 		},
 	}
-	pullCmd.Flags().String("dest", "", "dest file or dir the object to be stored")
-	return pullCmd
+	downloadCmd.Flags().String("dest", "", "dest file or dir the object to be stored")
+	return downloadCmd
 }
 
 func MakeListCmd(cfg *Config) *cobra.Command {

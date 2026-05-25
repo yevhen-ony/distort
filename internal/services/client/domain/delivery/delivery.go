@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"sync"
 
 	"dos/internal/common/transport/chunkrpc"
 	t "dos/internal/common/types"
@@ -13,6 +12,8 @@ import (
 	"dos/internal/services/client/domain/progress"
 	"dos/internal/services/client/io/file"
 	"dos/internal/services/client/transport"
+
+	"golang.org/x/sync/errgroup"
 )
 
 type ObjectDeliveryConfig interface {
@@ -23,23 +24,23 @@ type ChunkSource interface {
 	Next() (t.ChunkKey, []byte, error)
 }
 
-type ObjectDeliveryDeps struct{
+type ObjectDeliveryDeps struct {
 	MasterT *transport.MasterTransport
-	ChunkT *chunkrpc.Transport
-	Config ObjectDeliveryConfig
+	ChunkT  *chunkrpc.Transport
+	Config  ObjectDeliveryConfig
 
 	ObjectID t.ObjectID
 }
 
 type ObjectDelivery struct {
-	objectID t.ObjectID
-	progress *progress.ObjectProgress
+	objectID   t.ObjectID
+	progress   *progress.ObjectProgress
 	onProgress func(*progress.ObjectProgress)
 
 	masterT *transport.MasterTransport
-	chunkT *chunkrpc.Transport
+	chunkT  *chunkrpc.Transport
 
-	sem chan struct{}
+	config ObjectDeliveryConfig
 }
 
 func NewObjectDelivery(deps ObjectDeliveryDeps) (*ObjectDelivery, error) {
@@ -52,20 +53,29 @@ func NewObjectDelivery(deps ObjectDeliveryDeps) (*ObjectDelivery, error) {
 	if deps.ChunkT == nil {
 		return nil, errors.New("missing chunk transport")
 	}
+
+	if deps.Config == nil {
+		return nil, errors.New("missing config")
+	}
+
+	if deps.Config.TransferConcurrency() < 1 {
+		return nil, errors.New("invalid concurrency")
+	}
+
 	uploader := &ObjectDelivery{
 		objectID: deps.ObjectID,
 		masterT:  deps.MasterT,
 		chunkT:   deps.ChunkT,
-		onProgress: func(*progress.ObjectProgress) {}, // nop
-		progress: progress.NewObjectProgress(deps.ObjectID),
+		config:   deps.Config,
 
-		sem: make(chan struct{}, deps.Config.TransferConcurrency()),
+		progress:   progress.NewObjectProgress(deps.ObjectID),
+		onProgress: func(*progress.ObjectProgress) {}, // nop
 	}
 	return uploader, nil
 }
 
 func (d *ObjectDelivery) WithProgress(h progress.ProgressHandler) {
-	d.onProgress = h 
+	d.onProgress = h
 }
 
 func (d *ObjectDelivery) Upload(ctx context.Context, source ChunkSource) error {
@@ -74,35 +84,48 @@ func (d *ObjectDelivery) Upload(ctx context.Context, source ChunkSource) error {
 		return fmt.Errorf("create object: %w", err)
 	}
 	d.emitProgress()
-	
-	wg := sync.WaitGroup{}
+	defer d.emitProgress()
+
+	var readErr error
+	eg := errgroup.Group{}
+	eg.SetLimit(d.config.TransferConcurrency())
+
 	for {
 		chunkKey, chunkData, err := source.Next()
 		if err == io.EOF {
 			break
 		}
 		if err != nil {
-			return fmt.Errorf("read chunk: %w", err)
+			readErr = fmt.Errorf("read chunk: %w", err)
+			break
 		}
 
-		d.sem <- struct{}{}
-		wg.Go(func() {
-			defer func() { <-d.sem }()
-			d.uploadChunk(ctx, chunkKey, chunkData)
+		eg.Go(func() error {
+			if err := d.uploadChunk(ctx, chunkKey, chunkData); err != nil {
+				return fmt.Errorf("upload chunk failed %s", chunkKey)
+			}
+			return nil 
 		})
 	}
-	wg.Wait()
 
-	d.progress.Done = true
-	d.emitProgress()
-	return nil
+	err := eg.Wait()
+	if readErr != nil {
+		d.progress.Fail("read chunk failed")
+		return readErr 
+	} else if err != nil {
+		d.progress.Fail("upload chunk failed")
+		return err
+	} else {
+		d.progress.Done()
+		return nil
+	}
 }
 
 func (d *ObjectDelivery) uploadChunk(ctx context.Context, chunkKey t.ChunkKey, data []byte) error {
 
 	loc, err := d.masterT.AllocateChunk(ctx, &transport.AllocateChunkCommand{
-		Slot:  t.ObjectSlot{
-			ObjectID: d.objectID, 
+		Slot: t.ObjectSlot{
+			ObjectID: d.objectID,
 			ChunkKey: chunkKey,
 		},
 		ChunkSize: int64(len(data)),
@@ -139,25 +162,28 @@ func (d *ObjectDelivery) Download(ctx context.Context, asm *file.ObjectAssembler
 		return p.ChunkDesc
 	})
 
-
 	writer, err := asm.NewWriter(access.ObjectDesc, chunkDescs)
 	if err != nil {
 		return fmt.Errorf("new object writer: %w", err)
 	}
 	defer writer.Close()
 
-	wg := sync.WaitGroup{}
+	
+	eg := errgroup.Group{}
+	eg.SetLimit(d.config.TransferConcurrency())
+
 	for _, placement := range access.Chunks {
-		d.sem <- struct{}{}
-		wg.Go(func() {
-			defer func() { <-d.sem }()
-			d.downloadChunk(ctx, placement, writer)
+		eg.Go(func() error {
+			return d.downloadChunk(ctx, placement, writer)
 		})
 	}
-	wg.Wait()
+	if err := eg.Wait(); err != nil {
+		d.progress.Fail("download chunk failed")
+		return err
+	} else {
+		d.progress.Done()
+	}
 
-	d.progress.Done = true
-	
 	return nil
 }
 

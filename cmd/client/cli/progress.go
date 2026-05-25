@@ -66,10 +66,11 @@ func (r *ProgressRender) RunLoop(ctx context.Context) {
 	for {
 		select {
 		case <-r.stop:
-			r.renderState()
-			return
+			r.renderState()		
+			return 
 		case <-ctx.Done():
-			return
+			r.renderState()
+			return	
 		case <-ticker.C:
 			r.renderState()		
 		}

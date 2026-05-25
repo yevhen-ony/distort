@@ -129,6 +129,23 @@ func (s *ClientFacadeService) AllocateChunk(
 	if err != nil {
 		return nil, fmt.Errorf("exists chunk: %w", err)
 	}
+	
+	replicaCount, err := s.catalog.GetReplication(ctx, cmd.Slot.ObjectID)
+	if err != nil {
+		return nil, err
+	}
+
+	candidates, err := s.placement.GetCandidates(ctx, m.CandidateNodesQuery{
+		MinFreeBytes: cmd.Size,
+		MaxCount:     replicaCount,
+		ExcludeNodes: cmd.ExcludeNodes,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("get candidate nodes: %w", err)
+	}
+	if len(candidates) == 0 {
+		return nil, m.ErrNoCandidateNodes
+	}
 
 	var chunkID t.ChunkID
 	if exists {
@@ -154,20 +171,7 @@ func (s *ClientFacadeService) AllocateChunk(
 		}
 	}
 
-	replicaCount, err := s.catalog.GetReplication(ctx, cmd.Slot.ObjectID)
-	if err != nil {
-		return nil, err
-	}
-
-	candidates, err := s.placement.GetCandidates(ctx, m.CandidateNodesQuery{
-		MinFreeBytes: cmd.Size,
-		MaxCount:     replicaCount,
-		ExcludeNodes: cmd.ExcludeNodes,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("get candidate nodes: %w", err)
-	}
-
+ 
 	res := &t.ChunkAllocation1{
 		ID:      chunkID,
 		Slot:    cmd.Slot,
