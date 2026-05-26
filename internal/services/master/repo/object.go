@@ -66,8 +66,8 @@ func (o *InMemObjectRepo) GetReplication(_ context.Context, oid t.ObjectID) (int
 }
 
 func (o *InMemObjectRepo) SetReplication(_ context.Context, oid t.ObjectID, count int) error {
-	o.mu.RLock()
-	defer o.mu.RUnlock()
+	o.mu.Lock()
+	defer o.mu.Unlock()
 
 	if count < 0 {
 		return m.ErrInvalidArgument
@@ -135,16 +135,21 @@ func (o *InMemObjectRepo) GetChunk(_ context.Context, slot t.ObjectSlot) (t.Chun
 	return chunkID, nil
 }
 
-func (o *InMemObjectRepo) DeleteChunk(_ context.Context, slot t.ObjectSlot) {
+func (o *InMemObjectRepo) DeleteChunk(_ context.Context, slot t.ObjectSlot) error {
 	o.mu.Lock()
 	defer o.mu.Unlock()
 
-	obj, ok := o.objects[slot.ObjectID]
+	object, ok := o.objects[slot.ObjectID]
 	if !ok {
-		return 
+		return m.ErrObjectNotFound 
+	}
+	_, ok = object.Chunks[slot.ChunkKey]
+	if !ok {
+		return m.ErrChunkKeyNotFound
 	}
 
-	delete(obj.Chunks, slot.ChunkKey)
+	delete(object.Chunks, slot.ChunkKey)
+	return nil
 }
 
 func (o *InMemObjectRepo) Delete(_ context.Context, objectID t.ObjectID) error {

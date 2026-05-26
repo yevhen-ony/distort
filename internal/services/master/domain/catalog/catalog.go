@@ -8,26 +8,27 @@ import (
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
 	m "dos/internal/services/master"
+	"dos/internal/services/master/domain/object"
 )
 
 type CatalogDeps struct {
-	ObjectRepo m.ObjectRepo
-	ChunkRepo  m.ChunkRepo
-	Metrics    *CatalogMetrics
+	ObjectAuthority object.ObjectAuthority
+	ChunkRepository m.ChunkRepo
+	Metrics         *CatalogMetrics
 }
 
 type CatalogService struct {
-	objectRepo m.ObjectRepo
-	chunkRepo  m.ChunkRepo
+	objects object.ObjectAuthority
+	chunks  m.ChunkRepo
 
 	metrics *CatalogMetrics
 }
 
 func NewCatalogService(deps CatalogDeps) (*CatalogService, error) {
-	if deps.ObjectRepo == nil {
+	if deps.ObjectAuthority == nil {
 		return nil, errors.New("missing object repository")
 	}
-	if deps.ChunkRepo == nil {
+	if deps.ChunkRepository == nil {
 		return nil, errors.New("missing chunk repository")
 	}
 	if deps.Metrics == nil {
@@ -35,16 +36,16 @@ func NewCatalogService(deps CatalogDeps) (*CatalogService, error) {
 	}
 
 	service := &CatalogService{
-		objectRepo: deps.ObjectRepo,
-		chunkRepo:  deps.ChunkRepo,
-		metrics:    deps.Metrics,
+		objects: deps.ObjectAuthority,
+		chunks:  deps.ChunkRepository,
+		metrics: deps.Metrics,
 	}
 	return service, nil
 }
 
 func (s *CatalogService) CreateObject(ctx context.Context, objectID t.ObjectID, replicaCount int) error {
 
-	err := s.objectRepo.Create(ctx, objectID, replicaCount)
+	err := s.objects.Create(ctx, objectID, replicaCount)
 	if err != nil {
 		return fmt.Errorf("create object: %w", err)
 	}
@@ -53,21 +54,21 @@ func (s *CatalogService) CreateObject(ctx context.Context, objectID t.ObjectID, 
 }
 
 func (s *CatalogService) GetObject(ctx context.Context, objectID t.ObjectID) (m.Object, error) {
-	return s.objectRepo.Get(ctx, objectID)
+	return s.objects.Get(ctx, objectID)
 }
 
 func (s *CatalogService) GetReplication(ctx context.Context, objectID t.ObjectID) (int, error) {
-	return s.objectRepo.GetReplication(ctx, objectID)
+	return s.objects.GetReplication(ctx, objectID)
 }
 
 func (s *CatalogService) SetReplication(ctx context.Context, objectID t.ObjectID, count int) error {
-	return s.objectRepo.SetReplication(ctx, objectID, count)
+	return s.objects.SetReplication(ctx, objectID, count)
 }
 
 func (s *CatalogService) ExistsChunk(
 	ctx context.Context, slot t.ObjectSlot,
 ) (bool, error) {
-	obj, err := s.objectRepo.Get(ctx, slot.ObjectID)
+	obj, err := s.objects.Get(ctx, slot.ObjectID)
 	if err != nil {
 		return false, fmt.Errorf("get object: %w", err)
 	}
@@ -77,7 +78,7 @@ func (s *CatalogService) ExistsChunk(
 
 func (s *CatalogService) GetChunkID(ctx context.Context, slot t.ObjectSlot) (t.ChunkID, error) {
 
-	obj, err := s.objectRepo.Get(ctx, slot.ObjectID)
+	obj, err := s.objects.Get(ctx, slot.ObjectID)
 	if err != nil {
 		return "", fmt.Errorf("get object: %w", err)
 	}
@@ -89,32 +90,32 @@ func (s *CatalogService) GetChunkID(ctx context.Context, slot t.ObjectSlot) (t.C
 }
 
 func (s *CatalogService) GetChunk(ctx context.Context, chunkID t.ChunkID) (m.Chunk, error) {
-	return s.chunkRepo.Get(ctx, chunkID)
+	return s.chunks.Get(ctx, chunkID)
 }
 
 func (s *CatalogService) AddChunk(
 	ctx context.Context, slot t.ObjectSlot, chunkSize int64,
 ) (t.ChunkID, error) {
 
-	chunkID := s.chunkRepo.NewChunkID()
-	err := s.chunkRepo.Create(ctx, chunkID, slot)
+	chunkID := s.chunks.NewChunkID()
+	err := s.chunks.Create(ctx, chunkID, slot)
 	if err != nil {
 		return "", fmt.Errorf("create chunk: %w", err)
 	}
 
-	err = s.objectRepo.AddChunk(ctx, slot, chunkID)
+	err = s.objects.AddChunk(ctx, slot, chunkID)
 	if err != nil {
-		s.chunkRepo.Delete(ctx, chunkID)
+		s.chunks.Delete(ctx, chunkID)
 		return "", fmt.Errorf("add chunk to object %s: %w", slot.ObjectID, err)
 	}
-	
+
 	s.metrics.ChunkCount.Add(1)
 	return chunkID, nil
 }
 
 func (s *CatalogService) GetObjectChunks(ctx context.Context, objectID t.ObjectID) ([]t.ChunkID, error) {
 
-	object, err := s.objectRepo.Get(ctx, objectID)
+	object, err := s.objects.Get(ctx, objectID)
 	if err != nil {
 		return nil, err
 	}
@@ -128,7 +129,7 @@ func (s *CatalogService) GetObjectChunks(ctx context.Context, objectID t.ObjectI
 
 func (s *CatalogService) DescribeChunk(ctx context.Context, chunkID t.ChunkID) (t.ChunkDesc, error) {
 
-	chunk, err := s.chunkRepo.Get(ctx, chunkID)
+	chunk, err := s.chunks.Get(ctx, chunkID)
 	if err != nil {
 		return t.ChunkDesc{}, fmt.Errorf("get chunk: %w", err)
 	}
@@ -146,7 +147,7 @@ func (s *CatalogService) DescribeChunk(ctx context.Context, chunkID t.ChunkID) (
 }
 
 func (s *CatalogService) ListObjects(ctx context.Context) []t.ObjectInfo {
-	return utils.Map(s.objectRepo.List(ctx), func(o m.Object) t.ObjectInfo {
+	return utils.Map(s.objects.List(ctx), func(o m.Object) t.ObjectInfo {
 		return t.ObjectInfo{
 			ID:          o.ID,
 			ChunkCount:  len(o.Chunks),
@@ -156,7 +157,7 @@ func (s *CatalogService) ListObjects(ctx context.Context) []t.ObjectInfo {
 }
 
 func (s *CatalogService) ListChunks(ctx context.Context) []t.ChunkInfo {
-	chunks, _ := s.chunkRepo.List(ctx)
+	chunks, _ := s.chunks.List(ctx)
 	return utils.Map(chunks, func(c m.Chunk) t.ChunkInfo {
 		size := int64(0)
 		if c.ReplicaCount > 0 {

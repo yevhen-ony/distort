@@ -44,23 +44,6 @@ type ObjectCatalog interface {
 	GetChunks(ctx context.Context, objectID t.ObjectID) ([]t.ChunkDesc, error)
 }
 
-type ObjectRepo interface {
-	Create(context.Context, t.ObjectID, int) error
-	Delete(context.Context, t.ObjectID) error
-
-	List(context.Context) []Object
-	Get(context.Context, t.ObjectID) (Object, error)
-	Exists(context.Context, t.ObjectID) (bool, error)
-
-	GetReplication(context.Context, t.ObjectID) (int, error)
-	SetReplication(context.Context, t.ObjectID, int) error
-
-	ExistsChunk(context.Context, t.ObjectSlot) (bool, error)
-	AddChunk(context.Context, t.ObjectSlot, t.ChunkID) error
-	GetChunk(context.Context, t.ObjectSlot) (t.ChunkID, error)
-	DeleteChunk(context.Context, t.ObjectSlot)
-}
-
 type ChunkRepo interface {
 	NewChunkID() t.ChunkID
 

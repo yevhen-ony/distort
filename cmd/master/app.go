@@ -12,6 +12,7 @@ import (
 	"dos/internal/services/master/api"
 	"dos/internal/services/master/domain"
 	"dos/internal/services/master/domain/catalog"
+	"dos/internal/services/master/domain/object"
 	"dos/internal/services/master/domain/replicate"
 	"dos/internal/services/master/domain/storagenode"
 	"dos/internal/services/master/repo"
@@ -22,7 +23,7 @@ import (
 type App struct {
 	conn *connect.ConnCache
 
-	objectRepo     *repo.InMemObjectRepo
+	objectHodler   *ObjectAuthorityHolder
 	chunkRepo      *repo.InMemChunkRepo
 	nodeRegistry   *repo.InMemNodeRegistry
 	chunkNodeIndex *domain.InMemChunkNodeIndex
@@ -48,8 +49,11 @@ type App struct {
 func NewApp(config *Config) (*App, error) {
 	conn := connect.NewConnCache()
 
-	objectRepo := repo.NewInMemObjectRepo()
-	chunkRepo := repo.NewInMemChunkRepo()
+	object, err := InitObjectAuthority()
+	if err != nil {
+		return nil, fmt.Errorf("object authority init: %w", err)
+	}
+	chunkRepository := repo.NewInMemChunkRepo()
 	nodeRegistry := repo.NewInMemNodeRegistry()
 	chunkNodeIndex := domain.NewInMemChunkNodeIndex()
 
@@ -63,19 +67,19 @@ func NewApp(config *Config) (*App, error) {
 	catalogMetrics := catalog.NewCatalogMetrics(metricsService.Provider())
 
 	catalogService, err := catalog.NewCatalogService(catalog.CatalogDeps{
-		ObjectRepo: objectRepo,
-		ChunkRepo:  chunkRepo,
-		Metrics:    catalogMetrics,
+		ObjectAuthority: object.Authority,
+		ChunkRepository: chunkRepository,
+		Metrics:         catalogMetrics,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("catalog service init: %w", err)
 	}
 
 	catalogCleanup, err := catalog.NewCleanupService(catalog.CleanupDeps{
-		ObjectRepo: objectRepo,
-		ChunkRepo:  chunkRepo,
-		Config:     config,
-		Metrics:    catalogMetrics,
+		ObjectAuthority: object.Authority,
+		ChunkRepository: chunkRepository,
+		Config:          config,
+		Metrics:         catalogMetrics,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("catalog cleanup init: %w", err)
@@ -91,39 +95,39 @@ func NewApp(config *Config) (*App, error) {
 	}
 
 	replicateExecutor, err := replicate.NewExecutorService(replicate.ExecutorDeps{
-		ObjectRepo: objectRepo,
-		ChunkRepo:  chunkRepo,
-		Placement:  nodePlacement,
-		ChunkT:     chunkT,
-		Config:     config,
-		Metrics:    replicate.NewExecutorMetrics(metricsService.Provider()),
+		ObjectReader:    object.Authority,
+		ChunkRepository: chunkRepository,
+		Placement:       nodePlacement,
+		ChunkT:          chunkT,
+		Config:          config,
+		Metrics:         replicate.NewExecutorMetrics(metricsService.Provider()),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("replicate executor service init: %w", err)
 	}
 
 	replicatePlanner, err := replicate.NewPlannerService(replicate.PlannerDeps{
-		ObjectRepo:  objectRepo,
-		ChunkRepo:   chunkRepo,
-		Replication: replicateExecutor,
-		Config:      config,
+		ObjectReader:    object.Authority,
+		ChunkRepository: chunkRepository,
+		Replication:     replicateExecutor,
+		Config:          config,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("replicate planner init: %w", err)
 	}
 
 	nodeLifecycle, err := storagenode.NewLifecycleService(storagenode.LifecycleDeps{
-		ChunkRepo:      chunkRepo,
-		ChunkNodeIndex: chunkNodeIndex,
-		NodeRegistry:   nodeRegistry,
-		Metrics:        storagenode.NewLifecycleMetrics(metricsService.Provider()),
+		ChunkRepository: chunkRepository,
+		ChunkNodeIndex:  chunkNodeIndex,
+		NodeRegistry:    nodeRegistry,
+		Metrics:         storagenode.NewLifecycleMetrics(metricsService.Provider()),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("storage lifecycle service init: %w", err)
 	}
 
 	nodeReport, err := storagenode.NewReportService(storagenode.ReportDeps{
-		ChunkRepo:      chunkRepo,
+		ChunkRepo:      chunkRepository,
 		NodeRegistry:   nodeRegistry,
 		ChunkNodeIndex: chunkNodeIndex,
 		Replication:    replicateExecutor,
@@ -157,8 +161,8 @@ func NewApp(config *Config) (*App, error) {
 	app := &App{
 		conn: conn,
 
-		objectRepo:     objectRepo,
-		chunkRepo:      chunkRepo,
+		objectHodler:   object,
+		chunkRepo:      chunkRepository,
 		nodeRegistry:   nodeRegistry,
 		chunkNodeIndex: chunkNodeIndex,
 
@@ -201,4 +205,39 @@ func (app *App) Run(ctx context.Context) error {
 
 func (app *App) Close() error {
 	return app.conn.Close()
+}
+
+type ObjectAuthorityHolder struct {
+	repository *repo.InMemObjectRepo
+	applier    *object.LocalObjectCommandApplier
+	writer     *object.ObjectWriterImpl
+
+	Authority *object.Authority
+}
+
+func InitObjectAuthority() (*ObjectAuthorityHolder, error) {
+	repo := repo.NewInMemObjectRepo()
+
+	applier, err := object.NewLocalObjectCommandApplier(repo)
+	if err != nil {
+		return nil, fmt.Errorf("command applier init: %w", err)
+	}
+
+	writer, err := object.NewObjectWriterImpl(applier)
+	if err != nil {
+		return nil, fmt.Errorf("object writer init: %w", err)
+	}
+
+	authority, err := object.NewObjectAuthority(repo, writer)
+	if err != nil {
+		return nil, fmt.Errorf("object authority init: %w", err)
+	}
+	holder := &ObjectAuthorityHolder{
+		repository: repo,
+		applier:    applier,
+		writer:     writer,
+		Authority:  authority,
+	}
+
+	return holder, nil
 }

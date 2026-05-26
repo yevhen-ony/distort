@@ -6,6 +6,7 @@ import (
 	"dos/internal/common/loop"
 	t "dos/internal/common/types"
 	m "dos/internal/services/master"
+	"dos/internal/services/master/domain/object"
 	"errors"
 	"log/slog"
 	"time"
@@ -21,16 +22,16 @@ type PlannerConfig interface {
 }
 
 type PlannerDeps struct {
-	ObjectRepo  m.ObjectRepo
-	ChunkRepo   m.ChunkRepo
-	Replication ReplicationScheduler
-	Config      PlannerConfig
+	ObjectReader    object.ObjectReader
+	ChunkRepository m.ChunkRepo
+	Replication     ReplicationScheduler
+	Config          PlannerConfig
 }
 
 type PlannerService struct {
-	objectRepo m.ObjectRepo
-	chunkRepo  m.ChunkRepo
-	replicate  ReplicationScheduler
+	objects   object.ObjectReader
+	chunks    m.ChunkRepo
+	replicate ReplicationScheduler
 
 	config PlannerConfig
 
@@ -39,10 +40,10 @@ type PlannerService struct {
 
 func NewPlannerService(deps PlannerDeps) (*PlannerService, error) {
 
-	if deps.ObjectRepo == nil {
+	if deps.ObjectReader == nil {
 		return nil, errors.New("missing object repo")
 	}
-	if deps.ChunkRepo == nil {
+	if deps.ChunkRepository == nil {
 		return nil, errors.New("missing chunk repo")
 	}
 	if deps.Replication == nil {
@@ -54,19 +55,19 @@ func NewPlannerService(deps PlannerDeps) (*PlannerService, error) {
 	looper := loop.NewLooper(deps.Config.ReplicationPlannerInterval())
 
 	planner := &PlannerService{
-		objectRepo: deps.ObjectRepo,
-		chunkRepo:  deps.ChunkRepo,
-		replicate:  deps.Replication,
-		config:     deps.Config,
-		looper:     looper,
+		objects:   deps.ObjectReader,
+		chunks:    deps.ChunkRepository,
+		replicate: deps.Replication,
+		config:    deps.Config,
+		looper:    looper,
 	}
 	return planner, nil
 }
 
 func (p *PlannerService) ScheduleStaleChunks(ctx context.Context) {
 	now := time.Now()
-	p.chunkRepo.ForEach(ctx, func(chunk m.Chunk) {
-		desired, err := p.objectRepo.GetReplication(ctx, chunk.Slot.ObjectID)
+	p.chunks.ForEach(ctx, func(chunk m.Chunk) {
+		desired, err := p.objects.GetReplication(ctx, chunk.Slot.ObjectID)
 		if err != nil {
 			slog.ErrorContext(ctx,
 				"read object replication for chunk failed",

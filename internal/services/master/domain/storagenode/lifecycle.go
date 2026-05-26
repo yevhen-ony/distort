@@ -16,10 +16,10 @@ type StorageNodeConfig interface {
 }
 
 type LifecycleDeps struct {
-	NodeRegistry   m.NodeRegistry
-	ChunkRepo      m.ChunkRepo
-	ChunkNodeIndex m.ChunkNodeIndex
-	Metrics        *LifecycleMetrics
+	NodeRegistry    m.NodeRegistry
+	ChunkRepository m.ChunkRepo
+	ChunkNodeIndex  m.ChunkNodeIndex
+	Metrics         *LifecycleMetrics
 }
 
 type LifecycleService struct {
@@ -33,7 +33,7 @@ func NewLifecycleService(deps LifecycleDeps) (*LifecycleService, error) {
 	if deps.NodeRegistry == nil {
 		return nil, errors.New("missing node registry")
 	}
-	if deps.ChunkRepo == nil {
+	if deps.ChunkRepository == nil {
 		return nil, errors.New("missing chunk repository")
 	}
 	if deps.ChunkNodeIndex == nil {
@@ -44,7 +44,7 @@ func NewLifecycleService(deps LifecycleDeps) (*LifecycleService, error) {
 	}
 	service := &LifecycleService{
 		nodeReg:        deps.NodeRegistry,
-		chunkRepo:      deps.ChunkRepo,
+		chunkRepo:      deps.ChunkRepository,
 		chunkNodeIndex: deps.ChunkNodeIndex,
 		metrics:        deps.Metrics,
 	}

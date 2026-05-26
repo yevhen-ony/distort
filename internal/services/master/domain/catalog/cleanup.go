@@ -9,6 +9,7 @@ import (
 	"dos/internal/common/loop"
 	t "dos/internal/common/types"
 	m "dos/internal/services/master"
+	"dos/internal/services/master/domain/object"
 )
 
 type CleanupConfig interface {
@@ -16,16 +17,16 @@ type CleanupConfig interface {
 }
 
 type CleanupDeps struct {
-	ObjectRepo m.ObjectRepo
-	ChunkRepo  m.ChunkRepo
-	Config     CleanupConfig
-	Metrics    *CatalogMetrics
+	ObjectAuthority object.ObjectAuthority
+	ChunkRepository m.ChunkRepo
+	Config          CleanupConfig
+	Metrics         *CatalogMetrics
 }
 
 type CleanupService struct {
-	objectRepo m.ObjectRepo
-	chunkRepo  m.ChunkRepo
-	metrics    *CatalogMetrics
+	objects object.ObjectAuthority
+	chunks  m.ChunkRepo
+	metrics *CatalogMetrics
 
 	config CleanupConfig
 
@@ -34,10 +35,10 @@ type CleanupService struct {
 
 func NewCleanupService(deps CleanupDeps) (*CleanupService, error) {
 
-	if deps.ObjectRepo == nil {
+	if deps.ObjectAuthority == nil {
 		return nil, errors.New("missing object repository")
 	}
-	if deps.ChunkRepo == nil {
+	if deps.ChunkRepository == nil {
 		return nil, errors.New("missing chunk repository")
 	}
 	if deps.Config == nil {
@@ -50,11 +51,11 @@ func NewCleanupService(deps CleanupDeps) (*CleanupService, error) {
 	looper := loop.NewLooper(deps.Config.CatalogCleanupInterval())
 
 	cleanup := &CleanupService{
-		objectRepo: deps.ObjectRepo,
-		chunkRepo:  deps.ChunkRepo,
-		config:     deps.Config,
-		metrics:    deps.Metrics,
-		looper:     looper,
+		objects: deps.ObjectAuthority,
+		chunks:  deps.ChunkRepository,
+		config:  deps.Config,
+		metrics: deps.Metrics,
+		looper:  looper,
 	}
 	return cleanup, nil
 }
@@ -62,15 +63,15 @@ func NewCleanupService(deps CleanupDeps) (*CleanupService, error) {
 func (cc *CleanupService) DeleteUnwanted(ctx context.Context) []t.ObjectID {
 	removedObjectIDs := []t.ObjectID{}
 
-	objects := cc.objectRepo.List(ctx)
+	objects := cc.objects.List(ctx)
 	for _, object := range objects {
 
 		if object.Replication == 0 { // unwanted
 
 			cleaned := true
 			for chunkKey, chunkID := range object.Chunks {
-				if ok, _ := cc.chunkRepo.Delete(ctx, chunkID); ok {
-					cc.objectRepo.DeleteChunk(ctx, t.ObjectSlot{
+				if ok, _ := cc.chunks.Delete(ctx, chunkID); ok {
+					cc.objects.DeleteChunk(ctx, t.ObjectSlot{
 						ObjectID: object.ID,
 						ChunkKey: chunkKey,
 					})
@@ -82,7 +83,7 @@ func (cc *CleanupService) DeleteUnwanted(ctx context.Context) []t.ObjectID {
 			if !cleaned {
 				continue
 			}
-			if err := cc.objectRepo.Delete(ctx, object.ID); err != nil {
+			if err := cc.objects.Delete(ctx, object.ID); err != nil {
 				slog.ErrorContext(ctx, "delete object failed", "object_id", object.ID, "error", err)
 			} else {
 				removedObjectIDs = append(removedObjectIDs, object.ID)

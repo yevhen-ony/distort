@@ -14,6 +14,7 @@ import (
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
 	m "dos/internal/services/master"
+	"dos/internal/services/master/domain/object"
 )
 
 var (
@@ -26,19 +27,19 @@ type ExecutorConfig interface {
 }
 
 type ExecutorDeps struct {
-	ChunkRepo  m.ChunkRepo
-	ObjectRepo m.ObjectRepo
-	Placement  m.StorageNodePlacement
-	ChunkT     *chunkrpc.Transport
-	Config     ExecutorConfig
-	Metrics    *ExecutorMetrics
+	ChunkRepository m.ChunkRepo
+	ObjectReader    object.ObjectReader
+	Placement       m.StorageNodePlacement
+	ChunkT          *chunkrpc.Transport
+	Config          ExecutorConfig
+	Metrics         *ExecutorMetrics
 }
 
 type ExecutorService struct {
-	chunkRepo  m.ChunkRepo
-	objectRepo m.ObjectRepo
-	placement  m.StorageNodePlacement
-	chunkT     *chunkrpc.Transport
+	chunks    m.ChunkRepo
+	objects   object.ObjectReader
+	placement m.StorageNodePlacement
+	chunkT    *chunkrpc.Transport
 
 	metrics *ExecutorMetrics
 	config  ExecutorConfig
@@ -48,10 +49,10 @@ type ExecutorService struct {
 }
 
 func NewExecutorService(deps ExecutorDeps) (*ExecutorService, error) {
-	if deps.ChunkRepo == nil {
+	if deps.ChunkRepository == nil {
 		return nil, errors.New("missing chunk repository")
 	}
-	if deps.ObjectRepo == nil {
+	if deps.ObjectReader == nil {
 		return nil, errors.New("missing object repository")
 	}
 	if deps.Placement == nil {
@@ -71,11 +72,11 @@ func NewExecutorService(deps ExecutorDeps) (*ExecutorService, error) {
 	queue := queue.NewDedupQueue[t.ChunkID](config.ReplicationQueueLength())
 	looper := loop.NewLooper(config.ReplicationExecInterval())
 	service := &ExecutorService{
-		chunkRepo:  deps.ChunkRepo,
-		objectRepo: deps.ObjectRepo,
-		placement:  deps.Placement,
-		chunkT:     deps.ChunkT,
-		metrics:    deps.Metrics,
+		chunks:    deps.ChunkRepository,
+		objects:   deps.ObjectReader,
+		placement: deps.Placement,
+		chunkT:    deps.ChunkT,
+		metrics:   deps.Metrics,
 
 		config: deps.Config,
 
@@ -116,7 +117,7 @@ func (r *ExecutorService) ReplicateChunk(ctx context.Context, chunk m.Chunk) err
 func (r *ExecutorService) decideReplication(ctx context.Context, chunk m.Chunk) (int, error) {
 
 	actual := chunk.ReplicaCount
-	wanted, err := r.objectRepo.GetReplication(ctx, chunk.Slot.ObjectID)
+	wanted, err := r.objects.GetReplication(ctx, chunk.Slot.ObjectID)
 	if err != nil {
 		slog.ErrorContext(ctx, "access object failed", "object_id", chunk.Slot.ObjectID)
 		return 0, fmt.Errorf("read object %s: %w", chunk.Slot.ObjectID, err)
@@ -159,7 +160,7 @@ func (r *ExecutorService) addReplica(
 	ctx = dosctx.WithOperation(ctx, "add")
 	slog.DebugContext(ctx, "add replica")
 
-	r.chunkRepo.Touch(ctx, meta.ID)
+	r.chunks.Touch(ctx, meta.ID)
 
 	sources, err := r.placement.GetChunkNodes(ctx, meta.ID)
 	if err != nil {
@@ -241,7 +242,7 @@ func (r *ExecutorService) RunReplicationIteration(ctx context.Context) {
 	slog.DebugContext(ctx, "replicate chunks", "count", len(chunkIDs))
 	for _, chunkID := range chunkIDs {
 
-		chunk, err := r.chunkRepo.Get(ctx, chunkID)
+		chunk, err := r.chunks.Get(ctx, chunkID)
 		if err != nil {
 			slog.WarnContext(ctx,
 				"failed to access scheduled chunk",
