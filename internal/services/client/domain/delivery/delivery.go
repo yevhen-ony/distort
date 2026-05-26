@@ -4,11 +4,10 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
+	"iter"
 
 	"dos/internal/common/transport/chunkrpc"
 	t "dos/internal/common/types"
-	"dos/internal/common/utils"
 	"dos/internal/services/client/domain/progress"
 	"dos/internal/services/client/io/file"
 	"dos/internal/services/client/transport"
@@ -21,7 +20,8 @@ type ObjectDeliveryConfig interface {
 }
 
 type ChunkSource interface {
-	Next() (t.ChunkKey, []byte, error)
+	Chunks() iter.Seq2[t.ChunkKey, []byte]
+	Err() error
 }
 
 type ObjectDeliveryDeps struct {
@@ -86,20 +86,10 @@ func (d *ObjectDelivery) Upload(ctx context.Context, source ChunkSource) error {
 	d.emitProgress()
 	defer d.emitProgress()
 
-	var readErr error
 	eg := errgroup.Group{}
 	eg.SetLimit(d.config.TransferConcurrency())
 
-	for {
-		chunkKey, chunkData, err := source.Next()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			readErr = fmt.Errorf("read chunk: %w", err)
-			break
-		}
-
+	for chunkKey, chunkData := range source.Chunks() {  
 		eg.Go(func() error {
 			if err := d.uploadChunk(ctx, chunkKey, chunkData); err != nil {
 				return fmt.Errorf("upload chunk failed %s", chunkKey)
@@ -108,14 +98,17 @@ func (d *ObjectDelivery) Upload(ctx context.Context, source ChunkSource) error {
 		})
 	}
 
-	err := eg.Wait()
-	if readErr != nil {
+	readErr := source.Err()
+	uploadErr := eg.Wait()
+
+	switch {
+	case readErr != nil:  
 		d.progress.Fail("read chunk failed")
 		return readErr 
-	} else if err != nil {
+	case uploadErr != nil:
 		d.progress.Fail("upload chunk failed")
-		return err
-	} else {
+		return uploadErr 
+	default:
 		d.progress.Done()
 		return nil
 	}
@@ -150,31 +143,27 @@ func (d *ObjectDelivery) uploadChunk(ctx context.Context, chunkKey t.ChunkKey, d
 
 func (d *ObjectDelivery) Download(ctx context.Context, asm *file.ObjectAssembler) error {
 
-	access, err := d.masterT.GetObjectAccess(ctx, d.objectID)
+	objDesc, err := d.masterT.DescribeObject(ctx, d.objectID)
 	if err != nil {
-		return fmt.Errorf("get object access: %w", err)
+		return fmt.Errorf("describe object: %w", err)
 	}
 
 	d.emitProgress()
 	defer d.emitProgress()
 
-	chunkDescs := utils.Map(access.Chunks, func(p t.ChunkPlacement) t.ChunkDesc {
-		return p.ChunkDesc
-	})
 
-	writer, err := asm.NewWriter(access.ObjectDesc, chunkDescs)
+	sink, err := asm.NewSink(objDesc.Chunks)
 	if err != nil {
 		return fmt.Errorf("new object writer: %w", err)
 	}
-	defer writer.Close()
-
+	defer sink.Close()
 	
 	eg := errgroup.Group{}
 	eg.SetLimit(d.config.TransferConcurrency())
 
-	for _, placement := range access.Chunks {
+	for _, placement := range objDesc.Chunks {
 		eg.Go(func() error {
-			return d.downloadChunk(ctx, placement, writer)
+			return d.downloadChunk(ctx, placement, sink)
 		})
 	}
 	if err := eg.Wait(); err != nil {
@@ -188,21 +177,21 @@ func (d *ObjectDelivery) Download(ctx context.Context, asm *file.ObjectAssembler
 }
 
 type ChunkSink interface {
-	WriteChunk(t.ChunkID, []byte) error
+	WriteChunk(t.ChunkKey, []byte) error
 }
 
-func (d *ObjectDelivery) downloadChunk(ctx context.Context, placement t.ChunkPlacement, sink ChunkSink) error {
+func (d *ObjectDelivery) downloadChunk(ctx context.Context, placement t.ChunkPlacement1, sink ChunkSink) error {
 	opt := chunkrpc.WithProgress(func(prog chunkrpc.Progress) {
-		d.progress.UpdateChunk(placement.ChunkKey, prog)
+		d.progress.UpdateChunk(placement.Slot.ChunkKey, prog)
 		d.emitProgress()
 	})
-	session := d.chunkT.NewTransferSession(placement.Nodes, opt)
-	chunk, err := session.Download(ctx, placement.ChunkID)
+	session := d.chunkT.NewTransferSession(placement.Sources, opt)
+	chunk, err := session.Download(ctx, placement.Meta.ID)
 	if err != nil {
-		return fmt.Errorf("download chunk %s: %w", placement.ChunkID, err)
+		return fmt.Errorf("download chunk %s: %w", placement.Meta.ID, err)
 	}
-	if err := sink.WriteChunk(chunk.Meta.ID, chunk.Data); err != nil {
-		return fmt.Errorf("write chunk %s: %w", placement.ChunkID, err)
+	if err := sink.WriteChunk(placement.Slot.ChunkKey, chunk.Data); err != nil {
+		return fmt.Errorf("write chunk %s: %w", placement.Meta.ID, err)
 	}
 	return nil
 }

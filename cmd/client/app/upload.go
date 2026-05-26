@@ -11,7 +11,7 @@ import (
 
 func (app *App) Upload(ctx context.Context, objectID string, path string) error {
 
-	chunker, err := file.NewObjectChunker(path, app.Config)
+	chunker, err := file.NewObjectChunker(path, app.Config.ChunkSize())
 	if err != nil {
 		return fmt.Errorf("init chunker: %w", err)
 	}

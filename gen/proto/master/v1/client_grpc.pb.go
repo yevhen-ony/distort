@@ -19,12 +19,11 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	MasterClientService_CreateObject_FullMethodName    = "/master.v1.MasterClientService/CreateObject"
-	MasterClientService_AllocateChunk_FullMethodName   = "/master.v1.MasterClientService/AllocateChunk"
-	MasterClientService_GetObjectAccess_FullMethodName = "/master.v1.MasterClientService/GetObjectAccess"
-	MasterClientService_SetReplication_FullMethodName  = "/master.v1.MasterClientService/SetReplication"
-	MasterClientService_DescribeObject_FullMethodName  = "/master.v1.MasterClientService/DescribeObject"
-	MasterClientService_DescribeChunk_FullMethodName   = "/master.v1.MasterClientService/DescribeChunk"
+	MasterClientService_CreateObject_FullMethodName   = "/master.v1.MasterClientService/CreateObject"
+	MasterClientService_AllocateChunk_FullMethodName  = "/master.v1.MasterClientService/AllocateChunk"
+	MasterClientService_SetReplication_FullMethodName = "/master.v1.MasterClientService/SetReplication"
+	MasterClientService_DescribeObject_FullMethodName = "/master.v1.MasterClientService/DescribeObject"
+	MasterClientService_DescribeChunk_FullMethodName  = "/master.v1.MasterClientService/DescribeChunk"
 )
 
 // MasterClientServiceClient is the client API for MasterClientService service.
@@ -33,7 +32,6 @@ const (
 type MasterClientServiceClient interface {
 	CreateObject(ctx context.Context, in *CreateObjectRequest, opts ...grpc.CallOption) (*CreateObjectResponse, error)
 	AllocateChunk(ctx context.Context, in *AllocateChunkRequest, opts ...grpc.CallOption) (*AllocateChunkResponse, error)
-	GetObjectAccess(ctx context.Context, in *GetObjectAccessRequest, opts ...grpc.CallOption) (*GetObjectAccessResponse, error)
 	SetReplication(ctx context.Context, in *SetReplicationRequest, opts ...grpc.CallOption) (*SetReplicationResponse, error)
 	DescribeObject(ctx context.Context, in *DescribeObjectRequest, opts ...grpc.CallOption) (*DescribeObjectResponse, error)
 	DescribeChunk(ctx context.Context, in *DescribeChunkRequest, opts ...grpc.CallOption) (*DescribeChunkResponse, error)
@@ -61,16 +59,6 @@ func (c *masterClientServiceClient) AllocateChunk(ctx context.Context, in *Alloc
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(AllocateChunkResponse)
 	err := c.cc.Invoke(ctx, MasterClientService_AllocateChunk_FullMethodName, in, out, cOpts...)
-	if err != nil {
-		return nil, err
-	}
-	return out, nil
-}
-
-func (c *masterClientServiceClient) GetObjectAccess(ctx context.Context, in *GetObjectAccessRequest, opts ...grpc.CallOption) (*GetObjectAccessResponse, error) {
-	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
-	out := new(GetObjectAccessResponse)
-	err := c.cc.Invoke(ctx, MasterClientService_GetObjectAccess_FullMethodName, in, out, cOpts...)
 	if err != nil {
 		return nil, err
 	}
@@ -113,7 +101,6 @@ func (c *masterClientServiceClient) DescribeChunk(ctx context.Context, in *Descr
 type MasterClientServiceServer interface {
 	CreateObject(context.Context, *CreateObjectRequest) (*CreateObjectResponse, error)
 	AllocateChunk(context.Context, *AllocateChunkRequest) (*AllocateChunkResponse, error)
-	GetObjectAccess(context.Context, *GetObjectAccessRequest) (*GetObjectAccessResponse, error)
 	SetReplication(context.Context, *SetReplicationRequest) (*SetReplicationResponse, error)
 	DescribeObject(context.Context, *DescribeObjectRequest) (*DescribeObjectResponse, error)
 	DescribeChunk(context.Context, *DescribeChunkRequest) (*DescribeChunkResponse, error)
@@ -132,9 +119,6 @@ func (UnimplementedMasterClientServiceServer) CreateObject(context.Context, *Cre
 }
 func (UnimplementedMasterClientServiceServer) AllocateChunk(context.Context, *AllocateChunkRequest) (*AllocateChunkResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method AllocateChunk not implemented")
-}
-func (UnimplementedMasterClientServiceServer) GetObjectAccess(context.Context, *GetObjectAccessRequest) (*GetObjectAccessResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "method GetObjectAccess not implemented")
 }
 func (UnimplementedMasterClientServiceServer) SetReplication(context.Context, *SetReplicationRequest) (*SetReplicationResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method SetReplication not implemented")
@@ -198,24 +182,6 @@ func _MasterClientService_AllocateChunk_Handler(srv interface{}, ctx context.Con
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
 		return srv.(MasterClientServiceServer).AllocateChunk(ctx, req.(*AllocateChunkRequest))
-	}
-	return interceptor(ctx, in, info, handler)
-}
-
-func _MasterClientService_GetObjectAccess_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(GetObjectAccessRequest)
-	if err := dec(in); err != nil {
-		return nil, err
-	}
-	if interceptor == nil {
-		return srv.(MasterClientServiceServer).GetObjectAccess(ctx, in)
-	}
-	info := &grpc.UnaryServerInfo{
-		Server:     srv,
-		FullMethod: MasterClientService_GetObjectAccess_FullMethodName,
-	}
-	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(MasterClientServiceServer).GetObjectAccess(ctx, req.(*GetObjectAccessRequest))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -288,10 +254,6 @@ var MasterClientService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AllocateChunk",
 			Handler:    _MasterClientService_AllocateChunk_Handler,
-		},
-		{
-			MethodName: "GetObjectAccess",
-			Handler:    _MasterClientService_GetObjectAccess_Handler,
 		},
 		{
 			MethodName: "SetReplication",

@@ -28,13 +28,6 @@ func validateAllocateChunkRequest(req *pb.AllocateChunkRequest) error {
 	return nil
 }
 
-func validateGetObjectAccessRequest(req *pb.GetObjectAccessRequest) error {
-	if req.GetObjectId() == "" {
-		return status.Error(codes.InvalidArgument, "missing object id")
-	}
-	return nil
-}
-
 func validateRegisterStorageNodeRequest(req *pb.RegisterStorageNodeRequest) error {
 	if req.GetAddr() == "" {
 		return status.Error(codes.InvalidArgument, "missing addr")

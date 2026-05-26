@@ -90,38 +90,6 @@ func (s *ClientServer) AllocateChunk(
 	return rsp, nil
 }
 
-func (s *ClientServer) GetObjectAccess(
-	ctx context.Context, req *pb.GetObjectAccessRequest,
-) (rsp *pb.GetObjectAccessResponse, err error) {
-
-	defer func() {
-		if err != nil {
-			slog.ErrorContext(ctx, "object access failed",
-				"object_id", req.GetObjectId(), "error", err,
-			)
-			err = toStatus(err)
-		}
-	}()
-	slog.DebugContext(ctx, "object access requested", "object_id", req.GetObjectId())
-
-	if err = validateGetObjectAccessRequest(req); err != nil {
-		return nil, err
-	}
-	object, err := s.facade.GetObjectAccess(ctx, t.ObjectID(req.GetObjectId()))
-	if err != nil {
-		return nil, err
-	}
-
-	rsp = &pb.GetObjectAccessResponse{
-		ObjectId:  string(object.ID),
-		TotalSize: object.TotalSize,
-		Chunks: utils.Map(object.Chunks, func(cp t.ChunkPlacement) *pb.ChunkPlacement {
-			return convert.ChunkPlacementToPB(cp)
-		}),
-	}
-	return rsp, nil
-}
-
 func (s *ClientServer) SetReplication(
 	ctx context.Context, req *pb.SetReplicationRequest,
 ) (rsp *pb.SetReplicationResponse, err error) {

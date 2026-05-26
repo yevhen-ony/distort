@@ -1,100 +1,72 @@
-package file 
+package file
 
 import (
-	"errors"
-	"io"
+	"fmt"
 	"os"
 	"path/filepath"
-	"slices"
 
 	t "dos/internal/common/types"
-	c "dos/internal/services/client"
+	"dos/internal/common/utils"
 )
-
-type ChunkKeyComparer func(t.ChunkKey, t.ChunkKey) int
 
 type ObjectAssembler struct {
 	destPath string
-	compare ChunkKeyComparer 
 }
 
-func NewFileObjectAssembler(destPath string, compare ChunkKeyComparer) (*ObjectAssembler, error) {
+func NewObjectAssembler(destPath string) (*ObjectAssembler, error) {
 	destDir := filepath.Dir(destPath)
 	err := os.MkdirAll(destDir, 0o755)
 	if err != nil {
 		return nil, err
 	}
 
-	if compare == nil {
-		return nil, errors.New("missing compare func")
-	}
-	return &ObjectAssembler{destPath: destPath, compare: compare}, nil
+	asm := &ObjectAssembler{destPath: destPath}
+	return asm, nil
 }
 
-func (a *ObjectAssembler) NewWriter(obj t.ObjectDesc, chunks []t.ChunkDesc) (*ObjectWriter, error) {
+func (a *ObjectAssembler) NewSink(chunks []t.ChunkPlacement1) (*ObjectSink, error) {
+	layoutSpec := ObjectLayoutSpecFromChunkPlacments(chunks) 
+	layout, err := NewObjectLayout(layoutSpec)	
+	if err != nil {
+		return nil, fmt.Errorf("create layout: %w", err)
+	}
 
-	slices.SortFunc(chunks, func(lhs, rhs t.ChunkDesc) int {
-		return a.compare(lhs.ChunkKey, rhs.ChunkKey)
+	writer, err := NewObjectWriter(a.destPath, layout.TotalBytes)
+	if err != nil {
+		return nil, fmt.Errorf("create writer: %w", err)
+	}
+	sink := &ObjectSink{
+		writer: writer,
+		layout: layout,
+	}
+	return sink, nil
+}
+
+type ObjectSink struct {
+	writer *ObjectWriter
+	layout *ObjectLayout
+}
+
+func (os *ObjectSink) WriteChunk(key t.ChunkKey, data []byte) error {
+	region, err := os.layout.Region(key)
+	if err != nil {
+		return err 
+	}
+	return os.writer.WriteRegion(region, data)
+}
+
+func (os *ObjectSink) Close() error {
+	return os.writer.Close()
+}
+
+func ObjectLayoutSpecFromChunkPlacments(chunks []t.ChunkPlacement1) *LayoutSpec {
+	lcs := utils.Map(chunks, func(p t.ChunkPlacement1) LayoutChunk {
+		return LayoutChunk {
+			Key: p.Slot.ChunkKey, 
+			Size: p.Meta.Digest.Size,
+		}		
 	})
-
-	layout := make(map[t.ChunkID]region, len(chunks))
-	offset := int64(0)
-	for _, chunk := range chunks {
-		layout[chunk.ChunkID] = region{offset: offset, size: chunk.ChunkSize}
-		offset += chunk.ChunkSize
-	}
-	if offset != obj.TotalSize {
-		return nil, c.ErrObjectSizeMismatch	
-	}
-
-	fd, err := os.OpenFile(a.destPath, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
-	if err != nil {
-		return nil, err
-	}
-
-	if err := fd.Truncate(obj.TotalSize); err != nil {
-		_ = fd.Close()
-		return nil, err
-	}
-	writer := &ObjectWriter{fd: fd, layout: layout}
-
-	return writer, nil
+	return &LayoutSpec{ chunks: lcs }
 }
 
-type ObjectWriter struct {
-	fd *os.File
-	layout map[t.ChunkID]region
-}
 
-func (w *ObjectWriter) WriteChunk(id t.ChunkID, data []byte) error {
-
-	reg, ok := w.layout[id]	
-	if !ok {
-		return c.ErrChunkNotFound
-	}
-	if reg.size != int64(len(data)) {
-		return c.ErrChunkSizeMismatch
-	}
-
-	n, err := w.fd.WriteAt(data, reg.offset)
-	if err != nil {
-		return err
-	}
-	if n != len(data) {
-		return io.ErrShortWrite
-	}
-	return nil 
-}
-
-func (w *ObjectWriter) Close() error {
-
-	if err := w.fd.Sync(); err != nil {
-		return err
-	}
-	return w.fd.Close()
-}
-
-type region struct {
-	offset int64
-	size int64
-}

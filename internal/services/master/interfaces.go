@@ -25,7 +25,6 @@ type StorageNodeReport interface {
 type ClientFacade interface {
 	CreateObject(context.Context, t.ObjectID) error
 	AllocateChunk(context.Context, AllocateChunkCommand) (*t.ChunkAllocation1, error)
-	GetObjectAccess(context.Context, t.ObjectID) (t.ObjectAccess, error)
 
 	ListObjects(context.Context) []t.ObjectInfo
 	ListChunks(context.Context) []t.ChunkInfo

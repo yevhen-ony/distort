@@ -14,16 +14,10 @@ import (
 )
 
 func (app *App) Download(ctx context.Context, objectID string, destPath string) error {
-	comparer := func (lhs, rhs t.ChunkKey) int {
-		if lhs < rhs { return -1 }
-		if lhs > rhs { return 1 }
-		return 0
-
-	}
 	destPath = ResolveOutputPath(destPath, objectID)
-	asm, err := file.NewFileObjectAssembler(destPath, comparer)
+	asm, err := file.NewObjectAssembler(destPath)
 	if err != nil {
-		return fmt.Errorf("create assembler: %w", err)
+		return fmt.Errorf("create object assembler: %w", err)
 	}
 	
 	downloader, err := delivery.NewObjectDelivery(delivery.ObjectDeliveryDeps{

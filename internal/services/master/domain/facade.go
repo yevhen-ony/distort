@@ -180,45 +180,6 @@ func (s *ClientFacadeService) AllocateChunk(
 	return res, nil
 }
 
-func (s *ClientFacadeService) GetObjectAccess(
-	ctx context.Context, objectID t.ObjectID,
-) (t.ObjectAccess, error) {
-
-	var totalSize int64
-	chunkIDs, err := s.catalog.GetObjectChunks(ctx, objectID)
-	if err != nil {
-		return t.ObjectAccess{}, err
-	}
-
-	placements := []t.ChunkPlacement{}
-	for _, chunkID := range chunkIDs {
-
-		chunk, err := s.catalog.DescribeChunk(ctx, chunkID)
-		if err != nil {
-			return t.ObjectAccess{}, fmt.Errorf("describe chunk %s: %w", chunkID, err)
-		}
-		nodes, err := s.placement.GetChunkNodes(ctx, chunkID)
-		if err != nil {
-			return t.ObjectAccess{}, fmt.Errorf("get chunk %s nodes: %w", chunkID, err)
-		}
-
-		totalSize += chunk.ChunkSize
-		placements = append(placements, t.ChunkPlacement{
-			ChunkDesc: chunk,
-			Nodes:     nodes,
-		})
-	}
-	objectAccess := t.ObjectAccess{
-		ObjectDesc: t.ObjectDesc{
-			ID:        objectID,
-			TotalSize: totalSize,
-		},
-		Chunks: placements,
-	}
-
-	return objectAccess, nil
-}
-
 func (s *ClientFacadeService) ListObjects(ctx context.Context) []t.ObjectInfo {
 	return s.catalog.ListObjects(ctx)
 }

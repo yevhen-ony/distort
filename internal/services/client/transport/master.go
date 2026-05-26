@@ -18,7 +18,7 @@ type MasterTransportConfig interface {
 
 type MasterTransport struct {
 	client pb.MasterClientServiceClient
-	admin pb.AdminServiceClient
+	admin  pb.AdminServiceClient
 
 	config MasterTransportConfig
 }
@@ -40,7 +40,7 @@ func NewMasterTransport(conn *connect.ConnCache, config MasterTransportConfig) (
 
 	mt := &MasterTransport{
 		client: client,
-		admin: admin,
+		admin:  admin,
 		config: config,
 	}
 	return mt, nil
@@ -64,7 +64,8 @@ type AllocateChunkCommand struct {
 }
 
 func (mt *MasterTransport) AllocateChunk(
-	ctx context.Context, query *AllocateChunkCommand,
+	ctx context.Context,
+	query *AllocateChunkCommand,
 ) (*t.ChunkAllocation1, error) {
 
 	req := &pb.AllocateChunkRequest{
@@ -77,24 +78,60 @@ func (mt *MasterTransport) AllocateChunk(
 	}
 
 	alloc := &t.ChunkAllocation1{
-		ID:       t.ChunkID(rsp.GetChunkId()),
-		Slot:     convert.ObjectSlotFromPB(rsp.GetObjectSlot()),
+		ID:      t.ChunkID(rsp.GetChunkId()),
+		Slot:    convert.ObjectSlotFromPB(rsp.GetObjectSlot()),
 		Targets: utils.Map(rsp.GetTargets(), convert.NodeRefFromPB),
 	}
 	return alloc, nil
 }
 
-func (mt *MasterTransport) GetObjectAccess(
-	ctx context.Context, oid t.ObjectID,
-) (t.ObjectAccess, error) {
-
-	req := &pb.GetObjectAccessRequest{ObjectId: string(oid)}
-	rsp, err := mt.client.GetObjectAccess(ctx, req)
-	if err != nil {
-		return t.ObjectAccess{}, fmt.Errorf("transport: %w", err)
+func (mt *MasterTransport) SetReplication(ctx context.Context, objectID t.ObjectID, count int) error {
+	req := &pb.SetReplicationRequest{
+		ObjectId: string(objectID),
+		Count:    int64(count),
 	}
-	objAccess := *convert.ObjectAccessFromPB(rsp)
-	return objAccess, nil
+
+	_, err := mt.client.SetReplication(ctx, req)
+	if err != nil {
+		return fmt.Errorf("transport: %w", err)
+	}
+	return nil
+}
+
+func (mt *MasterTransport) DescribeChunk(
+	ctx context.Context,
+	chunkID t.ChunkID,
+) (*t.ChunkDesc1, error) {
+
+	req := &pb.DescribeChunkRequest{
+		ChunkId: string(chunkID),
+	}
+
+	rsp, err := mt.client.DescribeChunk(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("transport: %w", err)
+	}
+
+	description := convert.ChunkDesc1FromPB(rsp.GetDescription())
+	return &description, nil
+}
+
+func (mt *MasterTransport) DescribeObject(
+	ctx context.Context,
+	objectID t.ObjectID,
+) (*t.ObjectDesc1, error) {
+
+	req := &pb.DescribeObjectRequest{
+		ObjectId: string(objectID),
+	}
+
+	rsp, err := mt.client.DescribeObject(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("transport: %w", err)
+	}
+
+	description := convert.ObjectDesc1FromPB(rsp.GetDescription())
+	return &description, nil
 }
 
 func (mt *MasterTransport) ListObjects(ctx context.Context) ([]t.ObjectInfo, error) {
@@ -126,53 +163,3 @@ func (mt *MasterTransport) ListNodes(ctx context.Context) ([]t.NodeInfo, error) 
 	infos := utils.Map(rsp.GetNodes(), convert.NodeInfoFromPB)
 	return infos, nil
 }
-
-func (mt *MasterTransport) SetReplication(ctx context.Context, objectID t.ObjectID, count int) error {
-	req := &pb.SetReplicationRequest{
-		ObjectId: string(objectID),
-		Count:    int64(count),
-	}
-
-	_, err := mt.client.SetReplication(ctx, req)
-	if err != nil {
-		return fmt.Errorf("transport: %w", err)
-	}
-	return nil
-}
-
-func (mt *MasterTransport) DescribeChunk(
-	ctx context.Context,
-	chunkID t.ChunkID,
-) (*t.ChunkDesc1, error) {
-
-	req := &pb.DescribeChunkRequest{
-		ChunkId: string(chunkID),
-	}
-
-	rsp, err := mt.client.DescribeChunk(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("transport: %w", err)
-	}
-
-	description := convert.ChunkDesc1FromPB(rsp.GetDescription())
-	return &description, nil 
-}
-
-func (mt *MasterTransport) DescribeObject(
-	ctx context.Context,
-	objectID t.ObjectID,
-) (*t.ObjectDesc1, error) {
-
-	req := &pb.DescribeObjectRequest{
-		ObjectId: string(objectID),
-	}
-
-	rsp, err := mt.client.DescribeObject(ctx, req)
-	if err != nil {
-		return nil, fmt.Errorf("transport: %w", err)
-	}
-
-	description := convert.ObjectDesc1FromPB(rsp.GetDescription())
-	return &description, nil
-}
-
