@@ -209,7 +209,7 @@ func (app *App) Close() error {
 
 type ObjectAuthorityHolder struct {
 	repository *repo.InMemObjectRepo
-	applier    *object.LocalObjectCommandApplier
+	applier    *object.LocalCommandApplier
 	writer     *object.ObjectWriterImpl
 
 	Authority *object.Authority
@@ -218,17 +218,27 @@ type ObjectAuthorityHolder struct {
 func InitObjectAuthority() (*ObjectAuthorityHolder, error) {
 	repo := repo.NewInMemObjectRepo()
 
-	applier, err := object.NewLocalObjectCommandApplier(repo)
+	applier, err := object.NewLocalCommandApplier(repo)
 	if err != nil {
 		return nil, fmt.Errorf("command applier init: %w", err)
 	}
 
-	writer, err := object.NewObjectWriterImpl(applier)
+	submitter, err := object.NewLocalCommandSubmitter(applier)
+	if err != nil {
+		return nil, fmt.Errorf("command submitter init: %w", err)
+	}
+
+	writer, err := object.NewObjectWriterImpl(submitter)
 	if err != nil {
 		return nil, fmt.Errorf("object writer init: %w", err)
 	}
 
-	authority, err := object.NewObjectAuthority(repo, writer)
+	authority, err := object.NewObjectAuthority(object.ObjectAuthorityDeps{
+		Reader: repo,
+		Writer: writer,
+		Codec: object.NewJSONCommandCodec(),
+	})
+
 	if err != nil {
 		return nil, fmt.Errorf("object authority init: %w", err)
 	}

@@ -1,6 +1,14 @@
 package object
 
-import t "dos/internal/common/types"
+import (
+	"errors"
+	
+	t "dos/internal/common/types"
+)
+
+var (
+	ErrInvalidObjectCommand = errors.New("invalid object command")
+)
 
 type ObjectCommand struct {
 	CreateObject   *CreateObjectCommand   `json:"create_object,omitempty"`
@@ -13,6 +21,25 @@ type ObjectCommand struct {
 type CreateObjectCommand struct {
 	ObjectID    t.ObjectID `json:"object_id"`
 	Replication int        `json:"replication"`
+}
+
+func (cmd *ObjectCommand) Validate() error {
+	count := 0
+	for _, present := range []bool{
+		cmd.CreateObject != nil,
+		cmd.DeleteObject != nil,
+		cmd.AddChunk != nil,
+		cmd.DeleteChunk != nil,
+		cmd.SetReplication != nil,
+	} {
+		if present {
+			count++
+		}
+	}
+	if count != 1 {
+		return ErrInvalidObjectCommand
+	}
+	return nil
 }
 
 func (cmd *CreateObjectCommand) ToCommand() ObjectCommand {

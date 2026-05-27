@@ -36,19 +36,26 @@ type ObjectAuthority interface {
 type Authority struct {
 	ObjectReader
 	ObjectWriter
+	codec CommandCodec
 }
 
-func NewObjectAuthority(reader ObjectReader, writer ObjectWriter) (*Authority, error) {
-	if reader == nil {
+type ObjectAuthorityDeps struct {
+	Reader ObjectReader
+	Writer ObjectWriter
+	Codec  CommandCodec
+}
+
+func NewObjectAuthority(deps ObjectAuthorityDeps) (*Authority, error) {
+	if deps.Reader == nil {
 		return nil, errors.New("missing object reader")
 	}
-	if writer == nil {
+	if deps.Writer == nil {
 		return nil, errors.New("missing object writer")
 	}
 	oa := &Authority{
-		ObjectReader: reader,
-		ObjectWriter: writer,
+		ObjectReader: deps.Reader,
+		ObjectWriter: deps.Writer,
+		codec:        deps.Codec,
 	}
 	return oa, nil
 }
-

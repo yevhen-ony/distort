@@ -2,31 +2,34 @@ package object
 
 import (
 	"context"
-	"errors"
-
 	t "dos/internal/common/types"
+	"errors"
 )
+
+type CommandApplier interface {
+  	Apply(context.Context, ObjectCommand) error
+}
 
 var (
 	ErrUnknownObjectCommand = errors.New("unknown object command")
 )
 
 
-type LocalObjectCommandApplier struct {
+type LocalCommandApplier struct {
   	repo Repository 
 }
 
-func NewLocalObjectCommandApplier(repo Repository) (*LocalObjectCommandApplier, error) {
+func NewLocalCommandApplier(repo Repository) (*LocalCommandApplier, error) {
 	if repo == nil {
 		return nil, errors.New("missing object repository")
 	}
-	applier := &LocalObjectCommandApplier{
+	applier := &LocalCommandApplier{
 		repo: repo,
 	}
 	return applier, nil
 }
 
-func (a *LocalObjectCommandApplier) ApplyObjectCommand(
+func (a *LocalCommandApplier) Apply(
   	ctx context.Context,
   	cmd ObjectCommand,
 ) error {
