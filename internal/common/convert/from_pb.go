@@ -213,3 +213,10 @@ func ReplicaReportFromPB(pb *mpb.ReplicaReport) t.StorageNodeReport {
 		return t.StorageNodeReport{}
 	}
 }
+
+func MasterRefFromPB(pb *mpb.MasterRef) t.MasterRef {
+	return t.MasterRef{
+		ID: t.MasterID(pb.GetMasterId()),
+		Addr: pb.GetAddr(),
+	}
+}

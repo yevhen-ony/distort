@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package master.v1;
+
+option go_package = "dos/gen/proto/master/v1;master";
+
+service MasterDiscoveryService {
+  rpc GetActiveMaster(GetActiveMasterRequest) returns (GetActiveMasterResponse);
+}
+
+message GetActiveMasterRequest {
+}
+
+message GetActiveMasterResponse {
+  MasterRef active = 1; 
+}
+
+message MasterRef {
+  string master_id = 1;
+  string addr = 2;
+}
+

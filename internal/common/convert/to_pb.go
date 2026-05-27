@@ -160,5 +160,10 @@ func ReplicaReportToPB(rr t.StorageNodeReport) *mpb.ReplicaReport {
 	}
 }
 
-
+func MasterRefToPB(mr t.MasterRef) *mpb.MasterRef {
+	return &mpb.MasterRef {
+		MasterId: string(mr.ID),
+		Addr: mr.Addr,
+	}
+}
 

@@ -3,7 +3,7 @@ package types
 import (
 	"dos/internal/common/digest"
 )
-
+type MasterID string
 type ObjectID string
 type ChunkID string
 type ChunkKey string
@@ -11,6 +11,11 @@ type NodeID string
 
 type NodeRef struct {
 	ID   NodeID
+	Addr string
+}
+
+type MasterRef struct {
+	ID MasterID 
 	Addr string
 }
 
@@ -94,3 +99,5 @@ type StorageNodeReport struct {
 	ReplicaChainFailed *ReplicaChainFailedReport
 	ReplicaDeleted     *ReplicaDeletedReport
 }
+
+

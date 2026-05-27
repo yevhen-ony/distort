@@ -209,13 +209,13 @@ func (app *App) Close() error {
 }
 
 type ObjectAuthorityHolder struct {
+	raftnode   *raftnode.ObjectNode
 	repository *repo.InMemObjectRepo
 	applier    *object.LocalCommandApplier
 	writer     *object.ObjectWriterImpl
 
 	Authority *object.Authority
 }
-
 
 func InitObjectAuthority(config *raftnode.Config) (*ObjectAuthorityHolder, error) {
 	repo := repo.NewInMemObjectRepo()
@@ -228,9 +228,9 @@ func InitObjectAuthority(config *raftnode.Config) (*ObjectAuthorityHolder, error
 	codec := object.NewJSONCommandCodec()
 
 	node, err := raftnode.NewObjectNode(raftnode.ObjectNodeDeps{
-		Config: config,
+		Config:  config,
 		Applier: applier,
-		Codec: codec,
+		Codec:   codec,
 	})
 
 	writer, err := object.NewObjectWriterImpl(node.Submitter)
@@ -241,13 +241,14 @@ func InitObjectAuthority(config *raftnode.Config) (*ObjectAuthorityHolder, error
 	authority, err := object.NewObjectAuthority(object.ObjectAuthorityDeps{
 		Reader: repo,
 		Writer: writer,
-		Codec: object.NewJSONCommandCodec(),
+		Codec:  object.NewJSONCommandCodec(),
 	})
 
 	if err != nil {
 		return nil, fmt.Errorf("object authority init: %w", err)
 	}
 	holder := &ObjectAuthorityHolder{
+		raftnode:   node,
 		repository: repo,
 		applier:    applier,
 		writer:     writer,
