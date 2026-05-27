@@ -27,3 +27,4 @@ func NewLocalCommandSubmitter(apply CommandApplier) (*LocalCommandSubmitter, err
 func (s *LocalCommandSubmitter) Submit(ctx context.Context, cmd ObjectCommand) error {
 	return s.apply.Apply(ctx, cmd)
 }
+

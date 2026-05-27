@@ -15,6 +15,7 @@ import (
 	"dos/internal/services/master/domain/object"
 	"dos/internal/services/master/domain/replicate"
 	"dos/internal/services/master/domain/storagenode"
+	"dos/internal/services/master/raftnode"
 	"dos/internal/services/master/repo"
 
 	"google.golang.org/grpc"
@@ -49,7 +50,7 @@ type App struct {
 func NewApp(config *Config) (*App, error) {
 	conn := connect.NewConnCache()
 
-	object, err := InitObjectAuthority()
+	object, err := InitObjectAuthority(&config.Raft)
 	if err != nil {
 		return nil, fmt.Errorf("object authority init: %w", err)
 	}
@@ -215,7 +216,8 @@ type ObjectAuthorityHolder struct {
 	Authority *object.Authority
 }
 
-func InitObjectAuthority() (*ObjectAuthorityHolder, error) {
+
+func InitObjectAuthority(config *raftnode.Config) (*ObjectAuthorityHolder, error) {
 	repo := repo.NewInMemObjectRepo()
 
 	applier, err := object.NewLocalCommandApplier(repo)
@@ -223,12 +225,15 @@ func InitObjectAuthority() (*ObjectAuthorityHolder, error) {
 		return nil, fmt.Errorf("command applier init: %w", err)
 	}
 
-	submitter, err := object.NewLocalCommandSubmitter(applier)
-	if err != nil {
-		return nil, fmt.Errorf("command submitter init: %w", err)
-	}
+	codec := object.NewJSONCommandCodec()
 
-	writer, err := object.NewObjectWriterImpl(submitter)
+	node, err := raftnode.NewObjectNode(raftnode.ObjectNodeDeps{
+		Config: config,
+		Applier: applier,
+		Codec: codec,
+	})
+
+	writer, err := object.NewObjectWriterImpl(node.Submitter)
 	if err != nil {
 		return nil, fmt.Errorf("object writer init: %w", err)
 	}

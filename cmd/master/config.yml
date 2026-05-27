@@ -6,10 +6,21 @@ listen:
   host: "0.0.0.0"
   port: 10000
 
+master:
+  advertise_addr: master-1:10000
+
 metrics:
   scrape_port: 9100
   scrape_path: /metrics
   namespace: dos 
+
+raft:
+  node_id: master-1
+  bind_addr: master-1
+  bootstrap: true
+  apply_timeout: 1s
+  snapshot_interval: 10m
+  snapshot_threshold: 1000000
 
 service:
   frame_size: 3MB

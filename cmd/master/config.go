@@ -5,6 +5,7 @@ import (
 	"dos/internal/common/listener"
 	"dos/internal/common/logger"
 	"dos/internal/common/metrics/prom"
+	"dos/internal/services/master/raftnode"
 	"time"
 )
 
@@ -12,6 +13,7 @@ type Config struct {
 	Logger  logger.Config   `yaml:"logger"`
 	Listen  listener.Config `yaml:"listen"`
 	Metrics prom.Config     `yaml:"metrics"`
+	Raft    raftnode.Config `yanl:"raft"`
 	Service ServiceConfig   `yaml:"service"`
 }
 
