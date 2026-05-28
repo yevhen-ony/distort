@@ -6,7 +6,7 @@ import (
 )
 
 type MasterMode interface {
-	MasterDiscovery() m.MasterDiscovery
+	MasterState() m.MasterState
 	ObjectAuthority() *object.Authority
 }
 

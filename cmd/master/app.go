@@ -33,7 +33,7 @@ type App struct {
 
 	metricsService *prom.Service
 
-	discoveryService m.MasterDiscovery
+	discoveryService m.MasterState
 
 	placement     *storagenode.PlacementService
 
@@ -120,19 +120,24 @@ func (app *App) Run(ctx context.Context) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 
-	go app.replicatePlanner.RunLoop(ctx)
-	go app.replicateExecutor.RunLoop(ctx)
-	go app.nodeCleanup.RunLoop(ctx)
-	go app.catalogCleanup.RunLoop(ctx)
+	go app.masterMode.MasterState().WatchState(ctx, func(ctx context.Context) {
+		go app.replicatePlanner.RunLoop(ctx)
+		go app.replicateExecutor.RunLoop(ctx)
+		go app.nodeCleanup.RunLoop(ctx)
+		go app.catalogCleanup.RunLoop(ctx)
+	})
 
 	go app.metricsService.Serve(ctx)
 
-	err := listener.RunGRPCServer(ctx, &app.config.Listen, func(s *grpc.Server) {
+	reg := func(s *grpc.Server) {
 		mpb.RegisterAdminServiceServer(s, app.adminAPI)
 		mpb.RegisterMasterClientServiceServer(s, app.clientAPI)
 		mpb.RegisterMasterStorageServiceServer(s, app.storageAPI)
 		mpb.RegisterMasterDiscoveryServiceServer(s, app.discoveryAPI)
-	})
+	}
+
+	guard := api.NewMasterGuard(app.masterMode.MasterState())
+	err := listener.RunGRPCServer(ctx, &app.config.Listen, reg, guard.AsOption())
 	return err
 }
 
@@ -235,7 +240,7 @@ func (app *App) initAPI(config *Config) (err error) {
 	if err != nil {
 		return fmt.Errorf("storage api init: %w", err)
 	}
-	app.discoveryAPI, err = api.NewMasterDiscoveryServer(app.masterMode.MasterDiscovery())
+	app.discoveryAPI, err = api.NewMasterDiscoveryServer(app.masterMode.MasterState())
 	if err != nil {
 		return fmt.Errorf("discovery api init: %w", err)
 	}

@@ -13,7 +13,7 @@ import (
 
 type MasterRaftMode struct {
 	authority *object.Authority
-	discovery *raftnode.RaftDiscoveryService
+	state     *raftnode.RaftMasterStateService
 
 	node       *raftnode.ObjectNode
 	repository *repo.InMemObjectRepo
@@ -28,8 +28,8 @@ func (mode *MasterRaftMode) ObjectAuthority() *object.Authority {
 	return mode.authority
 }
 
-func (mode *MasterRaftMode) MasterDiscovery() m.MasterDiscovery {
-	return mode.discovery
+func (mode *MasterRaftMode) MasterState() m.MasterState {
+	return mode.state
 }
 
 func NewMasterRaftMode(config *Config) (*MasterRaftMode, error) {
@@ -49,7 +49,11 @@ func NewMasterRaftMode(config *Config) (*MasterRaftMode, error) {
 		return nil, fmt.Errorf("object authority init: %w", err)
 	}
 
-	mode.discovery, err = raftnode.NewRaftDiscoveryService(mode.node.Raft, mode.resolver) 
+	mode.state, err = raftnode.NewRaftMasterStateService(raftnode.RaftMasterStateDeps{
+		Raft: mode.node.Raft,
+		Resolver: mode.resolver,
+		Config: &config.Raft, 
+	})
 	if err != nil {
 		return nil, fmt.Errorf("raft discovery service: %w", err)
 	}
@@ -77,6 +81,9 @@ func (mode *MasterRaftMode) initObjectAuthority(
 		Codec:    mode.codec,
 		Resolver: resolver,
 	})
+	if err != nil {
+		return fmt.Errorf("object node init: %w", err)
+	}
 
 	mode.writer, err = object.NewObjectWriterImpl(mode.node.Submitter)
 	if err != nil {

@@ -12,7 +12,7 @@ import (
 
 type MasterLocalMode struct {
 	authority *object.Authority
-	discovery *domain.LocalDiscoveryService
+	discovery *domain.LocalMasterStateService
 
 	repository *repo.InMemObjectRepo
 	applier    *object.LocalCommandApplier
@@ -26,7 +26,7 @@ func (mode *MasterLocalMode) ObjectAuthority() *object.Authority {
 	return mode.authority
 }
 
-func (mode *MasterLocalMode) MasterDiscovery() m.MasterDiscovery {
+func (mode *MasterLocalMode) MasterState() m.MasterState {
 	return mode.discovery
 }
 
@@ -82,7 +82,7 @@ func (mode *MasterLocalMode) initLocalMasterDiscovery(config *Config) (err error
 		return fmt.Errorf("resolver init: %w", err) 
 	}
 
-	mode.discovery, err = domain.NewLocalDiscoveryService(mode.resolver)
+	mode.discovery, err = domain.NewLocalMasterStateService(mode.resolver)
 	if err != nil {
 		return fmt.Errorf("discovery init: %w", err)
 	}

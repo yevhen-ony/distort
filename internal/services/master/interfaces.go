@@ -112,6 +112,9 @@ type ReplicaScheduler interface {
 	Schedule(context.Context, t.ChunkID)
 }
 
-type MasterDiscovery interface {
+type MasterState interface {
 	GetActiveMaster(context.Context) (t.MasterRef, error)
+	IsActiveMaster() bool
+	WatchState(context.Context, func(context.Context))
 }
+
