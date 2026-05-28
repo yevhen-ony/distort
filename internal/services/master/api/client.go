@@ -2,6 +2,7 @@ package api
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"log/slog"
 
@@ -21,9 +22,13 @@ type ClientServer struct {
 	facade m.ClientFacade
 }
 
-func NewClientServer(facade m.ClientFacade) *ClientServer {
+func NewClientServer(facade m.ClientFacade) (*ClientServer, error) {
+	if facade == nil {
+		return nil, errors.New("missing facade service")
+	}
 
-	return &ClientServer{facade: facade}
+	s := &ClientServer{facade: facade}
+	return s, nil
 }
 
 func (s *ClientServer) CreateObject(

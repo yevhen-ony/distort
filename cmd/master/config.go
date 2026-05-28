@@ -4,22 +4,24 @@ import (
 	"dos/internal/common/config"
 	"dos/internal/common/listener"
 	"dos/internal/common/logger"
+	mrslv "dos/internal/common/master/resolve"
 	"dos/internal/common/metrics/prom"
 	"dos/internal/services/master/raftnode"
 	"time"
 )
 
 type Config struct {
+	Master  mrslv.Config    `yaml:"master"`
 	Logger  logger.Config   `yaml:"logger"`
 	Listen  listener.Config `yaml:"listen"`
 	Metrics prom.Config     `yaml:"metrics"`
-	Raft    raftnode.Config `yanl:"raft"`
+	Raft    raftnode.Config `yaml:"raft"`
 	Service ServiceConfig   `yaml:"service"`
 }
 
 type ServiceConfig struct {
 	FrameSize                  config.Size   `yaml:"frame_size"`
-	ChunkAllocationMargin      config.Size   `yaml:"chunk_allocation_margin"`
+	ChunkAllocationMargin      config.Size   `yaml:"chunk_allocation_margin_bytes"`
 	ReplicationCount           int           `yaml:"replication_count"`
 	ReplicationQueueLength     int           `yaml:"replication_queue_length"`
 	ReplicationExecInterval    time.Duration `yaml:"replication_interval"`
@@ -68,4 +70,8 @@ func (c *Config) ChunkStaleAfter() time.Duration {
 
 func (c *Config) ReplicationPlannerInterval() time.Duration {
 	return c.Service.ReplicationPlannerInterval
+}
+
+func (c *Config) RaftEnabled() bool {
+	return c.Raft.Enable
 }

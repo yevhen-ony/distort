@@ -21,31 +21,23 @@ type ObjectReader interface {
 type ObjectWriter interface {
 	Create(context.Context, t.ObjectID, int) error
 	Delete(context.Context, t.ObjectID) error
-
 	SetReplication(context.Context, t.ObjectID, int) error
 
 	AddChunk(context.Context, t.ObjectSlot, t.ChunkID) error
 	DeleteChunk(context.Context, t.ObjectSlot) error
 }
 
-type ObjectAuthority interface {
-	ObjectReader
-	ObjectWriter
-}
-
 type Authority struct {
 	ObjectReader
 	ObjectWriter
-	codec CommandCodec
 }
 
-type ObjectAuthorityDeps struct {
+type AuthorityDeps struct {
 	Reader ObjectReader
 	Writer ObjectWriter
-	Codec  CommandCodec
 }
 
-func NewObjectAuthority(deps ObjectAuthorityDeps) (*Authority, error) {
+func NewAuthority(deps AuthorityDeps) (*Authority, error) {
 	if deps.Reader == nil {
 		return nil, errors.New("missing object reader")
 	}
@@ -55,7 +47,6 @@ func NewObjectAuthority(deps ObjectAuthorityDeps) (*Authority, error) {
 	oa := &Authority{
 		ObjectReader: deps.Reader,
 		ObjectWriter: deps.Writer,
-		codec:        deps.Codec,
 	}
 	return oa, nil
 }

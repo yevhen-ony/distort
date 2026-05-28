@@ -6,6 +6,7 @@ import (
 	"dos/internal/common/convert"
 	"dos/internal/common/utils"
 	m "dos/internal/services/master"
+	"errors"
 	"log/slog"
 )
 
@@ -17,8 +18,13 @@ type AdminServer struct {
 	facade m.ClientFacade
 }
 
-func NewAdminServer(facade m.ClientFacade) *AdminServer {
-	return &AdminServer{facade: facade}
+func NewAdminServer(facade m.ClientFacade) (*AdminServer, error) {
+	if facade == nil {
+		return nil, errors.New("missing facade service")
+	}
+
+	s := &AdminServer{facade: facade}
+	return s, nil
 }
 
 

@@ -17,14 +17,14 @@ type CleanupConfig interface {
 }
 
 type CleanupDeps struct {
-	ObjectAuthority object.ObjectAuthority
+	ObjectAuthority *object.Authority
 	ChunkRepository m.ChunkRepo
 	Config          CleanupConfig
 	Metrics         *CatalogMetrics
 }
 
 type CleanupService struct {
-	objects object.ObjectAuthority
+	objects *object.Authority
 	chunks  m.ChunkRepo
 	metrics *CatalogMetrics
 

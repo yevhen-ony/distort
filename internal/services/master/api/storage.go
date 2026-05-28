@@ -7,6 +7,7 @@ import (
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
 	m "dos/internal/services/master"
+	"errors"
 	"fmt"
 	"log/slog"
 )
@@ -23,11 +24,19 @@ type StorageServer struct {
 func NewStorageServer(
 	lifecycle m.StorageNodeLifecycle,
 	report m.StorageNodeReport,
-) *StorageServer {
-	return &StorageServer{
+) (*StorageServer, error) {
+	if lifecycle == nil {
+		return nil, errors.New("missing lifecycle service")
+	}
+	if report == nil {
+		return nil, errors.New("missing report service") 
+	}
+
+	s := &StorageServer{
 		lifecycle: lifecycle,
 		report: report,
 	}
+	return s, nil
 }
 
 func (s *StorageServer) RegisterStorageNode(

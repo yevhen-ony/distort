@@ -9,13 +9,12 @@ import (
 	"dos/internal/common/listener"
 	"dos/internal/common/metrics/prom"
 	"dos/internal/common/transport/chunkrpc"
+	m "dos/internal/services/master"
 	"dos/internal/services/master/api"
 	"dos/internal/services/master/domain"
 	"dos/internal/services/master/domain/catalog"
-	"dos/internal/services/master/domain/object"
 	"dos/internal/services/master/domain/replicate"
 	"dos/internal/services/master/domain/storagenode"
-	"dos/internal/services/master/raftnode"
 	"dos/internal/services/master/repo"
 
 	"google.golang.org/grpc"
@@ -24,165 +23,96 @@ import (
 type App struct {
 	conn *connect.ConnCache
 
-	objectHodler   *ObjectAuthorityHolder
-	chunkRepo      *repo.InMemChunkRepo
-	nodeRegistry   *repo.InMemNodeRegistry
-	chunkNodeIndex *domain.InMemChunkNodeIndex
+	masterMode MasterMode
 
-	metricsService    *prom.Service
+	chunkRepository *repo.InMemChunkRepo
+	nodeRegistry    *repo.InMemNodeRegistry
+	chunkNodeIndex  *domain.InMemChunkNodeIndex
+
+	chunkTransport *chunkrpc.Transport
+
+	metricsService *prom.Service
+
+	discoveryService m.MasterDiscovery
+
+	placement     *storagenode.PlacementService
+
 	replicateExecutor *replicate.ExecutorService
 	replicatePlanner  *replicate.PlannerService
-	catalogService    *catalog.CatalogService
-	catalogCleanup    *catalog.CleanupService
-	storageLifecycle  *storagenode.LifecycleService
-	storagePlacement  *storagenode.PlacementService
-	storageReport     *storagenode.ReportService
-	nodeCleanup       *storagenode.CleanupWorker
-	clientFacade      *domain.ClientFacadeService
 
-	clientAPI  *api.ClientServer
-	adminAPI   *api.AdminServer
-	storageAPI *api.StorageServer
+	nodeLifecycle *storagenode.LifecycleService
+	nodeReport    *storagenode.ReportService
+	nodeCleanup   *storagenode.CleanupWorker
+
+	catalogService *catalog.CatalogService
+	catalogCleanup *catalog.CleanupService
+
+	clientFacade *domain.ClientFacadeService
+
+	clientAPI    *api.ClientServer
+	adminAPI     *api.AdminServer
+	storageAPI   *api.StorageServer
+	discoveryAPI *api.MasterDiscoveryServer
 
 	config *Config
 }
 
-func NewApp(config *Config) (*App, error) {
-	conn := connect.NewConnCache()
+func NewApp(config *Config) (app *App, err error) {
+	app = &App{config: config}
 
-	object, err := InitObjectAuthority(&config.Raft)
+	app.metricsService = prom.NewService(config.Metrics)
+
+	app.conn = connect.NewConnCache()
+	app.chunkRepository = repo.NewInMemChunkRepo()
+	app.nodeRegistry = repo.NewInMemNodeRegistry()
+	app.chunkNodeIndex = domain.NewInMemChunkNodeIndex()
+
+	app.masterMode, err = InitMasterMode(config)
 	if err != nil {
-		return nil, fmt.Errorf("object authority init: %w", err)
+		return nil, err
 	}
-	chunkRepository := repo.NewInMemChunkRepo()
-	nodeRegistry := repo.NewInMemNodeRegistry()
-	chunkNodeIndex := domain.NewInMemChunkNodeIndex()
 
-	metricsService := prom.NewService(config.Metrics)
-
-	chunkT, err := chunkrpc.NewTransport(conn, config)
+	app.chunkTransport, err = chunkrpc.NewTransport(app.conn, config)
 	if err != nil {
 		return nil, fmt.Errorf("chunk transport init: %w", err)
 	}
 
-	catalogMetrics := catalog.NewCatalogMetrics(metricsService.Provider())
-
-	catalogService, err := catalog.NewCatalogService(catalog.CatalogDeps{
-		ObjectAuthority: object.Authority,
-		ChunkRepository: chunkRepository,
-		Metrics:         catalogMetrics,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("catalog service init: %w", err)
-	}
-
-	catalogCleanup, err := catalog.NewCleanupService(catalog.CleanupDeps{
-		ObjectAuthority: object.Authority,
-		ChunkRepository: chunkRepository,
-		Config:          config,
-		Metrics:         catalogMetrics,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("catalog cleanup init: %w", err)
-	}
-
-	nodePlacement, err := storagenode.NewPlacementService(storagenode.PlacementDeps{
-		ChunkNodeIndex: chunkNodeIndex,
-		NodeRegistry:   nodeRegistry,
+	app.placement, err = storagenode.NewPlacementService(storagenode.PlacementDeps{
+		ChunkNodeIndex: app.chunkNodeIndex,
+		NodeRegistry:   app.nodeRegistry,
 		Config:         config,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("storage placement service init: %w", err)
+		return nil, fmt.Errorf("storage node placement service init: %w", err)
 	}
 
-	replicateExecutor, err := replicate.NewExecutorService(replicate.ExecutorDeps{
-		ObjectReader:    object.Authority,
-		ChunkRepository: chunkRepository,
-		Placement:       nodePlacement,
-		ChunkT:          chunkT,
-		Config:          config,
-		Metrics:         replicate.NewExecutorMetrics(metricsService.Provider()),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("replicate executor service init: %w", err)
+	if err := app.initCatalog(config); err != nil {
+		return nil, err
 	}
 
-	replicatePlanner, err := replicate.NewPlannerService(replicate.PlannerDeps{
-		ObjectReader:    object.Authority,
-		ChunkRepository: chunkRepository,
-		Replication:     replicateExecutor,
-		Config:          config,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("replicate planner init: %w", err)
+	if err := app.initReplication(config); err != nil {
+		return nil, err
 	}
 
-	nodeLifecycle, err := storagenode.NewLifecycleService(storagenode.LifecycleDeps{
-		ChunkRepository: chunkRepository,
-		ChunkNodeIndex:  chunkNodeIndex,
-		NodeRegistry:    nodeRegistry,
-		Metrics:         storagenode.NewLifecycleMetrics(metricsService.Provider()),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("storage lifecycle service init: %w", err)
+	if err := app.initStorageNodeServices(config); err != nil {
+		return nil, err
 	}
 
-	nodeReport, err := storagenode.NewReportService(storagenode.ReportDeps{
-		ChunkRepo:      chunkRepository,
-		NodeRegistry:   nodeRegistry,
-		ChunkNodeIndex: chunkNodeIndex,
-		Replication:    replicateExecutor,
-		Metrics:        storagenode.NewReportMetrics(metricsService.Provider()),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("storage report serivce init: %w", err)
-	}
-
-	nodeCleanup, err := storagenode.NewCleanupWorker(storagenode.CleanupDeps{
-		Lifecycle:   nodeLifecycle,
-		Replication: replicateExecutor,
-		Config:      config,
-	})
-
-	clientFacade, err := domain.NewClientFacadeService(domain.ClientFacadeDeps{
-		Catalog:     catalogService,
-		Placement:   nodePlacement,
-		Lifecycle:   nodeLifecycle,
-		Replication: replicateExecutor,
+	app.clientFacade, err = domain.NewClientFacadeService(domain.ClientFacadeDeps{
+		Catalog:     app.catalogService,
+		Placement:   app.placement,
+		Lifecycle:   app.nodeLifecycle,
+		Replication: app.replicateExecutor,
 		Config:      config,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("client facade service init: %w", err)
 	}
 
-	adminAPI := api.NewAdminServer(clientFacade)
-	clientAPI := api.NewClientServer(clientFacade)
-	storageAPI := api.NewStorageServer(nodeLifecycle, nodeReport)
-
-	app := &App{
-		conn: conn,
-
-		objectHodler:   object,
-		chunkRepo:      chunkRepository,
-		nodeRegistry:   nodeRegistry,
-		chunkNodeIndex: chunkNodeIndex,
-
-		metricsService:    metricsService,
-		catalogService:    catalogService,
-		catalogCleanup:    catalogCleanup,
-		storageLifecycle:  nodeLifecycle,
-		storagePlacement:  nodePlacement,
-		storageReport:     nodeReport,
-		nodeCleanup:       nodeCleanup,
-		replicateExecutor: replicateExecutor,
-		replicatePlanner:  replicatePlanner,
-
-		adminAPI:   adminAPI,
-		clientAPI:  clientAPI,
-		storageAPI: storageAPI,
-
-		config: config,
+	if err := app.initAPI(config); err != nil {
+		return nil, err
 	}
+
 	return app, nil
 }
 
@@ -194,66 +124,124 @@ func (app *App) Run(ctx context.Context) error {
 	go app.replicateExecutor.RunLoop(ctx)
 	go app.nodeCleanup.RunLoop(ctx)
 	go app.catalogCleanup.RunLoop(ctx)
+
 	go app.metricsService.Serve(ctx)
 
 	err := listener.RunGRPCServer(ctx, &app.config.Listen, func(s *grpc.Server) {
 		mpb.RegisterAdminServiceServer(s, app.adminAPI)
 		mpb.RegisterMasterClientServiceServer(s, app.clientAPI)
 		mpb.RegisterMasterStorageServiceServer(s, app.storageAPI)
+		mpb.RegisterMasterDiscoveryServiceServer(s, app.discoveryAPI)
 	})
 	return err
 }
 
+func (app *App) initCatalog(config *Config) (err error) {
+
+	catalogMetrics := catalog.NewCatalogMetrics(app.metricsService.Provider())
+	app.catalogService, err = catalog.NewCatalogService(catalog.CatalogDeps{
+		ObjectAuthority: app.masterMode.ObjectAuthority(),
+		ChunkRepository: app.chunkRepository,
+		Metrics:         catalogMetrics,
+	})
+	if err != nil {
+		return fmt.Errorf("catalog service init: %w", err)
+	}
+
+	app.catalogCleanup, err = catalog.NewCleanupService(catalog.CleanupDeps{
+		ObjectAuthority: app.masterMode.ObjectAuthority(),
+		ChunkRepository: app.chunkRepository,
+		Config:          config,
+		Metrics:         catalogMetrics,
+	})
+	if err != nil {
+		return fmt.Errorf("catalog cleanup init: %w", err)
+	}
+	return nil
+}
+
+func (app *App) initStorageNodeServices(config *Config) (err error) {
+
+	lifecycleMetrics := storagenode.NewLifecycleMetrics(app.metricsService.Provider())
+	app.nodeLifecycle, err = storagenode.NewLifecycleService(storagenode.LifecycleDeps{
+		ChunkRepository: app.chunkRepository,
+		ChunkNodeIndex:  app.chunkNodeIndex,
+		NodeRegistry:    app.nodeRegistry,
+		Metrics:         lifecycleMetrics,
+	})
+	if err != nil {
+		return fmt.Errorf("storage lifecycle service init: %w", err)
+	}
+
+	reportMetrics := storagenode.NewReportMetrics(app.metricsService.Provider())
+	app.nodeReport, err = storagenode.NewReportService(storagenode.ReportDeps{
+		ChunkRepo:      app.chunkRepository,
+		NodeRegistry:   app.nodeRegistry,
+		ChunkNodeIndex: app.chunkNodeIndex,
+		Replication:    app.replicateExecutor,
+		Metrics:        reportMetrics,
+	})
+	if err != nil {
+		return fmt.Errorf("storage report serivce init: %w", err)
+	}
+
+	app.nodeCleanup, err = storagenode.NewCleanupWorker(storagenode.CleanupDeps{
+		Lifecycle:   app.nodeLifecycle,
+		Replication: app.replicateExecutor,
+		Config:      config,
+	})
+	if err != nil {
+		return fmt.Errorf("storage node cleanulp service init: %w", err)
+	}
+	return nil
+}
+
+func (app *App) initReplication(config *Config) (err error) {
+	executorMetrics := replicate.NewExecutorMetrics(app.metricsService.Provider())
+	app.replicateExecutor, err = replicate.NewExecutorService(replicate.ExecutorDeps{
+		ObjectReader:    app.masterMode.ObjectAuthority(),
+		ChunkRepository: app.chunkRepository,
+		Placement:       app.placement,
+		ChunkTransport:  app.chunkTransport,
+		Config:          config,
+		Metrics:         executorMetrics,
+	})
+	if err != nil {
+		return fmt.Errorf("replicate executor service init: %w", err)
+	}
+
+	app.replicatePlanner, err = replicate.NewPlannerService(replicate.PlannerDeps{
+		ObjectReader:    app.masterMode.ObjectAuthority(),
+		ChunkRepository: app.chunkRepository,
+		Replication:     app.replicateExecutor,
+		Config:          config,
+	})
+	if err != nil {
+		return fmt.Errorf("replicate planner init: %w", err)
+	}
+	return nil
+}
+
+func (app *App) initAPI(config *Config) (err error) {
+	app.adminAPI, err = api.NewAdminServer(app.clientFacade)
+	if err != nil {
+		return fmt.Errorf("admin api init: %w", err)
+	}
+	app.clientAPI, err = api.NewClientServer(app.clientFacade)
+	if err != nil {
+		return fmt.Errorf("client api init: %w", err)
+	}
+	app.storageAPI, err = api.NewStorageServer(app.nodeLifecycle, app.nodeReport)
+	if err != nil {
+		return fmt.Errorf("storage api init: %w", err)
+	}
+	app.discoveryAPI, err = api.NewMasterDiscoveryServer(app.masterMode.MasterDiscovery())
+	if err != nil {
+		return fmt.Errorf("discovery api init: %w", err)
+	}
+	return nil
+}
+
 func (app *App) Close() error {
 	return app.conn.Close()
-}
-
-type ObjectAuthorityHolder struct {
-	raftnode   *raftnode.ObjectNode
-	repository *repo.InMemObjectRepo
-	applier    *object.LocalCommandApplier
-	writer     *object.ObjectWriterImpl
-
-	Authority *object.Authority
-}
-
-func InitObjectAuthority(config *raftnode.Config) (*ObjectAuthorityHolder, error) {
-	repo := repo.NewInMemObjectRepo()
-
-	applier, err := object.NewLocalCommandApplier(repo)
-	if err != nil {
-		return nil, fmt.Errorf("command applier init: %w", err)
-	}
-
-	codec := object.NewJSONCommandCodec()
-
-	node, err := raftnode.NewObjectNode(raftnode.ObjectNodeDeps{
-		Config:  config,
-		Applier: applier,
-		Codec:   codec,
-	})
-
-	writer, err := object.NewObjectWriterImpl(node.Submitter)
-	if err != nil {
-		return nil, fmt.Errorf("object writer init: %w", err)
-	}
-
-	authority, err := object.NewObjectAuthority(object.ObjectAuthorityDeps{
-		Reader: repo,
-		Writer: writer,
-		Codec:  object.NewJSONCommandCodec(),
-	})
-
-	if err != nil {
-		return nil, fmt.Errorf("object authority init: %w", err)
-	}
-	holder := &ObjectAuthorityHolder{
-		raftnode:   node,
-		repository: repo,
-		applier:    applier,
-		writer:     writer,
-		Authority:  authority,
-	}
-
-	return holder, nil
 }

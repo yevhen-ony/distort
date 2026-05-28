@@ -2,7 +2,6 @@ package domain
 
 import (
 	"context"
-	"dos/internal/common/master/resolve"
 	t "dos/internal/common/types"
 	"errors"
 )
@@ -11,22 +10,26 @@ type StaticDiscoveryConfig interface {
 	AdvertiseAddr() string
 }
 
-type StaticDiscoveryService struct {
-	resolver *resolve.Resolver
+type LocalDiscoveryService struct {
+	resolver MasterSelfResolver 
 }
 
-func NewStaticDiscoveryService(resolver *resolve.Resolver) (*StaticDiscoveryService, error) {
+type MasterSelfResolver interface {
+	SelfRef() (t.MasterRef, error)
+}
+
+func NewLocalDiscoveryService(resolver MasterSelfResolver) (*LocalDiscoveryService, error) {
 	if resolver == nil {
 		return nil, errors.New("missing resolver")
 	}
 
-	s := &StaticDiscoveryService{
+	s := &LocalDiscoveryService{
 		resolver: resolver,
 	}	
 	return s, nil
 }
 
-func (s *StaticDiscoveryService) GetActiveMaster(_ context.Context) (t.MasterRef, error) {
+func (s *LocalDiscoveryService) GetActiveMaster(_ context.Context) (t.MasterRef, error) {
 	return s.resolver.SelfRef()
 }
 

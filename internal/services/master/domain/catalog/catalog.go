@@ -12,13 +12,13 @@ import (
 )
 
 type CatalogDeps struct {
-	ObjectAuthority object.ObjectAuthority
+	ObjectAuthority *object.Authority
 	ChunkRepository m.ChunkRepo
 	Metrics         *CatalogMetrics
 }
 
 type CatalogService struct {
-	objects object.ObjectAuthority
+	objects *object.Authority
 	chunks  m.ChunkRepo
 
 	metrics *CatalogMetrics

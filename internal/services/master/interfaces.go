@@ -111,3 +111,7 @@ type AllocateChunkCommand struct {
 type ReplicaScheduler interface {
 	Schedule(context.Context, t.ChunkID)
 }
+
+type MasterDiscovery interface {
+	GetActiveMaster(context.Context) (t.MasterRef, error)
+}

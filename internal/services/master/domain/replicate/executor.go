@@ -30,7 +30,7 @@ type ExecutorDeps struct {
 	ChunkRepository m.ChunkRepo
 	ObjectReader    object.ObjectReader
 	Placement       m.StorageNodePlacement
-	ChunkT          *chunkrpc.Transport
+	ChunkTransport  *chunkrpc.Transport
 	Config          ExecutorConfig
 	Metrics         *ExecutorMetrics
 }
@@ -58,7 +58,7 @@ func NewExecutorService(deps ExecutorDeps) (*ExecutorService, error) {
 	if deps.Placement == nil {
 		return nil, errors.New("missing placement service")
 	}
-	if deps.ChunkT == nil {
+	if deps.ChunkTransport == nil {
 		return nil, errors.New("missing chunk placement")
 	}
 	if deps.Config == nil {
@@ -75,7 +75,7 @@ func NewExecutorService(deps ExecutorDeps) (*ExecutorService, error) {
 		chunks:    deps.ChunkRepository,
 		objects:   deps.ObjectReader,
 		placement: deps.Placement,
-		chunkT:    deps.ChunkT,
+		chunkT:    deps.ChunkTransport,
 		metrics:   deps.Metrics,
 
 		config: deps.Config,

@@ -7,16 +7,19 @@ listen:
   port: 10000
 
 master:
-  advertise_addr: master-1:10000
+  self: master-0
+  peers:
+    - id: master-0
+      api_addr: master-0:10000
+      raft_addr: master-0:12000
 
 metrics:
   scrape_port: 9100
   scrape_path: /metrics
-  namespace: dos 
+  namespace: dos
 
 raft:
-  node_id: master-1
-  bind_addr: master-1
+  enable: true
   bootstrap: true
   apply_timeout: 1s
   snapshot_interval: 10m
@@ -25,11 +28,11 @@ raft:
 service:
   frame_size: 3MB
   replication_count: 1
-  chunk_allocation_margin_bytes: 512 
+  chunk_allocation_margin_bytes: 512
   node_inactivity_timeout: 30s
   node_cleanup_interval: 15s
   replication_queue_length: 100
   catalog_cleanup_interval: 15s
-  replication_exec_interval: 3s
+  replication_interval: 3s
   chunk_stale_after: 15s
   replication_planner_interval: 15s
