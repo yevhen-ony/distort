@@ -35,7 +35,7 @@ type App struct {
 
 	discoveryService m.MasterState
 
-	placement     *storagenode.PlacementService
+	placement *storagenode.PlacementService
 
 	replicateExecutor *replicate.ExecutorService
 	replicatePlanner  *replicate.PlannerService
@@ -215,11 +215,13 @@ func (app *App) initReplication(config *Config) (err error) {
 		return fmt.Errorf("replicate executor service init: %w", err)
 	}
 
+	plannerMetrics := replicate.NewPlannerMetrics(app.metricsService.Provider())
 	app.replicatePlanner, err = replicate.NewPlannerService(replicate.PlannerDeps{
 		ObjectReader:    app.masterMode.ObjectAuthority(),
 		ChunkRepository: app.chunkRepository,
 		Replication:     app.replicateExecutor,
 		Config:          config,
+		Metrics:         plannerMetrics,
 	})
 	if err != nil {
 		return fmt.Errorf("replicate planner init: %w", err)

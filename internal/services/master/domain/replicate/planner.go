@@ -26,6 +26,7 @@ type PlannerDeps struct {
 	ChunkRepository m.ChunkRepo
 	Replication     ReplicationScheduler
 	Config          PlannerConfig
+	Metrics         *PlannerMetrics
 }
 
 type PlannerService struct {
@@ -33,7 +34,8 @@ type PlannerService struct {
 	chunks    m.ChunkRepo
 	replicate ReplicationScheduler
 
-	config PlannerConfig
+	config  PlannerConfig
+	metrics *PlannerMetrics
 
 	looper *loop.Looper
 }
@@ -52,19 +54,27 @@ func NewPlannerService(deps PlannerDeps) (*PlannerService, error) {
 	if deps.Config == nil {
 		return nil, errors.New("missing config")
 	}
-	looper := loop.NewLooper(deps.Config.ReplicationPlannerInterval())
+	if deps.Metrics == nil {
+		return nil, errors.New("missing metrics")
+	}
 
+	looper := loop.NewLooper(deps.Config.ReplicationPlannerInterval())
 	planner := &PlannerService{
 		objects:   deps.ObjectReader,
 		chunks:    deps.ChunkRepository,
 		replicate: deps.Replication,
 		config:    deps.Config,
+		metrics:   deps.Metrics,
+
 		looper:    looper,
 	}
 	return planner, nil
 }
 
 func (p *PlannerService) ScheduleStaleChunks(ctx context.Context) {
+
+	p.metrics.PlannerIterationsTotal.Inc()
+
 	now := time.Now()
 	p.chunks.ForEach(ctx, func(chunk m.Chunk) {
 		desired, err := p.objects.GetReplication(ctx, chunk.Slot.ObjectID)

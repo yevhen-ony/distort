@@ -235,6 +235,9 @@ func (r *ExecutorService) deleteReplica(ctx context.Context, meta t.ChunkMeta, c
 }
 
 func (r *ExecutorService) RunReplicationIteration(ctx context.Context) {
+
+	r.metrics.ReplicationIterationsTotal.Inc()
+
 	chunkIDs := r.queue.Drain()
 	if len(chunkIDs) == 0 {
 		return

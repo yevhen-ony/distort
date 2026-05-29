@@ -6,5 +6,9 @@ client:
 
 master:
   peers:
-    - id: master
-      api_addr: master:10000
+    - id: master0
+      api_addr: master0:10000
+    - id: master1
+      api_addr: master1:10000
+    - id: master2
+      api_addr: master2:10000

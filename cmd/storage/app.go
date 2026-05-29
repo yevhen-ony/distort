@@ -32,7 +32,7 @@ type App struct {
 	storageBE s.ChunkStorage
 
 	metricsS   *prom.Service
-	catalogS   *storage.ChunkCatalogService
+	inventoryS *storage.ChunkInventory
 	heartbeatS *storage.HeartbeatService
 	identityS  *identity.IdentityService
 	reportS    *report.ReportService
@@ -81,24 +81,13 @@ func NewApp(config *Config) (*App, error) {
 		return nil, fmt.Errorf("report service init: %w", err)
 	}
 
-	catalogS, err := storage.NewChunkCatalogService(storage.ChunkCatalogDeps{
+	inventoryS, err := storage.NewChunkInventory(storage.ChunkInventoryDeps{
 		Config:  config,
 		Metrics: storage.NewChunkCatalogMetrics(metricsS.Provider()),
 	})
 
-	heartbeatS, err := storage.NewHeartbeatService(storage.HeartbeatDeps{
-		Catalog:  catalogS,
-		Identity: identityS,
-		MasterT:  master.transport,
-		Config:   config,
-		Metrics:  storage.NewHeartbeatMetrics(metricsS.Provider()),
-	})
-	if err != nil {
-		return nil, fmt.Errorf("heartbeat service init: %w", err)
-	}
-
 	storageS, err := storage.NewStorageService(storage.StorageDeps{
-		Catalog:   catalogS,
+		Catalog:   inventoryS,
 		Identity:  identityS,
 		Reporter:  reportS,
 		StorageBE: storageBE,
@@ -109,6 +98,18 @@ func NewApp(config *Config) (*App, error) {
 	})
 	if err != nil {
 		return nil, fmt.Errorf("storage service init: %w", err)
+	}
+
+	heartbeatS, err := storage.NewHeartbeatService(storage.HeartbeatDeps{
+		Inventory: inventoryS,
+		Identity:  identityS,
+		Storage:   storageS,
+		MasterT:   master.transport,
+		Config:    config,
+		Metrics:   storage.NewHeartbeatMetrics(metricsS.Provider()),
+	})
+	if err != nil {
+		return nil, fmt.Errorf("heartbeat service init: %w", err)
 	}
 
 	apiServer, err := api.NewServer(api.ServerDeps{
@@ -136,7 +137,7 @@ func NewApp(config *Config) (*App, error) {
 		chunkT:    chunkT,
 
 		metricsS:   metricsS,
-		catalogS:   catalogS,
+		inventoryS: inventoryS,
 		identityS:  identityS,
 		reportS:    reportS,
 		heartbeatS: heartbeatS,

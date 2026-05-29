@@ -6,6 +6,7 @@ import (
 	"dos/internal/services/master/domain/object"
 	"errors"
 	"fmt"
+	"net"
 	"time"
 
 	"github.com/hashicorp/raft"
@@ -45,8 +46,10 @@ func NewObjectNode(deps ObjectNodeDeps) (*ObjectNode, error) {
 	stableStore := raft.NewInmemStore()
 	snapshotStore := raft.NewInmemSnapshotStore()
 
-	addr := raft.ServerAddress(self.Addr)
-	_, transport := raft.NewInmemTransport(addr)
+	transport, err := setupTCPTransport(self.Addr)
+	if err != nil {
+		return nil, fmt.Errorf("setup tcp transport: %w", err)
+	}
 
 	raftConfig := deps.Config.RaftConfig(self.ID)
 	r, err := raft.NewRaft(raftConfig, fsm, logStore, stableStore, snapshotStore, transport)
@@ -91,4 +94,29 @@ func bootstrapRaft(r *raft.Raft, resolver *resolve.ResolverWithRaft) error {
 	return r.BootstrapCluster(raft.Configuration{
 		Servers: servers,
 	}).Error()
+}
+
+func makeBindAddr(addr string) (string, error) {
+	_, port, err := net.SplitHostPort(addr)
+	if err != nil {
+		return "", err
+	}
+	return net.JoinHostPort("0.0.0.0", port), nil
+}
+
+func setupTCPTransport(addr string) (*raft.NetworkTransport, error) {
+	bindAddr, err := makeBindAddr(addr)
+	if err != nil {
+		return nil, fmt.Errorf("make bind addr: %w", err)
+	}
+
+	advertiseAddr, err := net.ResolveTCPAddr("tcp", addr)
+	if err != nil {
+		return nil, fmt.Errorf("make advertise addr: %w", err)
+	}
+	return raft.NewTCPTransport(
+		bindAddr,
+		advertiseAddr,
+		3, 10*time.Second, nil,
+	)
 }

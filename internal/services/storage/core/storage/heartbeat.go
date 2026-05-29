@@ -25,23 +25,30 @@ type IdentityProvider interface {
 	RequestNewID(context.Context) error
 }
 
+type CatalogRestager interface {
+	RestageCatalog(context.Context)
+}
+
 type MasterTransport interface {
 	Heartbeat(context.Context, t.NodeID, t.NodeStats) (s.HeartbeatResult, error)
 }
 
 type HeartbeatDeps struct {
-	Catalog  StatsProvider
-	Identity IdentityProvider
-	MasterT   MasterTransport
-	Config   HeartbeatConfig
-	Metrics  *HeartbeatMetrics
+	Inventory StatsProvider
+	Identity  IdentityProvider
+	Storage   CatalogRestager
+
+	MasterT MasterTransport
+	Config  HeartbeatConfig
+	Metrics *HeartbeatMetrics
 }
 
-
 type HeartbeatService struct {
-	catalog  StatsProvider
-	identity IdentityProvider
-	masterT   MasterTransport
+	inventory StatsProvider
+	identity  IdentityProvider
+	storage   CatalogRestager
+
+	masterT MasterTransport
 
 	config  HeartbeatConfig
 	metrics *HeartbeatMetrics
@@ -49,11 +56,14 @@ type HeartbeatService struct {
 }
 
 func NewHeartbeatService(deps HeartbeatDeps) (*HeartbeatService, error) {
-	if deps.Catalog == nil {
-		return nil, errors.New("missing catalog service")
+	if deps.Inventory == nil {
+		return nil, errors.New("missing inventory service")
 	}
 	if deps.Identity == nil {
 		return nil, errors.New("missing identity service")
+	}
+	if deps.Storage == nil {
+		return nil, errors.New("missing restager")
 	}
 	if deps.MasterT == nil {
 		return nil, errors.New("missing master transport")
@@ -65,12 +75,13 @@ func NewHeartbeatService(deps HeartbeatDeps) (*HeartbeatService, error) {
 		return nil, errors.New("missing heartbeat metrics")
 	}
 	service := &HeartbeatService{
-		catalog: deps.Catalog,
-		identity: deps.Identity,
-		masterT: deps.MasterT,
-		config: deps.Config,
-		metrics: deps.Metrics,
-		looper: loop.NewLooper(deps.Config.HeartbeatInterval()),
+		inventory: deps.Inventory,
+		identity:  deps.Identity,
+		storage:   deps.Storage,
+		masterT:   deps.MasterT,
+		config:    deps.Config,
+		metrics:   deps.Metrics,
+		looper:    loop.NewLooper(deps.Config.HeartbeatInterval()),
 	}
 	return service, nil
 }
@@ -83,7 +94,7 @@ func (s *HeartbeatService) doIteration(ctx context.Context) {
 		return
 	}
 
-	stats := s.catalog.GetStats()
+	stats := s.inventory.GetStats()
 
 	res, err := s.masterT.Heartbeat(ctx, nodeID, stats)
 	if err != nil {
@@ -95,7 +106,9 @@ func (s *HeartbeatService) doIteration(ctx context.Context) {
 		slog.WarnContext(ctx, "node id is unknown", "node_id", nodeID)
 		if err := s.identity.RequestNewID(ctx); err != nil {
 			slog.WarnContext(ctx, "request new node id failed", "error", err)
+			return
 		}
+		s.storage.RestageCatalog(ctx)
 	}
 }
 

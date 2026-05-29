@@ -7,19 +7,30 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       
-  master:
+  master0:
     profiles: [main]
     image: dos-master:latest
-    ports:
-      - "10000:10000"
     environment:
       - SERVICE__REPLICATION_COUNT=1
+      - MASTER__SELF=master0
+  
+  master1:
+    profiles: [main]
+    image: dos-master:latest
+    environment:
+      - SERVICE__REPLICATION_COUNT=1
+      - MASTER__SELF=master1
+  
+  master2:
+    profiles: [main]
+    image: dos-master:latest
+    environment:
+      - SERVICE__REPLICATION_COUNT=1
+      - MASTER__SELF=master2
 
   storage1:
     profiles: [main]
     image: dos-storage:latest
-    depends_on:
-      - master
     environment:
       - TRANSPORT__MASTER_ADDR=master:10000
       - TRANSPORT__ADVERTISE_ADDR=storage1:10001
@@ -28,8 +39,6 @@ services:
   storage2:
     profiles: [main]
     image: dos-storage:latest
-    depends_on:
-      - master
     ports:
       - "9101:9100"
     environment:
@@ -40,8 +49,6 @@ services:
   storage3:
     profiles: [main]
     image: dos-storage:latest
-    depends_on:
-      - master
     environment:
       - TRANSPORT__MASTER_ADDR=master:10000
       - TRANSPORT__ADVERTISE_ADDR=storage3:10001

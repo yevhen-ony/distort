@@ -29,7 +29,7 @@ type Reporter interface {
 }
 
 type StorageDeps struct {
-	Catalog   *ChunkCatalogService
+	Catalog   *ChunkInventory
 	Identity  *identity.IdentityService
 	Reporter  Reporter
 	StorageBE s.ChunkStorage
@@ -40,7 +40,7 @@ type StorageDeps struct {
 }
 
 type StorageService struct {
-	catalog  *ChunkCatalogService
+	inventory  *ChunkInventory
 	identity *identity.IdentityService
 	reporter Reporter
 
@@ -78,7 +78,7 @@ func NewStorageService(deps StorageDeps) (*StorageService, error) {
 	}
 
 	service := &StorageService{
-		catalog:  deps.Catalog,
+		inventory:  deps.Catalog,
 		reporter: deps.Reporter,
 		identity: deps.Identity,
 
@@ -95,15 +95,17 @@ func NewStorageService(deps StorageDeps) (*StorageService, error) {
 
 func (cs *StorageService) Start(ctx context.Context) error {
 
-	metas, err := cs.catalog.BuildCatalog(ctx, cs.storageBE)
-	if err != nil {
+	if err := cs.inventory.BuildCatalog(ctx, cs.storageBE); err != nil {
 		return fmt.Errorf("build catalog: %w", err)
 	}
+
+	metas := cs.inventory.ListStaged()
 	for _, meta := range metas {
 		cs.reporter.Report(ctx, t.NewReplicaStaged(meta).ToRecord())
 	}
+
 	cs.reporter.Flush(ctx)
-	slog.Debug("catalog built", "chunks", len(metas))
+	slog.DebugContext(ctx, "catalog built", "chunks", len(metas))
 	return nil
 }
 
@@ -132,7 +134,7 @@ func (cs *StorageService) AcquireOpSlot(ctx context.Context) (func(), error) {
 }
 
 func (cs *StorageService) StartUpload(ctx context.Context, meta *t.ChunkMeta) (*UploadSession, error) {
-	if cs.catalog.Has(meta.ID) {
+	if cs.inventory.Has(meta.ID) {
 		return nil, s.ErrChunkConflict
 	}
 
@@ -179,7 +181,7 @@ func (cs *StorageService) commitUpload(
 		return fmt.Errorf("store chunk: %w", err)
 	}
 
-	if err := cs.catalog.Add(meta); err != nil {
+	if err := cs.inventory.Add(meta); err != nil {
 		if err := cs.storageBE.Delete(meta.ID); err != nil {
 			slog.ErrorContext(ctx, "rollback failed", "error", err)
 		}
@@ -192,7 +194,7 @@ func (cs *StorageService) commitUpload(
 
 func (cs *StorageService) LoadChunk(chunkID t.ChunkID) (t.Chunk, error) {
 
-	meta, err := cs.catalog.Get(chunkID)
+	meta, err := cs.inventory.Get(chunkID)
 	if err != nil {
 		return t.Chunk{}, err
 	}
@@ -266,7 +268,7 @@ func (cs *StorageService) ScheduleForwardChunk(
 	ctx context.Context, chunkID t.ChunkID, targets []t.NodeRef,
 ) error {
 
-	if !cs.catalog.Has(chunkID) {
+	if !cs.inventory.Has(chunkID) {
 		return s.ErrChunkNotFound
 	}
 
@@ -334,7 +336,7 @@ func (cs *StorageService) DeleteChunk(ctx context.Context, chunkID t.ChunkID) er
 	ctx = dosctx.WithChunkID(ctx, chunkID)
 	ctx = dosctx.WithOperation(ctx, "delete")
 
-	if !cs.catalog.Has(chunkID) {
+	if !cs.inventory.Has(chunkID) {
 		slog.WarnContext(ctx, "delete non-existing chunk")
 		return nil
 	}
@@ -343,8 +345,17 @@ func (cs *StorageService) DeleteChunk(ctx context.Context, chunkID t.ChunkID) er
 		return fmt.Errorf("delete data from disk: %w", err)
 	}
 
-	if cs.catalog.Remove(chunkID) {
+	if cs.inventory.Remove(chunkID) {
 		cs.reporter.Report(ctx, t.NewReplicaDeleted(chunkID).ToRecord())
 	}
 	return nil
+}
+
+func (cs *StorageService) RestageCatalog(ctx context.Context) {
+	slog.InfoContext(ctx, "restage catalog")
+	cs.inventory.RestageActive()
+	for _, meta := range cs.inventory.ListStaged() {
+		cs.reporter.Report(ctx, t.NewReplicaStaged(meta).ToRecord())
+	}
+	cs.reporter.Flush(ctx)
 }

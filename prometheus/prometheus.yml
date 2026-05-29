@@ -4,7 +4,9 @@ scrape_configs:
     scrape_interval: 2s
     static_configs:
       - targets:
-        - "master:9100"
+        - "master0:9100"
+        - "master1:9100"
+        - "master2:9100"
         - "storage1:9100"
         - "storage2:9100"
         - "storage3:9100"
