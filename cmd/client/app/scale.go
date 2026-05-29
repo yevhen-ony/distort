@@ -7,7 +7,7 @@ import (
 )
 
 func (app *App) ScaleObjects(ctx context.Context, objectID string, count int) error {
-	err := app.MasterT.SetReplication(ctx, t.ObjectID(objectID), count)
+	err := app.MasterT().SetReplication(ctx, t.ObjectID(objectID), count)
 	if err != nil {
 		return err
 	}

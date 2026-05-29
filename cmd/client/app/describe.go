@@ -10,7 +10,7 @@ import (
 )
 
 func (app *App) DescribeChunk(ctx context.Context, chunkID string) error {
-	desc, err := app.MasterT.DescribeChunk(ctx, t.ChunkID(chunkID))
+	desc, err := app.MasterT().DescribeChunk(ctx, t.ChunkID(chunkID))
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func RenderSources(out io.Writer, sources []t.NodeRef) {
 
 func (app *App) DescribeObject(ctx context.Context, objectID string) error {
 
-	desc, err := app.MasterT.DescribeObject(ctx, t.ObjectID(objectID))
+	desc, err := app.MasterT().DescribeObject(ctx, t.ObjectID(objectID))
 	if err != nil {
 		return err
 	}

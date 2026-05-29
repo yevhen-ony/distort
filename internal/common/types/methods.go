@@ -66,3 +66,13 @@ func NewReplicaDeleted(chunkID ChunkID) *ReplicaDeletedReport {
 func (rd *ReplicaDeletedReport) ToRecord() StorageNodeReport {
 	return StorageNodeReport{ReplicaDeleted: rd}
 }
+ 
+func (r MasterRef) Validate() error {
+  	if r.ID == "" {
+		return fmt.Errorf("missing id: %w", ErrInvalidMasterRef) 
+  	}
+  	if r.Addr == "" {
+		return fmt.Errorf("missing addr: %w", ErrInvalidMasterRef)
+  	}
+  	return nil
+}

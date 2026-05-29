@@ -20,7 +20,7 @@ func (app *App) Upload(ctx context.Context, objectID string, path string) error 
 
 	uploader, err := delivery.NewObjectDelivery(delivery.ObjectDeliveryDeps{
 		ObjectID: t.ObjectID(objectID),
-		MasterT: app.MasterT,
+		MasterT: app.MasterT(),
 		ChunkT: app.ChunkT,
 		Config: app.Config,
 	})

@@ -7,7 +7,7 @@ import (
 )
 
 func (app *App) ListObjects(ctx context.Context) error {
-	infos, err := app.MasterT.ListObjects(ctx)
+	infos, err := app.MasterT().ListObjects(ctx)
 	if err != nil {
 		return err
 	}
@@ -23,7 +23,7 @@ func (app *App) ListObjects(ctx context.Context) error {
 }
 
 func (app *App) ListChunks(ctx context.Context) error {
-	infos, err := app.MasterT.ListChunks(ctx)
+	infos, err := app.MasterT().ListChunks(ctx)
 	if err != nil {
 		return err
 	}
@@ -48,7 +48,7 @@ func (app *App) ListChunks(ctx context.Context) error {
 }
 
 func (app *App) ListNodes(ctx context.Context) error {
-	infos, err := app.MasterT.ListNodes(ctx)
+	infos, err := app.MasterT().ListNodes(ctx)
 	if err != nil {
 		return err
 	}

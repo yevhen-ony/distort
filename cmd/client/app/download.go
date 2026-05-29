@@ -22,7 +22,7 @@ func (app *App) Download(ctx context.Context, objectID string, destPath string) 
 	
 	downloader, err := delivery.NewObjectDelivery(delivery.ObjectDeliveryDeps{
 		ObjectID: t.ObjectID(objectID),
-		MasterT: app.MasterT,
+		MasterT: app.MasterT(),
 		ChunkT: app.ChunkT,
 		Config: app.Config,
 	})

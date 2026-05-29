@@ -6,52 +6,55 @@ import (
 	"fmt"
 
 	pb "dos/gen/proto/master/v1"
-	"dos/internal/common/connect"
 	"dos/internal/common/convert"
+	"dos/internal/common/transport/masterrouter"
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
 )
 
-type MasterTransportConfig interface {
-	MasterAddr() string
-}
-
 type MasterTransport struct {
-	client pb.MasterClientServiceClient
-	admin  pb.AdminServiceClient
-
-	config MasterTransportConfig
+	mrouter *masterrouter.MasterRouter
 }
 
-func NewMasterTransport(conn *connect.ConnCache, config MasterTransportConfig) (*MasterTransport, error) {
-	if conn == nil {
-		return nil, errors.New("missing conn")
-	}
-	if config == nil {
-		return nil, errors.New("missing config")
-	}
 
-	c, err := conn.Get(config.MasterAddr())
-	if err != nil {
-		return nil, fmt.Errorf("get conn: %w", err)
+func NewMasterTransport(mrouter *masterrouter.MasterRouter) (*MasterTransport, error) {
+	if mrouter == nil {
+		return nil, errors.New("missing master router")
 	}
-	client := pb.NewMasterClientServiceClient(c)
-	admin := pb.NewAdminServiceClient(c)
 
 	mt := &MasterTransport{
-		client: client,
-		admin:  admin,
-		config: config,
+		mrouter: mrouter,
 	}
 	return mt, nil
 }
+
+func (mt *MasterTransport) client(ctx context.Context) (pb.MasterClientServiceClient, error) {
+	conn, err := mt.mrouter.Conn(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get master conn: %w", err)
+	}
+	return pb.NewMasterClientServiceClient(conn), nil
+}
+
+func (mt *MasterTransport) admin(ctx context.Context) (pb.AdminServiceClient, error) {
+	conn, err := mt.mrouter.Conn(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get master conn: %w", err)
+	}
+	return pb.NewAdminServiceClient(conn), nil
+}
+
 
 func (mt *MasterTransport) CreateObject(ctx context.Context, oid t.ObjectID) error {
 
 	req := &pb.CreateObjectRequest{ObjectId: string(oid)}
 
-	_, err := mt.client.CreateObject(ctx, req)
+	client, err := mt.client(ctx)
 	if err != nil {
+		return err
+	}
+
+	if _, err = client.CreateObject(ctx, req); err != nil {
 		return fmt.Errorf("transport: %w", err)
 	}
 
@@ -72,7 +75,13 @@ func (mt *MasterTransport) AllocateChunk(
 		ObjectSlot: convert.ObjectSlotToPB(query.Slot),
 		ChunkSize:  query.ChunkSize,
 	}
-	rsp, err := mt.client.AllocateChunk(ctx, req)
+
+	client, err := mt.client(ctx)
+	if err != nil {
+		return nil, err 
+	}
+
+	rsp, err := client.AllocateChunk(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("transport: %w", err)
 	}
@@ -91,7 +100,12 @@ func (mt *MasterTransport) SetReplication(ctx context.Context, objectID t.Object
 		Count:    int64(count),
 	}
 
-	_, err := mt.client.SetReplication(ctx, req)
+	client, err := mt.client(ctx)
+	if err != nil {
+		return err
+	}
+
+	_, err = client.SetReplication(ctx, req)
 	if err != nil {
 		return fmt.Errorf("transport: %w", err)
 	}
@@ -107,7 +121,12 @@ func (mt *MasterTransport) DescribeChunk(
 		ChunkId: string(chunkID),
 	}
 
-	rsp, err := mt.client.DescribeChunk(ctx, req)
+	client, err := mt.client(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rsp, err := client.DescribeChunk(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("transport: %w", err)
 	}
@@ -125,7 +144,12 @@ func (mt *MasterTransport) DescribeObject(
 		ObjectId: string(objectID),
 	}
 
-	rsp, err := mt.client.DescribeObject(ctx, req)
+	client, err := mt.client(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rsp, err := client.DescribeObject(ctx, req)
 	if err != nil {
 		return nil, fmt.Errorf("transport: %w", err)
 	}
@@ -135,8 +159,13 @@ func (mt *MasterTransport) DescribeObject(
 }
 
 func (mt *MasterTransport) ListObjects(ctx context.Context) ([]t.ObjectInfo, error) {
-
-	rsp, err := mt.admin.ListObjects(ctx, &pb.ListObjectsRequest{})
+	
+	admin, err := mt.admin(ctx)
+	if err != nil {
+		return nil, err
+	}
+	
+	rsp, err := admin.ListObjects(ctx, &pb.ListObjectsRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("transport: %w", err)
 	}
@@ -146,7 +175,12 @@ func (mt *MasterTransport) ListObjects(ctx context.Context) ([]t.ObjectInfo, err
 
 func (mt *MasterTransport) ListChunks(ctx context.Context) ([]t.ChunkInfo, error) {
 
-	rsp, err := mt.admin.ListChunks(ctx, &pb.ListChunksRequest{})
+	admin, err := mt.admin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rsp, err := admin.ListChunks(ctx, &pb.ListChunksRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("transport: %w", err)
 	}
@@ -156,7 +190,12 @@ func (mt *MasterTransport) ListChunks(ctx context.Context) ([]t.ChunkInfo, error
 
 func (mt *MasterTransport) ListNodes(ctx context.Context) ([]t.NodeInfo, error) {
 
-	rsp, err := mt.admin.ListNodes(ctx, &pb.ListNodesRequest{})
+	admin, err := mt.admin(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	rsp, err := admin.ListNodes(ctx, &pb.ListNodesRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("transport: %w", err)
 	}

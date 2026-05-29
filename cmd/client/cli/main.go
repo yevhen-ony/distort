@@ -43,17 +43,6 @@ func run() error {
 
 
 func ApplyFlags(config *app.Config, cmd *cobra.Command) error {
-	if cmd == nil {
-		return nil
-	}
-
-	if flag := cmd.Flag(masterAddrKey); flag != nil && flag.Changed {
-		v, err := cmd.Flags().GetString(masterAddrKey)
-		if err != nil {
-			return err
-		}
-		config.Client.MasterAddr = v
-	}
 	return nil
 }
 

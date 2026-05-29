@@ -4,14 +4,14 @@ import (
 	"dos/internal/common/config"
 	"dos/internal/common/listener"
 	"dos/internal/common/logger"
-	mrslv "dos/internal/common/master/resolve"
+	mresolve "dos/internal/common/master/resolve"
 	"dos/internal/common/metrics/prom"
 	"dos/internal/services/master/raftnode"
 	"time"
 )
 
 type Config struct {
-	Master  mrslv.Config    `yaml:"master"`
+	Master  mresolve.Config `yaml:"master"`
 	Logger  logger.Config   `yaml:"logger"`
 	Listen  listener.Config `yaml:"listen"`
 	Metrics prom.Config     `yaml:"metrics"`
