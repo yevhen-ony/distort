@@ -6,10 +6,9 @@ import (
 
 	"dos/internal/common/connect"
 	"dos/internal/common/master/resolve"
-	mresolve "dos/internal/common/master/resolve"
+	"dos/internal/common/master/route"
 	"dos/internal/common/transport/chunkrpc"
 	"dos/internal/common/transport/healthrpc"
-	"dos/internal/common/transport/masterrouter"
 	"dos/internal/services/client/transport"
 )
 
@@ -72,17 +71,17 @@ func (app *App) MasterT() *transport.MasterTransport {
 
 type MasterHolder struct {
 	resolver  *resolve.Resolver
-	router    *masterrouter.MasterRouter
+	router    *route.MasterRouter
 	transport *transport.MasterTransport
 }
 
 func initMasterTransport(config *Config) (*MasterHolder, error) {
-	mresolver, err := mresolve.New(&config.Master)
+	mresolver, err := resolve.New(&config.Master)
 	if err != nil {
 		return nil, fmt.Errorf("master resolver init: %w", err)
 
 	}
-	mrouter, err := masterrouter.New(mresolver)
+	mrouter, err := route.New(mresolver)
 	if err != nil {
 		return nil, fmt.Errorf("master router init: %w", err)
 	}

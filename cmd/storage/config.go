@@ -6,6 +6,7 @@ import (
 	"dos/internal/common/config"
 	"dos/internal/common/listener"
 	"dos/internal/common/logger"
+	"dos/internal/common/master/resolve"
 	"dos/internal/common/metrics/prom"
 )
 
@@ -16,6 +17,7 @@ type Config struct {
 	Store     StoreConfig     `yaml:"store"`
 	Transport TransportConfig `yaml:"transport"`
 	Service   ServiceConfig   `yaml:"service"`
+	Master    resolve.Config  `yaml:"master"`
 }
 
 type StoreConfig struct {

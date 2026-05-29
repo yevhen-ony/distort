@@ -2,11 +2,12 @@ package transport
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	mpb "dos/gen/proto/master/v1"
-	"dos/internal/common/connect"
 	"dos/internal/common/convert"
+	"dos/internal/common/master/route"
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
 	s "dos/internal/services/storage"
@@ -15,33 +16,40 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type MasterConfig interface {
-	MasterAddr() string
-}
-
 type Master struct {
-	client mpb.MasterStorageServiceClient
-	config MasterConfig
+	router *route.MasterRouter
 }
 
-func NewMaster(conn *connect.ConnCache, cfg MasterConfig) (*Master, error) {
 
-	c, err := conn.Get(cfg.MasterAddr())	
-	if err != nil {
-		return nil, fmt.Errorf("get conn %s: %w", cfg.MasterAddr(), err)
+func NewMaster(router *route.MasterRouter) (*Master, error) {
+	if router == nil {
+		return nil, errors.New("missing master router")
 	}
 	mt := &Master{
-		client: mpb.NewMasterStorageServiceClient(c),
-		config: cfg,
+		router: router,
 	}
 	return mt, nil 
 }
 
+func (mt *Master) client(ctx context.Context) (mpb.MasterStorageServiceClient, error) {
+
+	conn, err := mt.router.Conn(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("get master conn: %w", err)
+	}
+
+	return mpb.NewMasterStorageServiceClient(conn), nil
+}
 
 func (mt *Master) RegisterNode(ctx context.Context, addr string) (t.NodeID, error) {
 
+	client, err := mt.client(ctx)
+	if err != nil {
+		return "", err
+	}
+
 	req := &mpb.RegisterStorageNodeRequest{ Addr: addr }
-	rsp, err := mt.client.RegisterStorageNode(ctx, req)
+	rsp, err := client.RegisterStorageNode(ctx, req)
 	if err != nil {
 		return "", fmt.Errorf("register node %s: %w", addr, err)
 	}
@@ -55,12 +63,17 @@ func (mt *Master) Heartbeat(
 	ctx context.Context, nodeID t.NodeID, stats t.NodeStats,
 ) (s.HeartbeatResult, error) {
 
+	client, err := mt.client(ctx)
+	if err != nil {
+		return s.HeartbeatResult{}, err
+	}
+
 	req := &mpb.HeartbeatRequest{
 		NodeId: string(nodeID),
 		Stats: convert.NodeStatsToPB(stats),
 	}
 
-	_, err := mt.client.Heartbeat(ctx, req)
+	_, err = client.Heartbeat(ctx, req)
 	if status.Code(err) == codes.NotFound {
 		return s.HeartbeatResult{NodeUnknown: true}, nil
 	}
@@ -76,11 +89,16 @@ func (mt *Master) ReportChunks(
 	ctx context.Context, nodeID t.NodeID, reports []t.StorageNodeReport,
 ) (t.ReportResult, error) {
 
+	client, err := mt.client(ctx)
+	if err != nil {
+		return t.ReportResult{}, err 
+	}
+
 	req := &mpb.ReportStorageRequest{
 		NodeId: string(nodeID),
 		Reports: utils.Map(reports, convert.ReplicaReportToPB),
 	}
-	rsp, err := mt.client.ReportStorage(ctx, req)
+	rsp, err := client.ReportStorage(ctx, req)
 	if err != nil {
 		return t.ReportResult{}, fmt.Errorf("report storage: %w", err) 
 	}

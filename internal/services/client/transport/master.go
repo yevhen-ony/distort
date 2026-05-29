@@ -7,17 +7,17 @@ import (
 
 	pb "dos/gen/proto/master/v1"
 	"dos/internal/common/convert"
-	"dos/internal/common/transport/masterrouter"
+	"dos/internal/common/master/route"
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
 )
 
 type MasterTransport struct {
-	mrouter *masterrouter.MasterRouter
+	mrouter *route.MasterRouter
 }
 
 
-func NewMasterTransport(mrouter *masterrouter.MasterRouter) (*MasterTransport, error) {
+func NewMasterTransport(mrouter *route.MasterRouter) (*MasterTransport, error) {
 	if mrouter == nil {
 		return nil, errors.New("missing master router")
 	}

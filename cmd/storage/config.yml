@@ -10,9 +10,13 @@ store:
   max_storage: 10GB
   root_dir: ./storage_data
 
+master:
+  peers:
+    - id: master
+      api_addr: master:10000
+
 transport:
   advertise_addr: localhost:10001
-  master_addr: localhost:10000
   frame_size: 1MB
 
 metrics:

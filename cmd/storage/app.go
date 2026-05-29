@@ -8,6 +8,8 @@ import (
 	spb "dos/gen/proto/storage/v1"
 	"dos/internal/common/connect"
 	"dos/internal/common/listener"
+	"dos/internal/common/master/resolve"
+	"dos/internal/common/master/route"
 	"dos/internal/common/metrics/prom"
 	"dos/internal/common/transport/chunkrpc"
 	s "dos/internal/services/storage"
@@ -26,7 +28,7 @@ type App struct {
 	conn   *connect.ConnCache
 
 	chunkT    *chunkrpc.Transport
-	masterT   *transport.Master
+	master    *MasterHolder
 	storageBE s.ChunkStorage
 
 	metricsS   *prom.Service
@@ -49,9 +51,9 @@ func NewApp(config *Config) (*App, error) {
 		return nil, fmt.Errorf("chunk transport init: %w", err)
 	}
 
-	masterT, err := transport.NewMaster(conn, config)
+	master, err := initMasterTransport(config)
 	if err != nil {
-		return nil, fmt.Errorf("master transport init: %w", err)
+		return nil, err
 	}
 
 	storageBE, err := store.NewChunkStorage(config)
@@ -62,7 +64,7 @@ func NewApp(config *Config) (*App, error) {
 	metricsS := prom.NewService(config.Metrics)
 
 	identityS, err := identity.NewIdentityService(identity.IdentityDeps{
-		MasterT: masterT,
+		MasterT: master.transport,
 		Config:  config,
 	})
 	if err != nil {
@@ -71,7 +73,7 @@ func NewApp(config *Config) (*App, error) {
 
 	reportS, err := report.NewReportService(report.ReportDeps{
 		Identity: identityS,
-		MasterT:  masterT,
+		MasterT:  master.transport,
 		Config:   config,
 		Metrics:  report.NewReportMetrics(metricsS.Provider()),
 	})
@@ -87,7 +89,7 @@ func NewApp(config *Config) (*App, error) {
 	heartbeatS, err := storage.NewHeartbeatService(storage.HeartbeatDeps{
 		Catalog:  catalogS,
 		Identity: identityS,
-		MasterT:  masterT,
+		MasterT:  master.transport,
 		Config:   config,
 		Metrics:  storage.NewHeartbeatMetrics(metricsS.Provider()),
 	})
@@ -100,7 +102,7 @@ func NewApp(config *Config) (*App, error) {
 		Identity:  identityS,
 		Reporter:  reportS,
 		StorageBE: storageBE,
-		MasterT:   masterT,
+		MasterT:   master.transport,
 		ChunkT:    chunkT,
 		Config:    config,
 		Metrics:   storage.NewStorageMetrics(metricsS.Provider()),
@@ -130,7 +132,7 @@ func NewApp(config *Config) (*App, error) {
 		conn:   conn,
 
 		storageBE: storageBE,
-		masterT:   masterT,
+		master:    master,
 		chunkT:    chunkT,
 
 		metricsS:   metricsS,
@@ -177,4 +179,34 @@ func (app *App) Close() error {
 		return nil
 	}
 	return app.conn.Close()
+}
+
+type MasterHolder struct {
+	resolver  *resolve.Resolver
+	router    *route.MasterRouter
+	transport *transport.Master
+}
+
+func initMasterTransport(config *Config) (*MasterHolder, error) {
+	mresolver, err := resolve.New(&config.Master)
+	if err != nil {
+		return nil, fmt.Errorf("master resolver init: %w", err)
+
+	}
+	mrouter, err := route.New(mresolver)
+	if err != nil {
+		return nil, fmt.Errorf("master router init: %w", err)
+	}
+
+	mtransport, err := transport.NewMaster(mrouter)
+	if err != nil {
+		return nil, fmt.Errorf("master transport init: %w", err)
+	}
+
+	holder := &MasterHolder{
+		resolver:  mresolver,
+		router:    mrouter,
+		transport: mtransport,
+	}
+	return holder, nil
 }
