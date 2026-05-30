@@ -121,10 +121,10 @@ func (app *App) Run(ctx context.Context) error {
 	defer cancel()
 
 	go app.masterMode.MasterState().WatchState(ctx, func(ctx context.Context) {
-		go app.replicatePlanner.RunLoop(ctx)
-		go app.replicateExecutor.RunLoop(ctx)
-		go app.nodeCleanup.RunLoop(ctx)
-		go app.catalogCleanup.RunLoop(ctx)
+		app.catalogCleanup.RunLoop(ctx)
+		app.replicatePlanner.RunLoop(ctx)
+		app.replicateExecutor.RunLoop(ctx)
+		app.nodeCleanup.RunLoop(ctx)
 	})
 
 	go app.metricsService.Serve(ctx)

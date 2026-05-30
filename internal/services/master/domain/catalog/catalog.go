@@ -113,20 +113,6 @@ func (s *CatalogService) AddChunk(
 	return chunkID, nil
 }
 
-func (s *CatalogService) ReconcileChunks(ctx context.Context) {
-	for _, object := range s.objects.List() {
-		for chunkKey, chunkID := range object.Chunks {
-			slot := t.ObjectSlot{ 
-				ChunkKey: chunkKey,
-				ObjectID: object.ID,
-			}
-			_ = s.chunks.Create(ctx, chunkID, slot)
-
-		}
-
-	}
-}
-
 func (s *CatalogService) GetObjectChunks(ctx context.Context, objectID t.ObjectID) ([]t.ChunkID, error) {
 
 	object, err := s.objects.Get(ctx, objectID)

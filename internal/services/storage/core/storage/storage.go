@@ -18,7 +18,6 @@ import (
 
 type StorageConfig interface {
 	AdvertiseAddr() string
-	ReportInterval() time.Duration
 	ReplicationTimeout() time.Duration
 	MaxParallelHeavyOps() int
 }
@@ -28,10 +27,14 @@ type Reporter interface {
 	Flush(context.Context)
 }
 
+type NopReporter struct{}
+
+func (*NopReporter) Report(context.Context, t.StorageNodeReport) {}
+func (*NopReporter) Flush(context.Context)                       {}
+
 type StorageDeps struct {
-	Catalog   *ChunkInventory
+	Inventory   *ChunkInventory
 	Identity  *identity.IdentityService
-	Reporter  Reporter
 	StorageBE s.ChunkStorage
 	MasterT   s.MasterTransport
 	ChunkT    *chunkrpc.Transport
@@ -40,30 +43,27 @@ type StorageDeps struct {
 }
 
 type StorageService struct {
-	inventory  *ChunkInventory
-	identity *identity.IdentityService
-	reporter Reporter
+	inventory *ChunkInventory
+	identity  *identity.IdentityService
 
 	storageBE s.ChunkStorage
 	masterT   s.MasterTransport
 	chunkT    *chunkrpc.Transport
 	config    StorageConfig
 
+	reporter Reporter
+
 	sem     chan struct{}
 	metrics *StorageMetrics
 }
 
 func NewStorageService(deps StorageDeps) (*StorageService, error) {
-	if deps.Catalog == nil {
+	if deps.Inventory == nil {
 		return nil, errors.New("missing catalog service")
 	}
 	if deps.Identity == nil {
 		return nil, errors.New("missing identity service")
 	}
-	if deps.Reporter == nil {
-		return nil, errors.New("missing reporter")
-	}
-
 	if deps.StorageBE == nil {
 		return nil, errors.New("missing store")
 	}
@@ -78,9 +78,9 @@ func NewStorageService(deps StorageDeps) (*StorageService, error) {
 	}
 
 	service := &StorageService{
-		inventory:  deps.Catalog,
-		reporter: deps.Reporter,
-		identity: deps.Identity,
+		inventory: deps.Inventory,
+		identity:  deps.Identity,
+		reporter:  &NopReporter{},
 
 		storageBE: deps.StorageBE,
 		masterT:   deps.MasterT,
@@ -91,6 +91,10 @@ func NewStorageService(deps StorageDeps) (*StorageService, error) {
 		sem: make(chan struct{}, deps.Config.MaxParallelHeavyOps()),
 	}
 	return service, nil
+}
+
+func (cs *StorageService) SetReporter(reporter Reporter) {
+	cs.reporter = reporter
 }
 
 func (cs *StorageService) Start(ctx context.Context) error {
@@ -194,7 +198,7 @@ func (cs *StorageService) commitUpload(
 
 func (cs *StorageService) LoadChunk(chunkID t.ChunkID) (t.Chunk, error) {
 
-	meta, err := cs.inventory.Get(chunkID)
+	rec, err := cs.inventory.GetRecord(chunkID)
 	if err != nil {
 		return t.Chunk{}, err
 	}
@@ -209,7 +213,7 @@ func (cs *StorageService) LoadChunk(chunkID t.ChunkID) (t.Chunk, error) {
 		return t.Chunk{}, fmt.Errorf("read chunk: %w", err)
 	}
 	chunk := t.Chunk{
-		Meta: meta,
+		Meta: rec.Meta,
 		Data: data,
 	}
 	return chunk, nil
@@ -358,4 +362,18 @@ func (cs *StorageService) RestageCatalog(ctx context.Context) {
 		cs.reporter.Report(ctx, t.NewReplicaStaged(meta).ToRecord())
 	}
 	cs.reporter.Flush(ctx)
+}
+
+func (cs *StorageService) ProcessReport(ctx context.Context, r t.ReportResult) {
+
+	for _, chunkID := range r.Accepted {
+		_ = cs.inventory.SetActive(chunkID)
+	}
+
+	for _, chunkID := range r.Rejected {
+		rec, err := cs.inventory.GetRecord(chunkID)
+		if err == nil && rec.State == ChunkStateStaged {
+			cs.reporter.Report(ctx, t.NewReplicaStaged(rec.Meta).ToRecord())
+		}
+	}
 }

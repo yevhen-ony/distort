@@ -99,7 +99,7 @@ func (p *PlannerService) ScheduleStaleChunks(ctx context.Context) {
 
 func (p *PlannerService) RunLoop(ctx context.Context) {
 	ctx = dosctx.WithService(ctx, "replication_planner")
-	p.looper.Run(ctx, p.ScheduleStaleChunks)
+	go p.looper.Run(ctx, p.ScheduleStaleChunks)
 }
 
 func (p *PlannerService) Flush() {

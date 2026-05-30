@@ -87,9 +87,8 @@ func NewApp(config *Config) (*App, error) {
 	})
 
 	storageS, err := storage.NewStorageService(storage.StorageDeps{
-		Catalog:   inventoryS,
+		Inventory: inventoryS,
 		Identity:  identityS,
-		Reporter:  reportS,
 		StorageBE: storageBE,
 		MasterT:   master.transport,
 		ChunkT:    chunkT,
@@ -127,6 +126,9 @@ func NewApp(config *Config) (*App, error) {
 	if err != nil {
 		return nil, fmt.Errorf("api health init: %w", err)
 	}
+
+	storageS.SetReporter(reportS)
+	reportS.SetReportProcessor(storageS)
 
 	app := &App{
 		config: config,

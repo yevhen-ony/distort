@@ -23,4 +23,11 @@ func NewChunkRecord(meta t.ChunkMeta) *ChunkRecord {
 	}
 }
 
+func (r *ChunkRecord) Clone() *ChunkRecord {
+	return &ChunkRecord{
+		Meta: *r.Meta.Clone(),
+		State: r.State,
+	}
+}
+
 type ChunkCatalog map[t.ChunkID]*ChunkRecord

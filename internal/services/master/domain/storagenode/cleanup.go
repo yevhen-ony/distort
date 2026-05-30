@@ -2,6 +2,7 @@ package storagenode
 
 import (
 	"context"
+	"dos/internal/common/loop"
 	t "dos/internal/common/types"
 	m "dos/internal/services/master"
 	"errors"
@@ -25,6 +26,7 @@ type CleanupWorker struct {
 	replicate m.ReplicaScheduler
 
 	config CleanupConfig
+	looper *loop.Looper
 }
 
 func NewCleanupWorker(deps CleanupDeps) (*CleanupWorker, error) {
@@ -38,10 +40,13 @@ func NewCleanupWorker(deps CleanupDeps) (*CleanupWorker, error) {
 		return nil, errors.New("missing config")
 	}
 
+	looper := loop.NewLooper(deps.Config.NodeCleanupInterval())
 	service := &CleanupWorker{
 		lifecycle: deps.Lifecycle,
 		replicate: deps.Replication,
 		config:    deps.Config,
+
+		looper: looper,
 	}
 	return service, nil
 }
@@ -67,19 +72,8 @@ func (s *CleanupWorker) RemoveInactive(ctx context.Context) int {
 
 func (s *CleanupWorker) RunLoop(ctx context.Context) {
 
-	timer := time.NewTimer(s.config.NodeCleanupInterval())
-	defer timer.Stop()
-
-	for {
-		select {
-		case <-ctx.Done():
-			return
-		case <-timer.C:
-		}
-
+	go s.looper.Run(ctx, func(ctx context.Context) {
 		count := s.RemoveInactive(ctx)
 		slog.DebugContext(ctx, "removed inactive nodes", "count", count)
-
-		timer.Reset(s.config.NodeCleanupInterval())
-	}
+	})
 }

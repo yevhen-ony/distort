@@ -72,15 +72,15 @@ func (ci *ChunkInventory) Has(chunkID t.ChunkID) bool {
 	return ok
 }
 
-func (ci *ChunkInventory) Get(chunkID t.ChunkID) (t.ChunkMeta, error) {
+func (ci *ChunkInventory) GetRecord(chunkID t.ChunkID) (*ChunkRecord, error) {
 	ci.mu.RLock()
 	defer ci.mu.RUnlock()
 
 	rec, ok := ci.catalog[chunkID]
 	if !ok {
-		return t.ChunkMeta{}, s.ErrChunkNotFound
+		return nil, s.ErrChunkNotFound
 	}
-	return *rec.Meta.Clone(), nil
+	return rec.Clone(), nil
 }
 
 func (ci *ChunkInventory) Remove(chunkID t.ChunkID) bool {
@@ -135,6 +135,31 @@ func (ci *ChunkInventory) ListStaged() []t.ChunkMeta {
 	}
 	return metas
 }
+
+func (ci *ChunkInventory) SetActive(chunkID t.ChunkID) error {
+	ci.mu.Lock()
+	defer ci.mu.Unlock()
+	
+	rec, ok := ci.catalog[chunkID]
+	if !ok {
+		return s.ErrChunkNotFound
+	}
+
+	rec.State = ChunkStateActive
+	return nil
+}
+
+func (ci *ChunkInventory) GetState(chunkID t.ChunkID) (ChunkState, error)  {
+	ci.mu.RLock()
+	defer ci.mu.RUnlock()
+
+	rec, ok := ci.catalog[chunkID]
+	if !ok {
+		return 0, s.ErrChunkNotFound
+	}
+	return rec.State, nil
+}
+
 
 type CatalogSource interface {
 	List() ([]t.ChunkID, error)

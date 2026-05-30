@@ -260,7 +260,7 @@ func (r *ExecutorService) RunReplicationIteration(ctx context.Context) {
 
 func (r *ExecutorService) RunLoop(ctx context.Context) {
 	ctx = dosctx.WithService(ctx, "replication_executor")
-	r.looper.Run(ctx, r.RunReplicationIteration)
+	go r.looper.Run(ctx, r.RunReplicationIteration)
 }
 
 func (r *ExecutorService) Schedule(ctx context.Context, chunkID t.ChunkID) {

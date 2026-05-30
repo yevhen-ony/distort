@@ -22,12 +22,12 @@ type IdentityProvider interface {
 }
 
 type ReportProcessor interface {
-	Process(context.Context, t.ReportResult)
+	ProcessReport(context.Context, t.ReportResult)
 }
 
 type NOPReportProcessor struct{}
 
-func (*NOPReportProcessor) Process(context.Context, t.ReportResult) {}
+func (*NOPReportProcessor) ProcessReport(context.Context, t.ReportResult) {}
 
 type ReportDeps struct {
 	Identity IdentityProvider
@@ -129,7 +129,7 @@ func (rs *ReportService) ProcessReportResult(ctx context.Context, result t.Repor
 	if len(result.Rejected) != 0 {
 		slog.WarnContext(ctx, "rejected chunks", "chunk_ids", result.Rejected)
 	}
-	rs.processor.Process(ctx, result)
+	rs.processor.ProcessReport(ctx, result)
 	rs.metrics.ReportsRejectedTotal.Add(float64(len(result.Rejected)))
 }
 

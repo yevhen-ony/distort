@@ -6,6 +6,7 @@ import (
 	"log/slog"
 	"time"
 
+	"dos/internal/common/dosctx"
 	"dos/internal/common/loop"
 	t "dos/internal/common/types"
 	m "dos/internal/services/master"
@@ -60,22 +61,45 @@ func NewCleanupService(deps CleanupDeps) (*CleanupService, error) {
 	return cleanup, nil
 }
 
-func (cc *CleanupService) DeleteUnwanted(ctx context.Context) []t.ObjectID {
+func (cs *CleanupService) ReconcileChunks(ctx context.Context) error {
+	ctx = dosctx.WithOperation(ctx, "reconcile_chunks")
+
+	var reconcileErr error
+	for _, object := range cs.objects.List(ctx) {
+		for chunkKey, chunkID := range object.Chunks {
+			err := cs.chunks.Create(ctx, chunkID, t.ObjectSlot{ 
+				ChunkKey: chunkKey,
+				ObjectID: object.ID,
+			})
+			if err != nil && !errors.Is(err, m.ErrChunkExists) {
+				slog.ErrorContext(ctx, "create chunk",
+					"chunk_id", chunkID,
+					"chunk_key", chunkKey,
+					"object_id", object.ID,
+					"error", err)
+				reconcileErr = errors.New("reconcile incomplete")
+			}
+		}
+	}
+	return reconcileErr
+}
+
+func (cs *CleanupService) DeleteUnwanted(ctx context.Context) []t.ObjectID {
 	removedObjectIDs := []t.ObjectID{}
 
-	objects := cc.objects.List(ctx)
+	objects := cs.objects.List(ctx)
 	for _, object := range objects {
 
 		if object.Replication == 0 { // unwanted
 
 			cleaned := true
 			for chunkKey, chunkID := range object.Chunks {
-				if ok, _ := cc.chunks.Delete(ctx, chunkID); ok {
-					cc.objects.DeleteChunk(ctx, t.ObjectSlot{
+				if ok, _ := cs.chunks.Delete(ctx, chunkID); ok {
+					cs.objects.DeleteChunk(ctx, t.ObjectSlot{
 						ObjectID: object.ID,
 						ChunkKey: chunkKey,
 					})
-					cc.metrics.ChunkCount.Add(-1)
+					cs.metrics.ChunkCount.Add(-1)
 				} else {
 					cleaned = false
 				}
@@ -83,20 +107,23 @@ func (cc *CleanupService) DeleteUnwanted(ctx context.Context) []t.ObjectID {
 			if !cleaned {
 				continue
 			}
-			if err := cc.objects.Delete(ctx, object.ID); err != nil {
+			if err := cs.objects.Delete(ctx, object.ID); err != nil {
 				slog.ErrorContext(ctx, "delete object failed", "object_id", object.ID, "error", err)
 			} else {
 				removedObjectIDs = append(removedObjectIDs, object.ID)
-				cc.metrics.ObjectCount.Add(-1)
+				cs.metrics.ObjectCount.Add(-1)
 			}
 		}
 	}
 	return removedObjectIDs
 }
 
-func (cc *CleanupService) RunLoop(ctx context.Context) {
-	cc.looper.Run(ctx, func(ctx context.Context) {
-		removed := cc.DeleteUnwanted(ctx)
+func (cs *CleanupService) RunLoop(ctx context.Context) {
+	
+	_ = cs.ReconcileChunks(ctx)
+
+	go cs.looper.Run(ctx, func(ctx context.Context) {
+		removed := cs.DeleteUnwanted(ctx)
 		if len(removed) > 0 {
 			slog.DebugContext(ctx, "removed objects", "count", len(removed), "object_ids", removed)
 		}
