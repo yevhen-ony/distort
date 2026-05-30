@@ -36,6 +36,8 @@ type MasterRouter struct {
 	active t.MasterRef
 
 	discoveryMu sync.Mutex
+
+	onMasterChange func(context.Context)
 }
 
 func New(resolver Resolver) (*MasterRouter, error) {
@@ -48,6 +50,13 @@ func New(resolver Resolver) (*MasterRouter, error) {
 	}
 	router.setupConnCaches()
 	return router, nil
+}
+
+func (r *MasterRouter) SetOnMasterChange(fn func(ctx context.Context)) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	r.onMasterChange = fn
 }
 
 func (r *MasterRouter) setupConnCaches() {
@@ -123,7 +132,11 @@ func (r *MasterRouter) Rediscover(ctx context.Context) error {
 			continue
 		}
 
-		r.setActive(active)
+		if r.setActive(active) {
+			if r.onMasterChange != nil {
+				go r.onMasterChange(context.WithoutCancel(ctx))
+			}
+		}
 		return nil
 	}
 	return ErrRediscoveryExhausted
@@ -159,11 +172,15 @@ func (r *MasterRouter) UnaryIntercept(
 	return err
 }
 
-func (r *MasterRouter) setActive(id t.MasterRef) {
+func (r *MasterRouter) setActive(ref t.MasterRef) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	r.active = id
+	if r.active.ID == ref.ID {
+		return false
+	}
+	r.active = ref
+	return true
 }
 
 func (r *MasterRouter) waitRediscovery() error {

@@ -116,3 +116,7 @@ func (s *HeartbeatService) RunLoop(ctx context.Context) {
 	ctx = dosctx.WithService(ctx, "heartbeat")
 	s.looper.Run(ctx, s.doIteration)
 }
+
+func (s *HeartbeatService) Flush() {
+	s.looper.Flush()
+}

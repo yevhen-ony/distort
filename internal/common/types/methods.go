@@ -67,7 +67,7 @@ func (rd *ReplicaDeletedReport) ToRecord() StorageNodeReport {
 	return StorageNodeReport{ReplicaDeleted: rd}
 }
  
-func (r MasterRef) Validate() error {
+func (r *MasterRef) Validate() error {
   	if r.ID == "" {
 		return fmt.Errorf("missing id: %w", ErrInvalidMasterRef) 
   	}

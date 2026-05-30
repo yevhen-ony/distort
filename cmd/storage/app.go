@@ -129,6 +129,9 @@ func NewApp(config *Config) (*App, error) {
 
 	storageS.SetReporter(reportS)
 	reportS.SetReportProcessor(storageS)
+	master.router.SetOnMasterChange(func(context.Context) {
+		heartbeatS.Flush()
+	})
 
 	app := &App{
 		config: config,
