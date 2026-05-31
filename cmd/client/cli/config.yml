@@ -1,3 +1,6 @@
+cli:
+  output: text
+
 client:
   frame_size: 1MB 
   chunk_size: 5MB

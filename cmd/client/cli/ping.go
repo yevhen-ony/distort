@@ -12,7 +12,7 @@ import (
 )
 
 func MakePingCmd(cfg *app.Config) *cobra.Command {
-	listObjectsCmd := &cobra.Command{
+	pingCmd := &cobra.Command{
 		Use: "ping [addr]",
 		Short: "ping resource",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -24,9 +24,14 @@ func MakePingCmd(cfg *app.Config) *cobra.Command {
 				return fmt.Errorf("apply config flags: %w", err)
 			}
 			
-			addr := args[0]
-			if addr == "" {
+			if len(args) == 0 || args[0] == "" {
 				return errors.New("missing addr")
+			}
+			addr := args[0]
+
+			render, err := NewRender(&cfg.CLI)
+			if err != nil {
+				return fmt.Errorf("init render: %w", err)
 			}
 
 			app, err := app.NewApp(cfg)
@@ -35,9 +40,19 @@ func MakePingCmd(cfg *app.Config) *cobra.Command {
 			}
 			defer app.Close()
 
-			app.Ping(ctx, addr)
+			var rerr error
+			res, err := app.Ping(ctx, addr)
+			if err != nil {
+				rerr = render.Error("ping", err)
+			} else {
+				rerr = render.Ping(res)
+			}
+			if rerr != nil {
+				return fmt.Errorf("render: %w", rerr)
+			}
+
 			return nil
 		},
 	}
-	return listObjectsCmd
+	return pingCmd 
 }

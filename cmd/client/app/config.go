@@ -3,23 +3,26 @@ package app
 import (
 	"time"
 
-	mresolve "dos/internal/common/master/resolve"
 	"dos/internal/common/config"
+	mresolve "dos/internal/common/master/resolve"
 )
 
-
 type Config struct {
-	Client ClientConfig `yaml:"client"`
+	Client ClientConfig    `yaml:"client"`
 	Master mresolve.Config `yaml:"master"`
+	CLI    CLIConfig       `yaml:"cli"`
 }
 
 type ClientConfig struct {
-	ChunkSize config.Size `yaml:"chunk_size"`
-	FrameSize config.Size `yaml:"frame_size"`
-	TransferConcurrency int `yaml:"concurrency"`
+	ChunkSize             config.Size   `yaml:"chunk_size"`
+	FrameSize             config.Size   `yaml:"frame_size"`
+	TransferConcurrency   int           `yaml:"concurrency"`
 	RenderRefreshInterval time.Duration `yaml:"render_refresh"`
 }
 
+type CLIConfig struct {
+	OutputFormat string `yaml:"output"`
+}
 
 func (c *Config) ChunkSize() int64 {
 	return int64(c.Client.ChunkSize)

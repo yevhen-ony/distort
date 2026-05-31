@@ -7,6 +7,9 @@ import (
 
 	cpb "dos/gen/proto/common/v1"
 	"dos/internal/common/connect"
+
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 )
 
 type HealthTransport struct {
@@ -25,6 +28,7 @@ func NewHealthTransport(conn *connect.ConnCache) (*HealthTransport, error) {
 
 type HealthResult struct {
 	Component string
+	Ready     bool 
 }
 
 func (ht *HealthTransport) Ready(ctx context.Context, addr string) (*HealthResult, error) {
@@ -32,28 +36,35 @@ func (ht *HealthTransport) Ready(ctx context.Context, addr string) (*HealthResul
 	if err != nil {
 		return nil, fmt.Errorf("create connection: %w", err)
 	}
+
 	client := cpb.NewHealthServiceClient(conn)
-
-
 	rsp, err := client.Ready(ctx, &cpb.ReadyRequest{})
-	if err != nil {
-		return nil, fmt.Errorf("transport: %w", err)
-	}
 
-	res := &HealthResult{
+	if err != nil {
+		if status.Code(err) == codes.Unavailable {
+			res := &HealthResult{
+				Component: "unknown",
+				Ready: false,
+			}
+		  	return res, nil
+		}
+		return nil, fmt.Errorf("transport: %w", err)
+	  }
+
+	  res := &HealthResult{
 		Component: ComponentFromPB(rsp.GetComponent()),
-	}
-	return res, nil
+		Ready:     true,
+	  }
+	  return res, nil
 }
 
 func ComponentFromPB(c cpb.Component) string {
-  	switch c {
-  	case cpb.Component_COMPONENT_MASTER:
-  		return "master"
-  	case cpb.Component_COMPONENT_STORAGE:
-  		return "storage"
-  	default:
-  		return "unknown"
-  	}
-  }
-
+	switch c {
+	case cpb.Component_COMPONENT_MASTER:
+		return "master"
+	case cpb.Component_COMPONENT_STORAGE:
+		return "storage"
+	default:
+		return "unknown"
+	}
+}

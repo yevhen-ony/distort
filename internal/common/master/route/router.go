@@ -89,19 +89,16 @@ func (r *MasterRouter) Conn(ctx context.Context) (*grpc.ClientConn, error) {
 	r.mu.RUnlock()
 
 	if err := active.Validate(); err != nil {
-		if err := r.Rediscover(ctx); err != nil {
+		active, err = r.Rediscover(ctx)
+		if err != nil {
 			return nil, err
 		}
-
-		r.mu.RLock()
-		active = r.active
-		r.mu.RUnlock()
 	}
 
 	return r.apiConn.Get(active.Addr)
 }
 
-func (r *MasterRouter) Rediscover(ctx context.Context) error {
+func (r *MasterRouter) Rediscover(ctx context.Context) (t.MasterRef, error) {
 
 	if !r.discoveryMu.TryLock() {
 		return r.waitRediscovery()
@@ -137,9 +134,9 @@ func (r *MasterRouter) Rediscover(ctx context.Context) error {
 				go r.onMasterChange(context.WithoutCancel(ctx))
 			}
 		}
-		return nil
+		return active, nil
 	}
-	return ErrRediscoveryExhausted
+	return t.MasterRef{}, ErrRediscoveryExhausted
 }
 
 func (r *MasterRouter) UnaryIntercept(
@@ -161,7 +158,7 @@ func (r *MasterRouter) UnaryIntercept(
 		return err
 	}
 
-	if rediscoverErr := r.Rediscover(ctx); rediscoverErr != nil {
+	if _, rediscoverErr := r.Rediscover(ctx); rediscoverErr != nil {
 		slog.ErrorContext(ctx,
 			"rediscover active master failed",
 			"method", method,
@@ -183,7 +180,7 @@ func (r *MasterRouter) setActive(ref t.MasterRef) bool {
 	return true
 }
 
-func (r *MasterRouter) waitRediscovery() error {
+func (r *MasterRouter) waitRediscovery() (t.MasterRef, error) {
 	r.discoveryMu.Lock()
 	r.discoveryMu.Unlock()
 
@@ -191,5 +188,8 @@ func (r *MasterRouter) waitRediscovery() error {
 	active := r.active
 	r.mu.Unlock()
 
-	return active.Validate()
+	if err := active.Validate() ; err != nil {
+		return t.MasterRef{}, err
+	}
+	return active, active.Validate()
 }

@@ -202,3 +202,9 @@ func (mt *MasterTransport) ListNodes(ctx context.Context) ([]t.NodeInfo, error) 
 	infos := utils.Map(rsp.GetNodes(), convert.NodeInfoFromPB)
 	return infos, nil
 }
+
+func (mt *MasterTransport) DiscoverMaster(ctx context.Context) (t.MasterRef, error) {
+	return mt.mrouter.Rediscover(ctx)
+}
+
+

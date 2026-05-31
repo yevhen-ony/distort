@@ -10,6 +10,11 @@ import (
 	"dos/internal/common/config"
 )
 
+const (
+	outputKey = "output"
+)
+
+
 func main() {
 	if err := run(); err != nil {
 		fmt.Println(os.Stderr, err)
@@ -34,6 +39,7 @@ func run() error {
 	root.AddCommand(MakeDescribeCmd(cfg))
 	root.AddCommand(MakeScaleObjectCmd(cfg))
 	root.AddCommand(MakePingCmd(cfg))
+	root.AddCommand(MakeSystemCmd(cfg))
 
 	if err := root.Execute(); err != nil {
 		return fmt.Errorf("execute: %w")
@@ -43,11 +49,29 @@ func run() error {
 
 
 func ApplyFlags(config *app.Config, cmd *cobra.Command) error {
-	return nil
+
+  	if config == nil {
+  		return fmt.Errorf("missing config")
+  	}
+
+  	out, err := cmd.Flags().GetString(outputKey)
+  	if err != nil {
+  		return fmt.Errorf("read --%s: %w", outputKey, err)
+  	}
+
+  	switch out {
+  	case "text", "json":
+  		config.CLI.OutputFormat = out
+  	default:
+  		return fmt.Errorf("invalid --%s %q (allowed: text,json)", outputKey, out)
+  	}
+  	return nil
 }
 
+
 func BindFlags(config *app.Config, cmd *cobra.Command) {
-	cmd.PersistentFlags().String(masterAddrKey, "", "master address")
+	cmd.PersistentFlags().StringP(outputKey, "o", "text", "output format: text|json")
+
 }
 
 
