@@ -2,21 +2,24 @@ package app
 
 import (
 	"context"
-	"fmt"
-	"strings"
+
+	t "dos/internal/common/types"
 )
 
-func (app *App) DiscoverActiveMaster(ctx context.Context) error {
+type DiscoverMasterResult struct {
+	MasterRef t.MasterRef
+}
+
+func (app *App) DiscoverMaster(ctx context.Context) (*DiscoverMasterResult, error) {
 	ref, err := app.MasterT().DiscoverMaster(ctx)
 	if err != nil {
-		return err
+		return nil, err 
 	}
 
-	b := &strings.Builder{}
-	fmt.Fprintf(b, "%-20s %-20s\n", "MASTER_ID", "MASTER_ADDR")
-	fmt.Fprintf(b, "%-20s %-20s\n", ref.ID, ref.Addr)
+	res := &DiscoverMasterResult{
+		MasterRef: ref,
+	}
 
-	fmt.Print(b.String())
-	return nil
+	return res, nil
 }
 

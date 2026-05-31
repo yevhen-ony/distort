@@ -16,23 +16,23 @@ type ChunkAllocation1 struct {
 }
 
 type ObjectSlot struct {
-	ObjectID ObjectID
-	ChunkKey ChunkKey
+	ObjectID ObjectID `json:"object_id"`
+	ChunkKey ChunkKey `json:"chunk_key"`
 }
 
 type ChunkPlacement1 struct {
-	Meta    ChunkMeta
-	Slot    ObjectSlot
-	Sources []NodeRef
+	Meta    ChunkMeta  `json:"chunk_meta"`
+	Slot    ObjectSlot `json:"object_slog"`
+	Sources []NodeRef  `json:"sources"`
 }
 
 type ChunkDesc1 struct {
-	Placement ChunkPlacement1
+	Placement ChunkPlacement1 `json:"chunk_placement"`
 }
 
 type ObjectDesc1 struct {
-	ID          ObjectID
-	Size        int64
-	Replication int
-	Chunks      []ChunkPlacement1
+	ID          ObjectID          `json:"object_id"`
+	Size        int64             `json:"total_size"`
+	Replication int               `json:"replication"`
+	Chunks      []ChunkPlacement1 `json:"chunks"`
 }

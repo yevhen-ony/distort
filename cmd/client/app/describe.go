@@ -9,6 +9,10 @@ import (
 	t "dos/internal/common/types"
 )
 
+type DescribeChunkResult struct {
+	Chunk *t.ChunkPlacement1
+}
+
 func (app *App) DescribeChunk(ctx context.Context, chunkID string) error {
 	desc, err := app.MasterT().DescribeChunk(ctx, t.ChunkID(chunkID))
 	if err != nil {

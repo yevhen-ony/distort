@@ -13,6 +13,7 @@ import (
 func MakeListCmd(cfg *app.Config) *cobra.Command {
 	listCmd := &cobra.Command{
 		Use: "list",
+		Aliases: []string{"ls"},
 		Short: "list resources",
 	}
 	listCmd.AddCommand(
@@ -27,6 +28,7 @@ func MakeListCmd(cfg *app.Config) *cobra.Command {
 func MakeListObjectsCmd(cfg *app.Config) *cobra.Command {
 	listObjectsCmd := &cobra.Command{
 		Use: "objects",
+		Aliases: []string{"o"},
 		Short: "list objects",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
@@ -36,13 +38,21 @@ func MakeListObjectsCmd(cfg *app.Config) *cobra.Command {
 			if err := ApplyFlags(cfg, cmd); err != nil {
 				return fmt.Errorf("apply config flags: %w", err)
 			}
-
-			app, err := app.NewApp(cfg)
+			
+			app, err := InitApp(cfg) 
 			if err != nil {
-				return fmt.Errorf("init app: %w", err)
+				return err
 			}
 			defer app.Close()
-			return app.ListObjects(ctx)
+
+			var rerr error
+			res, err := app.App.ListObjects(ctx)
+			if err != nil {
+				rerr = app.Render.Error("list_objects", err)
+			} else {
+				rerr = app.Render.ListObjects(res)
+			}
+			return rerr
 		},
 	}
 	return listObjectsCmd
@@ -51,6 +61,7 @@ func MakeListObjectsCmd(cfg *app.Config) *cobra.Command {
 func MakeListChunksCmd(cfg *app.Config) *cobra.Command {
 	listChunksCmd := &cobra.Command{
 		Use: "chunks",
+		Aliases: []string{"c"},
 		Short: "list chunks",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
@@ -61,12 +72,20 @@ func MakeListChunksCmd(cfg *app.Config) *cobra.Command {
 				return fmt.Errorf("apply config flags: %w", err)
 			}
 
-			app, err := app.NewApp(cfg)
+			app, err := InitApp(cfg)
 			if err != nil {
-				return fmt.Errorf("init app: %w", err)
+				return err
 			}
 			defer app.Close()
-			return app.ListChunks(ctx)
+			
+			var rerr error
+			res, err := app.App.ListChunks(ctx)
+			if err != nil {
+				rerr = app.Render.Error("list_chunks", err)
+			} else {
+				rerr = app.Render.ListChunks(res)
+			}
+			return rerr
 		},
 	}
 	return listChunksCmd
@@ -75,6 +94,7 @@ func MakeListChunksCmd(cfg *app.Config) *cobra.Command {
 func MakeListNodesCmd(cfg *app.Config) *cobra.Command {
 	listNodesCmd := &cobra.Command{
 		Use: "nodes",
+		Aliases: []string{"n"},
 		Short: "list nodes",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
@@ -85,12 +105,20 @@ func MakeListNodesCmd(cfg *app.Config) *cobra.Command {
 				return fmt.Errorf("apply config flags: %w", err)
 			}
 			
-			app, err := app.NewApp(cfg)
+			app, err := InitApp(cfg) 
 			if err != nil {
-				return fmt.Errorf("init app: %w", err)
+				return err
 			}
 			defer app.Close()
-			return app.ListNodes(ctx)
+
+			var rerr error
+			res, err := app.App.ListNodes(ctx)
+			if err != nil {
+				rerr = app.Render.Error("list_nodes", err)
+			} else {
+				rerr = app.Render.ListNodes(res)
+			}
+			return rerr
 		},
 	}
 	return listNodesCmd

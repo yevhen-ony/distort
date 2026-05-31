@@ -35,12 +35,20 @@ func MakeLeaderCmd(cfg *app.Config) *cobra.Command {
 				return fmt.Errorf("apply config flags: %w", err)
 			}
 
-			app, err := app.NewApp(cfg)
+			app, err := InitApp(cfg)
 			if err != nil {
-				return fmt.Errorf("init app: %w", err)
+				return err 
 			}
 			defer app.Close()
-			return app.DiscoverActiveMaster(ctx)
+
+			var rerr error 
+			res, err := app.App.DiscoverMaster(ctx)
+			if err != nil {
+				rerr = app.Render.Error("leader", err)
+			} else {
+				rerr = app.Render.DiscoverMaster(res)
+			}
+			return rerr
 		},
 	}
 	return listObjectsCmd

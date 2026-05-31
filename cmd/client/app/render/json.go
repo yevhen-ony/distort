@@ -47,3 +47,30 @@ func (r *JSONRender) Ping(res *app.PingResult) error {
 	})
 }
 
+func (r *JSONRender) ListObjects(res *app.ListObjectsResult) error {
+	return r.json.Encode(&Envelope{
+		Operation: "list_objects",
+		Result: res.Objects,
+	})
+}
+
+func (r *JSONRender) ListChunks(res *app.ListChunksResult) error {
+	return r.json.Encode(&Envelope{
+		Operation: "list_chunks",
+		Result: res.Chunks,
+	})
+}
+
+func (r *JSONRender) ListNodes(res *app.ListNodesResult) error {
+	return r.json.Encode(&Envelope{
+		Operation: "list_nodes",
+		Result: res.Nodes,
+	})
+}
+
+func (r *JSONRender) DiscoverMaster(res *app.DiscoverMasterResult) error {
+	return r.json.Encode(&Envelope{
+		Operation: "leader",
+		Result: res.MasterRef, 
+	})
+}

@@ -3,6 +3,7 @@ package types
 import (
 	"dos/internal/common/digest"
 )
+
 type MasterID string
 type ObjectID string
 type ChunkID string
@@ -10,13 +11,13 @@ type ChunkKey string
 type NodeID string
 
 type NodeRef struct {
-	ID   NodeID
-	Addr string
+	ID   NodeID `json:"node_id"`
+	Addr string `json:"address"`
 }
 
 type MasterRef struct {
-	ID MasterID 
-	Addr string
+	ID   MasterID `json:"master_id"`
+	Addr string   `json:"address"`
 }
 
 type ChunkDesc struct {
@@ -36,9 +37,9 @@ type ObjectDesc struct {
 }
 
 type ObjectInfo struct {
-	ID          ObjectID
-	ChunkCount  int
-	Replication int
+	ID          ObjectID `json:"object_id"`
+	ChunkCount  int      `json:"chunk_count"`
+	Replication int      `json:"replication"`
 }
 
 type ObjectAccess struct {
@@ -53,8 +54,8 @@ type NodeStats struct {
 }
 
 type ChunkMeta struct {
-	ID     ChunkID
-	Digest digest.Digest
+	ID     ChunkID       `json:"chunk_id"`
+	Digest digest.Digest `json:"digest"`
 }
 
 type Chunk struct {
@@ -63,17 +64,17 @@ type Chunk struct {
 }
 
 type ChunkInfo struct {
-	ID           ChunkID
-	ReplicaCount int
-	Size         int64
-	ObjectID     ObjectID
+	ID           ChunkID  `json:"chunk_id"`
+	ReplicaCount int      `json:"replica_count"`
+	Size         int64    `json:"size"`
+	ObjectID     ObjectID `json:"object_id"`
 }
 
 type NodeInfo struct {
-	ID         NodeID
-	Addr       string
-	ChunkCount int
-	UsedBytes  int64
+	ID         NodeID `json:"node_id"`
+	Addr       string `json:"address"`
+	ChunkCount int    `json:"chunk_count"`
+	UsedBytes  int64  `json:"used_bytes"`
 }
 
 type ReportResult struct {
@@ -99,5 +100,3 @@ type StorageNodeReport struct {
 	ReplicaChainFailed *ReplicaChainFailedReport
 	ReplicaDeleted     *ReplicaDeletedReport
 }
-
-

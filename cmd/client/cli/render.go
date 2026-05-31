@@ -8,8 +8,16 @@ import (
 )
 
 type Render interface {
-	Ping(ping *app.PingResult) error
+
 	Error(string, error) error
+
+	Ping(*app.PingResult) error
+
+	ListObjects(*app.ListObjectsResult) error
+	ListChunks(*app.ListChunksResult) error
+	ListNodes(*app.ListNodesResult) error
+	
+	DiscoverMaster(*app.DiscoverMasterResult) error
 }
 
 func NewRender(config *app.CLIConfig) (Render, error) {

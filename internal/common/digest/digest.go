@@ -15,13 +15,13 @@ var (
 type Checksum string
 
 type Digest struct {
-	Checksum Checksum
-	Size int64 
+	Checksum Checksum `json:"checksum"`
+	Size     int64    `json:"size"`
 }
 
 func (d *Digest) Match(other *Digest) error {
 	if other == nil {
-		return fmt.Errorf("compare with nil: %w", ErrDigestMismatch) 
+		return fmt.Errorf("compare with nil: %w", ErrDigestMismatch)
 	}
 	if d.Size != other.Size {
 		return fmt.Errorf(
@@ -44,12 +44,12 @@ func (d *Digest) Clone() Digest {
 	}
 	return Digest{
 		Checksum: d.Checksum,
-		Size: d.Size,
+		Size:     d.Size,
 	}
 }
 
 type Digester struct {
-	hash hash.Hash
+	hash  hash.Hash
 	total int64
 }
 
@@ -69,7 +69,7 @@ func (d *Digester) Write(p []byte) (int, error) {
 
 func (d *Digester) Digest() Digest {
 	return Digest{
-		Size: d.total,
+		Size:     d.total,
 		Checksum: d.Checksum(),
 	}
 }
@@ -78,5 +78,4 @@ func (d *Digester) Checksum() Checksum {
 	sum := d.hash.Sum(nil)
 	enc := hex.EncodeToString(sum)
 	return Checksum(enc)
-}	
-
+}
