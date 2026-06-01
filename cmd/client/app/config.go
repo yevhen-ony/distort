@@ -14,14 +14,14 @@ type Config struct {
 }
 
 type ClientConfig struct {
-	ChunkSize             config.Size   `yaml:"chunk_size"`
-	FrameSize             config.Size   `yaml:"frame_size"`
-	TransferConcurrency   int           `yaml:"concurrency"`
-	RenderRefreshInterval time.Duration `yaml:"render_refresh"`
+	ChunkSize           config.Size `yaml:"chunk_size"`
+	FrameSize           config.Size `yaml:"frame_size"`
+	TransferConcurrency int         `yaml:"concurrency"`
 }
 
 type CLIConfig struct {
-	OutputFormat string `yaml:"output"`
+	OutputFormat          string        `yaml:"output"`
+	RenderRefreshInterval time.Duration `yaml:"render_refresh"`
 }
 
 func (c *Config) ChunkSize() int64 {
@@ -37,5 +37,9 @@ func (c *Config) TransferConcurrency() int {
 }
 
 func (c *Config) RenderRefreshInterval() time.Duration {
-	return c.Client.RenderRefreshInterval
+	return c.CLI.RenderRefreshInterval
+}
+
+func (c *Config) OutputFormat() string {
+	return c.CLI.OutputFormat
 }

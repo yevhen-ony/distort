@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"dos/cmd/client/app"
+	"dos/cmd/client/render"
 	"fmt"
 	"os"
 	"os/signal"
@@ -39,20 +40,19 @@ func MakeListObjectsCmd(cfg *app.Config) *cobra.Command {
 				return fmt.Errorf("apply config flags: %w", err)
 			}
 			
-			app, err := InitApp(cfg) 
+			app, err := RunApp(ctx, cfg) 
 			if err != nil {
 				return err
 			}
 			defer app.Close()
 
-			var rerr error
 			res, err := app.App.ListObjects(ctx)
 			if err != nil {
-				rerr = app.Render.Error("list_objects", err)
+				app.Presenter.Update(render.NewErrorResult("list_objects", err))
 			} else {
-				rerr = app.Render.ListObjects(res)
+				app.Presenter.Update(res)
 			}
-			return rerr
+			return nil 
 		},
 	}
 	return listObjectsCmd
@@ -72,7 +72,7 @@ func MakeListChunksCmd(cfg *app.Config) *cobra.Command {
 				return fmt.Errorf("apply config flags: %w", err)
 			}
 
-			app, err := InitApp(cfg)
+			app, err := RunApp(ctx, cfg)
 			if err != nil {
 				return err
 			}
@@ -81,9 +81,9 @@ func MakeListChunksCmd(cfg *app.Config) *cobra.Command {
 			var rerr error
 			res, err := app.App.ListChunks(ctx)
 			if err != nil {
-				rerr = app.Render.Error("list_chunks", err)
+				app.Presenter.Update(render.NewErrorResult("list_chunks", err))
 			} else {
-				rerr = app.Render.ListChunks(res)
+				app.Presenter.Update(res)
 			}
 			return rerr
 		},
@@ -105,20 +105,19 @@ func MakeListNodesCmd(cfg *app.Config) *cobra.Command {
 				return fmt.Errorf("apply config flags: %w", err)
 			}
 			
-			app, err := InitApp(cfg) 
+			app, err := RunApp(ctx, cfg) 
 			if err != nil {
 				return err
 			}
 			defer app.Close()
 
-			var rerr error
 			res, err := app.App.ListNodes(ctx)
 			if err != nil {
-				rerr = app.Render.Error("list_nodes", err)
+				app.Presenter.Update(render.NewErrorResult("list_nodes", err))
 			} else {
-				rerr = app.Render.ListNodes(res)
+				app.Presenter.Update(res)
 			}
-			return rerr
+			return nil
 		},
 	}
 	return listNodesCmd

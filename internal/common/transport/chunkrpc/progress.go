@@ -16,35 +16,35 @@ const (
 )
 
 type Progress struct {
-	Meta      t.ChunkMeta
-	NodeRef   t.NodeRef
-	SentBytes int64
+	Meta      t.ChunkMeta `json:"chunk_meta"`
+	NodeRef   t.NodeRef   `json:"node_ref"`
+	SentBytes int64       `json:"sent_bytes"`
 
-	status ChunkStatus
-	reason string
+	Status ChunkStatus `json:"status"`
+	Reason string      `json:"reason,omitempty"`
 }
 
 func NewProgress(meta t.ChunkMeta, nodeRef t.NodeRef) Progress {
 	p := Progress{
 		Meta:    meta,
 		NodeRef: nodeRef,
-		status:  ChunkInProgress,
+		Status:  ChunkInProgress,
 	}
 	return p
 }
 
 func (p *Progress) Fail(reason string) {
-	p.status = ChunkFailed
-	p.reason = reason
+	p.Status = ChunkFailed
+	p.Reason = reason
 }
 
 func (p *Progress) Done() {
-	p.status = ChunkDone 
+	p.Status = ChunkDone
 }
 
 func (p *Progress) GetStatusStr() string {
-	if p.reason == "" {
-		return string(p.status)
+	if p.Reason == "" {
+		return string(p.Status)
 	}
-	return fmt.Sprintf("%s -> %s", p.status, p.reason)
+	return fmt.Sprintf("%s -> %s", p.Status, p.Reason)
 }

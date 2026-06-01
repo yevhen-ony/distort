@@ -10,6 +10,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"dos/cmd/client/app"
+	"dos/cmd/client/render"
 )
 
 
@@ -45,12 +46,19 @@ func MakeDescribeChunkCmd(cfg *app.Config) *cobra.Command {
 				return errors.New("missing chunk id")
 			}
 			
-			app, err := app.NewApp(cfg)
+			app, err := RunApp(ctx, cfg)
 			if err != nil {
-				return fmt.Errorf("init app: %w", err)
+				return err 
 			}
 			defer app.Close()
-			return app.DescribeChunk(ctx, chunkID)
+
+			res, err := app.App.DescribeChunk(ctx, chunkID)
+			if err != nil {
+				app.Presenter.Update(render.NewErrorResult("describe_chunk", err))
+			} else {
+				app.Presenter.Update(res)
+			}
+			return nil
 		},
 	}
 	return descChunkCmd
@@ -75,12 +83,19 @@ func MakeDescribeObjectCmd(cfg *app.Config) *cobra.Command {
 				return errors.New("missing object id")
 			}
 			
-			app, err := app.NewApp(cfg)
+			app, err := RunApp(ctx, cfg)
 			if err != nil {
-				return fmt.Errorf("init app: %w", err)
+				return err 
 			}
 			defer app.Close()
-			return app.DescribeObject(ctx, objectID)
+
+			res, err := app.App.DescribeObject(ctx, objectID) 
+			if err != nil {
+				app.Presenter.Update(render.NewErrorResult("describe_object", err))
+			} else {
+				app.Presenter.Update(res)
+			}
+			return nil
 		},
 	}
 	return descObjectCmd

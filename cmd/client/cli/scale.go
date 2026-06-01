@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"dos/cmd/client/app"
+	"dos/cmd/client/render"
 	"errors"
 	"fmt"
 	"os"
@@ -36,12 +37,17 @@ func MakeScaleObjectCmd(cfg *app.Config) *cobra.Command {
 				return fmt.Errorf("missing or invalid replica count")
 			}
 			
-			app, err := app.NewApp(cfg)
+			app, err := RunApp(ctx, cfg)
 			if err != nil {
-				return fmt.Errorf("init app: %w", err)
+				return err 
 			}
 			defer app.Close()
-			return app.ScaleObjects(ctx, objectID, replicaCount)
+
+
+			if err = app.App.ScaleObject(ctx, objectID, replicaCount); err != nil {
+				app.Presenter.Update(render.NewErrorResult("scale_object", err))
+			}
+			return nil
 		},
 	}
 	scaleObjectCmd.Flags().Int("replicas", -1, "desired replication count")

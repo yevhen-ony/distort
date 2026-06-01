@@ -1,0 +1,186 @@
+package render
+
+import (
+	"bytes"
+	"fmt"
+	"strings"
+
+	"dos/cmd/client/app"
+	"dos/internal/services/client/domain/progress"
+)
+
+type TextRender struct{}
+
+func NewTextRender() *TextRender {
+	return &TextRender{}
+}
+
+func (r *TextRender) Error(res *ErrorResult) ([]byte, error) {
+	s := fmt.Sprintf(
+		"%s:\n\t * error: %s\n",
+		strings.ToUpper(res.Operation),
+		res.Error.Error(),
+	)
+	return []byte(s), nil
+}
+
+func (r *TextRender) Ping(res *app.PingResult) ([]byte, error) {
+	b := &bytes.Buffer{}
+
+	fmt.Fprintln(b, "PING:")
+	fmt.Fprintf(b, "\t * address  : %s\n", res.Address)
+	fmt.Fprintf(b, "\t * status   : %s\n", res.Status)
+	fmt.Fprintf(b, "\t * component: %s\n", res.Component)
+
+	return b.Bytes(), nil
+}
+
+func (r *TextRender) ListObjects(res *app.ListObjectsResult) ([]byte, error) {
+	b := &bytes.Buffer{}
+
+	fmt.Fprintf(b, "%-20s %11s %11s\n", "OBJECT_ID", "CHUNK_COUNT", "REPLICATION")
+	for _, info := range res.Objects {
+		fmt.Fprintf(b, "%-20s %11d %11d\n",
+			info.ID,
+			info.ChunkCount,
+			info.Replication,
+		)
+	}
+	return b.Bytes(), nil
+}
+
+func (r *TextRender) ListChunks(res *app.ListChunksResult) ([]byte, error) {
+	b := &bytes.Buffer{}
+
+	fmt.Fprintf(b,
+		"%-18s %-8s %-8s %-20s\n",
+		"CHUNK_ID", "SIZE", "REPLICAS", "OBJECT_ID",
+	)
+	for _, info := range res.Chunks {
+		fmt.Fprintf(b,
+			"%-18s %8s %8d %-20s\n",
+			info.ID,
+			ToMBStr(info.Size),
+			info.ReplicaCount,
+			info.ObjectID,
+		)
+	}
+	return b.Bytes(), nil
+}
+
+func (r *TextRender) ListNodes(res *app.ListNodesResult) ([]byte, error) {
+	b := &bytes.Buffer{}
+
+	fmt.Fprintf(b,
+		"%-18s %-18s %-6s %-8s\n",
+		"NODE_ID", "ADDR", "CHUNKS", "SIZE",
+	)
+
+	for _, info := range res.Nodes {
+		fmt.Fprintf(b,
+			"%-18s %-18s %6d %8s\n",
+			info.ID,
+			info.Addr,
+			info.ChunkCount,
+			ToMBStr(info.UsedBytes),
+		)
+	}
+	return b.Bytes(), nil
+}
+
+func (r *TextRender) DiscoverMaster(res *app.DiscoverMasterResult) ([]byte, error) {
+	b := &bytes.Buffer{}
+
+	fmt.Fprintf(b, "%-20s %-20s\n", "MASTER_ID", "MASTER_ADDR")
+	fmt.Fprintf(b, "%-20s %-20s\n", res.MasterRef.ID, res.MasterRef.Addr)
+
+	return b.Bytes(), nil
+}
+
+func (r *TextRender) DescribeChunk(res *app.DescribeChunkResult) ([]byte, error) {
+	placement := res.Description.Placement
+
+	b := &bytes.Buffer{}
+
+	meta := placement.Meta
+	fmt.Fprintln(b, "CHUNK META:")
+	fmt.Fprintf(b, "\t * chunk_id: %s\n", meta.ID)
+	fmt.Fprintf(b, "\t * checksum: %s\n", meta.Digest.Checksum)
+	fmt.Fprintf(b, "\t * size    : %s\n", ToMBStr(meta.Digest.Size))
+
+	slot := placement.Slot
+	fmt.Fprintln(b, "OBJECT SLOT:")
+	fmt.Fprintf(b, "\t * object_id: %s\n", slot.ObjectID)
+	fmt.Fprintf(b, "\t * chunk_key: %s\n", slot.ChunkKey)
+
+	sources := placement.Sources
+	fmt.Fprintf(b, "SOURCES (STORAGE NODES) %d:\n", len(sources))
+	for _, ref := range sources {
+		fmt.Fprintf(b, "\t * node_id: %s | node_addr: %s\n", ref.ID, ref.Addr)
+	}
+	return b.Bytes(), nil
+}
+
+func (r *TextRender) DescribeObject(res *app.DescribeObjectResult) ([]byte, error) {
+	desc := res.Description
+
+	b := &bytes.Buffer{}
+
+	fmt.Fprintln(b, "OBJECT:")
+	fmt.Fprintf(b, "\t * object_id  : %s\n", desc.ID)
+	fmt.Fprintf(b, "\t * total_size : %s\n", ToMBStr(desc.Size))
+	fmt.Fprintf(b, "\t * chunks     : %d\n", len(desc.Chunks))
+	fmt.Fprintf(b, "\t * replication: %d\n", desc.Replication)
+
+	fmt.Fprintln(b, "CHUNKS:")
+	fmt.Fprintf(b, "%-10s %-18s %11s %8s\n",
+		"KEY",
+		"CHUNK_ID",
+		"SIZE",
+		"REPLICAS",
+	)
+
+	for _, chunk := range desc.Chunks {
+
+		fmt.Fprintf(b, "%-10s %-18s %10s %8d\n",
+			chunk.Slot.ChunkKey,
+			chunk.Meta.ID,
+			ToMBStr(chunk.Meta.Digest.Size),
+			len(chunk.Sources),
+		)
+	}
+	return b.Bytes(), nil
+}
+
+func (r *TextRender) Progress(op *progress.ObjectProgress) ([]byte, error) {
+	b := &bytes.Buffer{}
+
+	fmt.Fprintf(b, "OBJECT: %s\n", op.ObjectID)
+	fmt.Fprintf(b, "STATUS: %s\n", op.GetStatusStr())
+
+	fmt.Fprintf(b,
+		"%-10s %-20s %-10s %-10s %-6s\n",
+		"KEY", "ID", "SIZE", "SENT", "STATUS",
+	)
+
+	for _, key := range op.ChunksOrder {
+		ch, ok := op.Chunks[key]
+		if !ok {
+			continue
+		}
+
+		sizeMB := ToMBStr(ch.Meta.Digest.Size)
+		sentMB := ToMBStr(ch.SentBytes)
+		fmt.Fprintf(
+			b,
+			"%-10s %-20s %10s %10s %10s\n",
+			key, ch.Meta.ID, sizeMB, sentMB, ch.GetStatusStr(),
+		)
+	}
+	return b.Bytes(), nil 
+}
+
+func ToMBStr(bytes int64) string {
+	mb := float64(bytes) / float64(1024*1024)
+	return fmt.Sprintf("%.1fMB", mb)
+}

@@ -1,11 +1,11 @@
 cli:
   output: text
+  render_refresh: 0.2s
 
 client:
   frame_size: 1MB 
   chunk_size: 5MB
   concurrency: 4  
-  render_refresh: 0.2s
 
 master:
   peers:

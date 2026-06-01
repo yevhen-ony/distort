@@ -9,7 +9,6 @@ import (
 
 	t "dos/internal/common/types"
 	"dos/internal/services/client/domain/delivery"
-	"dos/internal/services/client/domain/progress"
 	"dos/internal/services/client/io/file"
 )
 
@@ -30,14 +29,9 @@ func (app *App) Download(ctx context.Context, objectID string, destPath string) 
 		return fmt.Errorf("uploader init: %w", err) 
 	}
 
-	render := NewProgressRender(app.Config.RenderRefreshInterval())	
-	defer render.Close()
-
-	downloader.WithProgress(func(p *progress.ObjectProgress) {
-		render.Update(p)
-	})
-
-	go render.RunLoop(ctx)
+	if app.onProgress != nil {
+		downloader.WithProgress(app.onProgress)
+	}
 
 	if err := downloader.Download(ctx, asm); err != nil {
 		return fmt.Errorf("download object %s: %w", objectID, err)

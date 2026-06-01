@@ -9,6 +9,7 @@ import (
 	"dos/internal/common/master/route"
 	"dos/internal/common/transport/chunkrpc"
 	"dos/internal/common/transport/healthrpc"
+	"dos/internal/services/client/domain/progress"
 	"dos/internal/services/client/transport"
 )
 
@@ -19,7 +20,14 @@ type App struct {
 	Master  *MasterHolder
 	ChunkT  *chunkrpc.Transport
 	HealthT *healthrpc.HealthTransport
+	
+	onProgress func(*progress.ObjectProgress) 
 }
+
+func (app *App) SetOnProgress(fn func(*progress.ObjectProgress)) {
+	app.onProgress = fn
+}
+
 
 func (app *App) Close() error {
 	_ = app.Master.router.Close()

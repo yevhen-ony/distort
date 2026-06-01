@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"dos/cmd/client/app"
+	"dos/internal/services/client/domain/progress"
 	"fmt"
 	"os"
 	"os/signal"
@@ -35,13 +36,19 @@ func MakeUploadCmd(cfg *app.Config) *cobra.Command {
 				return fmt.Errorf("apply config flags: %w", err)
 			}
 
-			a, err := app.NewApp(cfg)
+			a, err := RunApp(ctx, cfg)
 			if err != nil {
 				return fmt.Errorf("init app: %w", err)
 			}
 			defer a.Close()
 
-			_ = a.Upload(ctx, objectID, path)
+			cancel := a.Presenter.RunLoop(ctx)
+			defer cancel()
+
+			a.App.SetOnProgress(func(p *progress.ObjectProgress) {
+				a.Presenter.Update(p)
+			})
+			_ = a.App.Upload(ctx, objectID, path)
 			return nil
 		},
 	}

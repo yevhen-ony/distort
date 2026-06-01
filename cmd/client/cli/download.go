@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"dos/cmd/client/app"
+	"dos/internal/services/client/domain/progress"
 )
 
 func MakeDownloadCmd(cfg *app.Config) *cobra.Command {
@@ -32,13 +33,19 @@ func MakeDownloadCmd(cfg *app.Config) *cobra.Command {
 				return fmt.Errorf("apply config flags: %w", err)
 			}
 
-			app, err := app.NewApp(cfg)
+			app, err := RunApp(ctx, cfg)
 			if err != nil {
-				return fmt.Errorf("init app: %w", err)
+				return err
 			}
 			defer app.Close()
-			
-			_ = app.Download(ctx, objectID, destPath)
+
+			cancel := app.Presenter.RunLoop(ctx)
+			defer cancel()
+
+			app.App.SetOnProgress(func(p *progress.ObjectProgress){
+				app.Presenter.Update(p)
+			})	
+			_ = app.App.Download(ctx, objectID, destPath)
 			return nil
 		},
 	}

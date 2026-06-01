@@ -71,7 +71,6 @@ func ApplyFlags(config *app.Config, cmd *cobra.Command) error {
 
 func BindFlags(config *app.Config, cmd *cobra.Command) {
 	cmd.PersistentFlags().StringP(outputKey, "o", "text", "output format: text|json")
-
 }
 
 

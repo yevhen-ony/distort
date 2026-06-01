@@ -4,7 +4,6 @@ import (
 	"context"
 	t "dos/internal/common/types"
 	"dos/internal/services/client/domain/delivery"
-	"dos/internal/services/client/domain/progress"
 	"dos/internal/services/client/io/file"
 	"fmt"
 )
@@ -17,7 +16,6 @@ func (app *App) Upload(ctx context.Context, objectID string, path string) error 
 	}
 	defer chunker.Close()
 
-
 	uploader, err := delivery.NewObjectDelivery(delivery.ObjectDeliveryDeps{
 		ObjectID: t.ObjectID(objectID),
 		MasterT: app.MasterT(),
@@ -28,14 +26,9 @@ func (app *App) Upload(ctx context.Context, objectID string, path string) error 
 		return fmt.Errorf("uploader init: %w", err) 
 	}
 
-	render := NewProgressRender(app.Config.RenderRefreshInterval())	
-	defer render.Close()
-
-	go render.RunLoop(ctx)
-
-	uploader.WithProgress(func(p *progress.ObjectProgress) {
-		render.Update(p)
-	})
+	if app.onProgress != nil {
+		uploader.WithProgress(app.onProgress)
+	}
 
 	return uploader.Upload(ctx, chunker)
 }
