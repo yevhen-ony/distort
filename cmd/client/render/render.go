@@ -32,6 +32,10 @@ type Render interface {
 	DescribeChunk(*app.DescribeChunkResult) ([]byte, error)
 	DescribeObject(*app.DescribeObjectResult) ([]byte, error)
 
+	DownloadChunk(*app.DownloadChunkResult) ([]byte, error)
+	AllocateChunk(*app.AllocateChunkResult) ([]byte, error)
+	PushChunk(*app.PushChunkResult) ([]byte, error)
+
 	Progress(*progress.ObjectProgress) ([]byte, error)
 }
 

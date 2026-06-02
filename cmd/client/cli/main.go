@@ -35,11 +35,10 @@ func run() error {
 
 	root.AddCommand(MakeUploadCmd(cfg))
 	root.AddCommand(MakeDownloadCmd(cfg))
-	root.AddCommand(MakeListCmd(cfg))
-	root.AddCommand(MakeDescribeCmd(cfg))
-	root.AddCommand(MakeScaleObjectCmd(cfg))
-	root.AddCommand(MakePingCmd(cfg))
+	root.AddCommand(MakeObjectCmd(cfg))
+	root.AddCommand(MakeChunkCmd(cfg))
 	root.AddCommand(MakeSystemCmd(cfg))
+	root.AddCommand(MakeNodeCmd(cfg))
 
 	if err := root.Execute(); err != nil {
 		return fmt.Errorf("execute: %w")

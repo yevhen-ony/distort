@@ -3,9 +3,6 @@ package app
 import (
 	"context"
 	"fmt"
-	"os"
-	"path/filepath"
-	"strings"
 
 	t "dos/internal/common/types"
 	"dos/internal/services/client/domain/delivery"
@@ -37,17 +34,4 @@ func (app *App) Download(ctx context.Context, objectID string, destPath string) 
 		return fmt.Errorf("download object %s: %w", objectID, err)
 	}
 	return nil
-}
-
-func ResolveOutputPath(path string, objectID string) string {
-	if path == "" || strings.HasSuffix(path, string(os.PathSeparator)) {
-		return filepath.Join(path, objectID)
-	}
-
-	info, err := os.Stat(path)
-	if err == nil && info.IsDir() {
-		return filepath.Join(path, objectID)
-	}
-
-	return path
 }

@@ -21,9 +21,8 @@ type WriteFlusher interface {
 	Flush() error
 }
 
-
 type Presenter struct {
-	output WriteFlusher 
+	output WriteFlusher
 	render Render
 
 	mu      sync.Mutex
@@ -32,7 +31,7 @@ type Presenter struct {
 }
 
 type PresenterDeps struct {
-	Output   WriteFlusher 
+	Output   WriteFlusher
 	Render   Render
 	Interval time.Duration
 }
@@ -84,7 +83,7 @@ func (p *Presenter) Present() error {
 }
 
 func (p *Presenter) RunLoop(ctx context.Context) context.CancelFunc {
-	ctx, cancel := context.WithCancel(ctx) 
+	ctx, cancel := context.WithCancel(ctx)
 
 	go p.looper.Run(ctx, func(context.Context) {
 		_ = p.Present()
@@ -98,7 +97,7 @@ func (p *Presenter) Update(state any) error {
 
 	current, err := p.resolve(state)
 	if err != nil {
-		return err  
+		return err
 	}
 
 	p.current = current
@@ -118,8 +117,8 @@ func (p *Presenter) resolve(state any) (FrameFn, error) {
 
 	case *app.DiscoverMasterResult:
 		frameFn := func() ([]byte, error) { return p.render.DiscoverMaster(s) }
-		return frameFn, nil 
-	
+		return frameFn, nil
+
 	case *app.ListObjectsResult:
 		frameFn := func() ([]byte, error) { return p.render.ListObjects(s) }
 		return frameFn, nil
@@ -127,27 +126,38 @@ func (p *Presenter) resolve(state any) (FrameFn, error) {
 	case *app.ListChunksResult:
 		frameFn := func() ([]byte, error) { return p.render.ListChunks(s) }
 		return frameFn, nil
-	
+
 	case *app.ListNodesResult:
 		frameFn := func() ([]byte, error) { return p.render.ListNodes(s) }
 		return frameFn, nil
-	
+
 	case *app.DescribeChunkResult:
 		frameFn := func() ([]byte, error) { return p.render.DescribeChunk(s) }
-		return frameFn, nil 
-	
+		return frameFn, nil
+
 	case *app.DescribeObjectResult:
 		frameFn := func() ([]byte, error) { return p.render.DescribeObject(s) }
+		return frameFn, nil
+
+	case *app.DownloadChunkResult:
+		frameFn := func() ([]byte, error) { return p.render.DownloadChunk(s) }
+		return frameFn, nil
+
+	case *app.AllocateChunkResult:
+		frameFn := func() ([]byte, error) { return p.render.AllocateChunk(s) }
+		return frameFn, nil
+
+	case *app.PushChunkResult:
+		frameFn := func() ([]byte, error) { return p.render.PushChunk(s) }
 		return frameFn, nil
 
 	case *progress.ObjectProgress:
 		frameFn := func() ([]byte, error) { return p.render.Progress(s) }
 		return frameFn, nil
-	
+
 	default:
 		slog.Error(fmt.Sprintf("presenter: unsupported state type %T", state))
 		return nil, errors.New("unsupported state")
- 	
-	}
 
+	}
 }

@@ -78,6 +78,28 @@ func (r *JSONRender) DescribeObject(res *app.DescribeObjectResult) ([]byte, erro
 	}, "", "  ")
 }
 
+func (r *JSONRender) DownloadChunk(res *app.DownloadChunkResult) ([]byte, error) {
+	return json.MarshalIndent(&Envelope{
+		Operation: "download_chunk",
+		Result: res,
+	}, "", "  ")
+}
+
+func (r *JSONRender) AllocateChunk(res *app.AllocateChunkResult) ([]byte, error) {
+  	return json.MarshalIndent(&Envelope{
+  		Operation: "allocate_chunk",
+  		Result:    res,
+  	}, "", "  ")
+}
+
+func (r *JSONRender) PushChunk(res *app.PushChunkResult) ([]byte, error) {
+  	return json.MarshalIndent(&Envelope{
+  		Operation: "push_chunk",
+  		Result:    res,
+  	}, "", "  ")
+}
+
+
 func (r *JSONRender) Progress(p *progress.ObjectProgress) ([]byte, error) {
 	return json.MarshalIndent(&Envelope{
 		Operation: "object_transfer_progress",
