@@ -25,16 +25,17 @@ type Render interface {
 	Ping(*app.PingResult) ([]byte, error)
 	DiscoverMaster(*app.DiscoverMasterResult) ([]byte, error)
 
-	ListObjects(*app.ListObjectsResult) ([]byte, error)
-	ListChunks(*app.ListChunksResult) ([]byte, error)
 	ListNodes(*app.ListNodesResult) ([]byte, error)
 
-	DescribeChunk(*app.DescribeChunkResult) ([]byte, error)
 	DescribeObject(*app.DescribeObjectResult) ([]byte, error)
+	ListObjects(*app.ListObjectsResult) ([]byte, error)
+	CreateObject(*app.CreateObjectResult) ([]byte, error)
 
 	DownloadChunk(*app.DownloadChunkResult) ([]byte, error)
 	AllocateChunk(*app.AllocateChunkResult) ([]byte, error)
 	PushChunk(*app.PushChunkResult) ([]byte, error)
+	ListChunks(*app.ListChunksResult) ([]byte, error)
+	DescribeChunk(*app.DescribeChunkResult) ([]byte, error)
 
 	Progress(*progress.ObjectProgress) ([]byte, error)
 }

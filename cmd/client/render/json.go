@@ -99,6 +99,13 @@ func (r *JSONRender) PushChunk(res *app.PushChunkResult) ([]byte, error) {
   	}, "", "  ")
 }
 
+func (r *JSONRender) CreateObject(res *app.CreateObjectResult) ([]byte, error) {
+  	return json.MarshalIndent(&Envelope{
+  		Operation: "create_object",
+  		Result:    res,
+  	}, "", "  ")
+}
+
 
 func (r *JSONRender) Progress(p *progress.ObjectProgress) ([]byte, error) {
 	return json.MarshalIndent(&Envelope{

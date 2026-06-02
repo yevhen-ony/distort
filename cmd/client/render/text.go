@@ -154,49 +154,57 @@ func (r *TextRender) DescribeObject(res *app.DescribeObjectResult) ([]byte, erro
 
 func (r *TextRender) DownloadChunk(res *app.DownloadChunkResult) ([]byte, error) {
 
-  	b := &bytes.Buffer{}
+	b := &bytes.Buffer{}
 
-  	fmt.Fprintln(b, "GET CHUNK:")
-  	fmt.Fprintf(b, "\t * chunk_id : %s\n", res.Meta.ID)
-  	fmt.Fprintf(b, "\t * size     : %s\n", ToMBStr(res.Meta.Digest.Size))
-  	fmt.Fprintf(b, "\t * checksum : %s\n", res.Meta.Digest.Checksum)
-  	fmt.Fprintf(b, "\t * node_id  : %s\n", res.Source.ID)
-  	fmt.Fprintf(b, "\t * node_addr: %s\n", res.Source.Addr)
-  	fmt.Fprintf(b, "\t * path     : %s\n", res.Path)
+	fmt.Fprintln(b, "GET CHUNK:")
+	fmt.Fprintf(b, "\t * chunk_id : %s\n", res.Meta.ID)
+	fmt.Fprintf(b, "\t * size     : %s\n", ToMBStr(res.Meta.Digest.Size))
+	fmt.Fprintf(b, "\t * checksum : %s\n", res.Meta.Digest.Checksum)
+	fmt.Fprintf(b, "\t * node_id  : %s\n", res.Source.ID)
+	fmt.Fprintf(b, "\t * node_addr: %s\n", res.Source.Addr)
+	fmt.Fprintf(b, "\t * path     : %s\n", res.Path)
 
-  	return b.Bytes(), nil
+	return b.Bytes(), nil
 }
 
-
 func (r *TextRender) AllocateChunk(res *app.AllocateChunkResult) ([]byte, error) {
-  	b := &bytes.Buffer{}
+	b := &bytes.Buffer{}
 
-  	fmt.Fprintln(b, "ALLOCATE CHUNK:")
-  	fmt.Fprintf(b, "\t * object_id: %s\n", res.ObjectID)
-  	fmt.Fprintf(b, "\t * chunk_key: %s\n", res.ChunkKey)
-  	fmt.Fprintf(b, "\t * chunk_id : %s\n", res.ChunkID)
+	fmt.Fprintln(b, "ALLOCATE CHUNK:")
+	fmt.Fprintf(b, "\t * object_id: %s\n", res.ObjectID)
+	fmt.Fprintf(b, "\t * chunk_key: %s\n", res.ChunkKey)
+	fmt.Fprintf(b, "\t * chunk_id : %s\n", res.ChunkID)
 
-  	fmt.Fprintf(b, "TARGETS %d:\n", len(res.Targets))
-  	fmt.Fprintf(b, "%18s %18s\n", "NODE_ID", "ADDR")
-  	for _, target := range res.Targets {
-  		fmt.Fprintf(b, "%18s %18s\n", target.ID, target.Addr)
-  	}
+	fmt.Fprintf(b, "TARGETS %d:\n", len(res.Targets))
+	fmt.Fprintf(b, "%18s %18s\n", "NODE_ID", "ADDR")
+	for _, target := range res.Targets {
+		fmt.Fprintf(b, "%18s %18s\n", target.ID, target.Addr)
+	}
 
-  	return b.Bytes(), nil
+	return b.Bytes(), nil
 }
 
 func (r *TextRender) PushChunk(res *app.PushChunkResult) ([]byte, error) {
-  	b := &bytes.Buffer{}
+	b := &bytes.Buffer{}
 
-  	fmt.Fprintln(b, "PUSH CHUNK:")
-  	fmt.Fprintf(b, "\t * chunk_id : %s\n", res.Meta.ID)
-  	fmt.Fprintf(b, "\t * size     : %s\n", ToMBStr(res.Meta.Digest.Size))
-  	fmt.Fprintf(b, "\t * checksum : %s\n", res.Meta.Digest.Checksum)
-  	fmt.Fprintf(b, "\t * node_id  : %s\n", res.Target.ID)
-  	fmt.Fprintf(b, "\t * node_addr: %s\n", res.Target.Addr)
-  	fmt.Fprintf(b, "\t * file     : %s\n", res.File)
+	fmt.Fprintln(b, "PUSH CHUNK:")
+	fmt.Fprintf(b, "\t * chunk_id : %s\n", res.Meta.ID)
+	fmt.Fprintf(b, "\t * size     : %s\n", ToMBStr(res.Meta.Digest.Size))
+	fmt.Fprintf(b, "\t * checksum : %s\n", res.Meta.Digest.Checksum)
+	fmt.Fprintf(b, "\t * node_id  : %s\n", res.Target.ID)
+	fmt.Fprintf(b, "\t * node_addr: %s\n", res.Target.Addr)
+	fmt.Fprintf(b, "\t * file     : %s\n", res.File)
 
-  	return b.Bytes(), nil
+	return b.Bytes(), nil
+}
+
+func (r *TextRender) CreateObject(res *app.CreateObjectResult) ([]byte, error) {
+	b := &bytes.Buffer{}
+
+	fmt.Fprintln(b, "CREATE OBJECT:")
+	fmt.Fprintf(b, "\t * object_id: %s\n", res.ObjectID)
+
+	return b.Bytes(), nil
 }
 
 func (r *TextRender) Progress(op *progress.ObjectProgress) ([]byte, error) {
@@ -224,10 +232,8 @@ func (r *TextRender) Progress(op *progress.ObjectProgress) ([]byte, error) {
 			key, ch.Meta.ID, sizeMB, sentMB, ch.GetStatusStr(),
 		)
 	}
-	return b.Bytes(), nil 
+	return b.Bytes(), nil
 }
-
-
 
 func ToMBStr(bytes int64) string {
 	mb := float64(bytes) / float64(1024*1024)

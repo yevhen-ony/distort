@@ -126,3 +126,37 @@ func (app *App) PushChunk(ctx context.Context, q PushChunkQuery) (*PushChunkResu
 	}
 	return res, nil
 }
+
+type ListChunksResult struct {
+	Chunks []t.ChunkInfo
+}
+
+func (app *App) ListChunks(ctx context.Context) (*ListChunksResult, error) {
+	infos, err := app.MasterT().ListChunks(ctx)
+	if err != nil {
+		return nil, err
+	}
+	
+	res := &ListChunksResult{
+		Chunks: infos,
+	}
+
+	return res, nil 
+}
+
+type DescribeChunkResult struct {
+	Description *t.ChunkDesc1
+}
+
+func (app *App) DescribeChunk(ctx context.Context, chunkID string) (*DescribeChunkResult, error) {
+	desc, err := app.MasterT().DescribeChunk(ctx, t.ChunkID(chunkID))
+	if err != nil {
+		return nil, err
+	}
+	
+	res := &DescribeChunkResult{
+		Description : desc,
+	}
+
+	return res, nil
+}

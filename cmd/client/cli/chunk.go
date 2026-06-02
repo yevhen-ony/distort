@@ -22,6 +22,7 @@ const (
 func MakeChunkCmd(cfg *app.Config) *cobra.Command {
 	chunkCmd := &cobra.Command{
 		Use:   "chunk",
+		Aliases: []string{"c"},
 		Short: "chunk-related operations",
 	}
 	chunkCmd.AddCommand(

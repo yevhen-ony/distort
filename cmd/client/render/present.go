@@ -151,6 +151,10 @@ func (p *Presenter) resolve(state any) (FrameFn, error) {
 		frameFn := func() ([]byte, error) { return p.render.PushChunk(s) }
 		return frameFn, nil
 
+	case *app.CreateObjectResult:
+		frameFn := func() ([]byte, error) { return p.render.CreateObject(s) }
+		return frameFn, nil
+
 	case *progress.ObjectProgress:
 		frameFn := func() ([]byte, error) { return p.render.Progress(s) }
 		return frameFn, nil
