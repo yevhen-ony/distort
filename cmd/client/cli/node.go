@@ -13,23 +13,23 @@ import (
 
 func MakeNodeCmd(cfg *app.Config) *cobra.Command {
 	nodeCmd := &cobra.Command{
-		Use: "node",
+		Use:     "node",
 		Aliases: []string{"n"},
-		Short: "node-related operations",
+		Short:   "node-related operations",
 	}
 	nodeCmd.AddCommand(
 		MakeListNodesCmd(cfg),
+		MakeInspectNodeCmd(cfg),
 	)
 
 	return nodeCmd
 }
 
-
 func MakeListNodesCmd(cfg *app.Config) *cobra.Command {
 	listNodesCmd := &cobra.Command{
-		Use: "list",
+		Use:     "list",
 		Aliases: []string{"ls"},
-		Short: "list storage nodes",
+		Short:   "list storage nodes",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -38,8 +38,8 @@ func MakeListNodesCmd(cfg *app.Config) *cobra.Command {
 			if err := ApplyFlags(cfg, cmd); err != nil {
 				return fmt.Errorf("apply config flags: %w", err)
 			}
-			
-			app, err := RunApp(ctx, cfg) 
+
+			app, err := RunApp(ctx, cfg)
 			if err != nil {
 				return err
 			}
@@ -55,4 +55,38 @@ func MakeListNodesCmd(cfg *app.Config) *cobra.Command {
 		},
 	}
 	return listNodesCmd
+}
+
+func MakeInspectNodeCmd(cfg *app.Config) *cobra.Command {
+	inspectNodeCmd := &cobra.Command{
+		Use:   "inspect [addr]",
+		Short: "inspect storage node",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer stop()
+
+			if err := ApplyFlags(cfg, cmd); err != nil {
+				return fmt.Errorf("apply config flags: %w", err)
+			}
+
+			addr := args[0]
+
+			app, err := RunApp(ctx, cfg)
+			if err != nil {
+				return err
+			}
+			defer app.Close()
+
+			res, err := app.App.InspectNode(ctx, addr)
+			if err != nil {
+				app.Presenter.Update(render.NewErrorResult("inspect_node", err))
+			} else {
+				app.Presenter.Update(res)
+			}
+			return nil
+		},
+	}
+	return inspectNodeCmd
 }

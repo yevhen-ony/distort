@@ -11,6 +11,17 @@ const (
 	ChunkStateActive
 )
 
+func (cs ChunkState) String() string {
+	switch cs {
+	case ChunkStateStaged:
+		return "staged"
+	case ChunkStateActive:
+		return "active"
+	default:
+		return ""
+	}
+}
+
 type ChunkRecord struct {
 	Meta  t.ChunkMeta
 	State ChunkState

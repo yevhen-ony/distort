@@ -3,6 +3,7 @@ package convert
 import (
 	cpb "dos/gen/proto/common/v1"
 	mpb "dos/gen/proto/master/v1"
+	spb "dos/gen/proto/storage/v1"
 	"dos/internal/common/digest"
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
@@ -164,6 +165,13 @@ func MasterRefToPB(mr t.MasterRef) *mpb.MasterRef {
 	return &mpb.MasterRef {
 		MasterId: string(mr.ID),
 		Addr: mr.Addr,
+	}
+}
+
+func ChunkStorageViewToPB(v t.ChunkStorageView) *spb.ChunkStorageView {
+	return &spb.ChunkStorageView{
+		Meta: ChunkMetaToPB(v.Meta),
+		State: v.State,
 	}
 }
 

@@ -3,6 +3,7 @@ package convert
 import (
 	pb "dos/gen/proto/common/v1"
 	mpb "dos/gen/proto/master/v1"
+	spb "dos/gen/proto/storage/v1"
 
 	"dos/internal/common/digest"
 	t "dos/internal/common/types"
@@ -218,5 +219,12 @@ func MasterRefFromPB(pb *mpb.MasterRef) t.MasterRef {
 	return t.MasterRef{
 		ID: t.MasterID(pb.GetMasterId()),
 		Addr: pb.GetAddr(),
+	}
+}
+
+func ChunkStorageViewFromPB(pb *spb.ChunkStorageView) t.ChunkStorageView {
+	return t.ChunkStorageView{
+		Meta: ChunkMetaFromPB(pb.GetMeta()),
+		State: pb.GetState(),
 	}
 }

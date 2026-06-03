@@ -372,7 +372,7 @@ func (cs *StorageService) ProcessReport(ctx context.Context, r t.ReportResult) {
 
 	for _, chunkID := range r.Rejected {
 		rec, err := cs.inventory.GetRecord(chunkID)
-		if err == nil && rec.State == ChunkStateStaged {
+		if err == nil && rec.State == s.ChunkStateStaged {
 			cs.reporter.Report(ctx, t.NewReplicaStaged(rec.Meta).ToRecord())
 		}
 	}

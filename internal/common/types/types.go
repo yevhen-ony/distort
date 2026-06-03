@@ -48,9 +48,9 @@ type ObjectAccess struct {
 }
 
 type NodeStats struct {
-	FreeBytes  int64
-	UsedBytes  int64
-	ChunkCount int
+	FreeBytes  int64 `json:"free_bytes"`
+	UsedBytes  int64 `json:"used_bytes"`
+	ChunkCount int   `json:"chunk_count"`
 }
 
 type ChunkMeta struct {
@@ -99,4 +99,9 @@ type StorageNodeReport struct {
 	ReplicaStaged      *ReplicaStagedReport
 	ReplicaChainFailed *ReplicaChainFailedReport
 	ReplicaDeleted     *ReplicaDeletedReport
+}
+
+type ChunkStorageView struct {
+	Meta  ChunkMeta `json:"meta"`
+	State string    `json:"state"`
 }

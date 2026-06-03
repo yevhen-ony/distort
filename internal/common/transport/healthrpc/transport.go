@@ -12,15 +12,15 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type HealthTransport struct {
+type Transport struct {
 	conn *connect.ConnCache
 }
 
-func NewHealthTransport(conn *connect.ConnCache) (*HealthTransport, error) {
+func NewTransport(conn *connect.ConnCache) (*Transport, error) {
 	if conn == nil {
 		return nil, errors.New("missing conn")
 	}
-	health := &HealthTransport{
+	health := &Transport{
 		conn: conn,
 	}
 	return health, nil
@@ -31,7 +31,7 @@ type HealthResult struct {
 	Ready     bool 
 }
 
-func (ht *HealthTransport) Ready(ctx context.Context, addr string) (*HealthResult, error) {
+func (ht *Transport) Ready(ctx context.Context, addr string) (*HealthResult, error) {
 	conn, err := ht.conn.Get(addr)
 	if err != nil {
 		return nil, fmt.Errorf("create connection: %w", err)

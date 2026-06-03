@@ -207,6 +207,28 @@ func (r *TextRender) CreateObject(res *app.CreateObjectResult) ([]byte, error) {
 	return b.Bytes(), nil
 }
 
+func (r *TextRender) InspectNode(res *app.InspectNodeResult) ([]byte, error) {
+  	report := res.Report
+  	b := &bytes.Buffer{}
+
+  	fmt.Fprintln(b, "INSPECT NODE:")
+  	fmt.Fprintf(b, "\t * addr      : %s\n", report.Addr)
+  	fmt.Fprintf(b, "\t * chunks    : %d\n", report.Stats.ChunkCount)
+  	fmt.Fprintf(b, "\t * used_bytes: %s\n", ToMBStr(report.Stats.UsedBytes))
+  	fmt.Fprintf(b, "\t * free_bytes: %s\n", ToMBStr(report.Stats.FreeBytes))
+
+  	fmt.Fprintf(b, "%-18s %10s %-10s\n", "CHUNK_ID", "SIZE", "STATE")
+  	for _, chunk := range report.Chunks {
+  		fmt.Fprintf(b, "%-18s %10s %-10s\n",
+  			chunk.Meta.ID,
+  			ToMBStr(chunk.Meta.Digest.Size),
+  			chunk.State,
+  		)
+  	}
+
+  	return b.Bytes(), nil
+}
+
 func (r *TextRender) Progress(op *progress.ObjectProgress) ([]byte, error) {
 	b := &bytes.Buffer{}
 

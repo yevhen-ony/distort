@@ -106,6 +106,12 @@ func (r *JSONRender) CreateObject(res *app.CreateObjectResult) ([]byte, error) {
   	}, "", "  ")
 }
 
+func (r *JSONRender) InspectNode(res *app.InspectNodeResult) ([]byte, error) {
+  	return json.MarshalIndent(&Envelope{
+  		Operation: "inspect_node",
+  		Result:    res.Report,
+  	}, "", "  ")
+}
 
 func (r *JSONRender) Progress(p *progress.ObjectProgress) ([]byte, error) {
 	return json.MarshalIndent(&Envelope{

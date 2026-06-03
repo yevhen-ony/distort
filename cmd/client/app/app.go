@@ -9,6 +9,7 @@ import (
 	"dos/internal/common/master/route"
 	"dos/internal/common/transport/chunkrpc"
 	"dos/internal/common/transport/healthrpc"
+	"dos/internal/common/transport/storage/adminrpc"
 	"dos/internal/services/client/domain/progress"
 	"dos/internal/services/client/transport"
 )
@@ -16,18 +17,18 @@ import (
 type App struct {
 	Config *Config
 
-	Conn    *connect.ConnCache
-	Master  *MasterHolder
-	ChunkT  *chunkrpc.Transport
-	HealthT *healthrpc.HealthTransport
-	
-	onProgress func(*progress.ObjectProgress) 
+	Conn           *connect.ConnCache
+	Master         *MasterHolder
+	ChunkT         *chunkrpc.Transport
+	StorageHealthT *healthrpc.Transport
+	StorageAdminT  *adminrpc.Transport
+
+	onProgress func(*progress.ObjectProgress)
 }
 
 func (app *App) SetOnProgress(fn func(*progress.ObjectProgress)) {
 	app.onProgress = fn
 }
-
 
 func (app *App) Close() error {
 	_ = app.Master.router.Close()
@@ -46,7 +47,7 @@ func NewApp(config *Config) (*App, error) {
 		return nil, err
 	}
 
-	healthT, err := healthrpc.NewHealthTransport(conn)
+	storageHealthT, err := healthrpc.NewTransport(conn)
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("init health transport: %w", err)
@@ -58,17 +59,24 @@ func NewApp(config *Config) (*App, error) {
 		return nil, fmt.Errorf("init storage transport: %w", err)
 	}
 
+	storageAdminT, err := adminrpc.NewTransport(conn)
+	if err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("init admin storage node transport: %w", err)
+	}
+
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("init service: %w", err)
 	}
 
 	app := &App{
-		Config:  config,
-		Conn:    conn,
-		Master:  master,
-		ChunkT:  chunkT,
-		HealthT: healthT,
+		Config:         config,
+		Conn:           conn,
+		Master:         master,
+		ChunkT:         chunkT,
+		StorageHealthT: storageHealthT,
+		StorageAdminT:  storageAdminT,
 	}
 	return app, nil
 }

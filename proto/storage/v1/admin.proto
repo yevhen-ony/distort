@@ -1,0 +1,24 @@
+syntax = "proto3";
+
+package chunk.v1;
+
+import "common/v1/types.proto";
+
+option go_package = "dos/gen/proto/storage/v1;storage";
+
+
+service AdminService {
+  rpc Inspect(InspectRequest) returns (InspectResponse);
+}
+
+message InspectRequest {}
+
+message InspectResponse {
+  common.v1.NodeStats stats = 2;
+  repeated ChunkStorageView chunks = 3;
+}
+
+message ChunkStorageView {
+  common.v1.ChunkMeta meta = 1;
+  string state = 2;
+}

@@ -30,7 +30,7 @@ type PingResult struct {
 }
 
 func (app *App) Ping(ctx context.Context, addr string) (*PingResult, error) {
-	health, err := app.HealthT.Ready(ctx, addr)
+	health, err := app.StorageHealthT.Ready(ctx, addr)
 	if err != nil {
 		return nil, err
 	}

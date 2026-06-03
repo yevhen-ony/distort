@@ -21,7 +21,7 @@ type ChunkInventoryDeps struct {
 }
 
 type ChunkInventory struct {
-	catalog    ChunkCatalog
+	catalog    s.ChunkCatalog
 	mu         sync.RWMutex
 	totalBytes int64
 
@@ -40,7 +40,7 @@ func NewChunkInventory(deps ChunkInventoryDeps) (*ChunkInventory, error) {
 	service := &ChunkInventory{
 		config:  deps.Config,
 		metrics: deps.Metrics,
-		catalog: make(ChunkCatalog),
+		catalog: make(s.ChunkCatalog),
 	}
 	return service, nil
 }
@@ -58,7 +58,7 @@ func (ci *ChunkInventory) Add(meta *t.ChunkMeta) error {
 	ci.metrics.ChunksCount.Add(1)
 	ci.metrics.ChunksTotalBytes.Add(float64(size))
 
-	ci.catalog[meta.ID] = NewChunkRecord(*meta)
+	ci.catalog[meta.ID] = s.NewChunkRecord(*meta)
 	ci.totalBytes += meta.Digest.Size
 
 	return nil
@@ -72,7 +72,7 @@ func (ci *ChunkInventory) Has(chunkID t.ChunkID) bool {
 	return ok
 }
 
-func (ci *ChunkInventory) GetRecord(chunkID t.ChunkID) (*ChunkRecord, error) {
+func (ci *ChunkInventory) GetRecord(chunkID t.ChunkID) (*s.ChunkRecord, error) {
 	ci.mu.RLock()
 	defer ci.mu.RUnlock()
 
@@ -117,8 +117,8 @@ func (ci *ChunkInventory) RestageActive() {
 	defer ci.mu.Unlock()
 
 	for _, record := range ci.catalog {
-		if record.State == ChunkStateActive {
-			record.State = ChunkStateStaged
+		if record.State == s.ChunkStateActive {
+			record.State = s.ChunkStateStaged
 		}
 	}
 }
@@ -129,7 +129,7 @@ func (ci *ChunkInventory) ListStaged() []t.ChunkMeta {
 
 	metas := make([]t.ChunkMeta, 0, len(ci.catalog))
 	for _, record := range ci.catalog {
-		if record.State == ChunkStateStaged {
+		if record.State == s.ChunkStateStaged {
 			metas = append(metas, *record.Meta.Clone())
 		}
 	}
@@ -145,11 +145,11 @@ func (ci *ChunkInventory) SetActive(chunkID t.ChunkID) error {
 		return s.ErrChunkNotFound
 	}
 
-	rec.State = ChunkStateActive
+	rec.State = s.ChunkStateActive
 	return nil
 }
 
-func (ci *ChunkInventory) GetState(chunkID t.ChunkID) (ChunkState, error)  {
+func (ci *ChunkInventory) GetState(chunkID t.ChunkID) (s.ChunkState, error)  {
 	ci.mu.RLock()
 	defer ci.mu.RUnlock()
 
@@ -175,7 +175,7 @@ func (cs *ChunkInventory) BuildCatalog(
 		return fmt.Errorf("list chunks: %w", err)
 	}
 
-	catalog := make(ChunkCatalog, len(ids))
+	catalog := make(s.ChunkCatalog, len(ids))
 	var totalBytes int64
 
 	for _, id := range ids {
@@ -184,7 +184,7 @@ func (cs *ChunkInventory) BuildCatalog(
 			slog.Error("read chunk", "id", id, "error", err)
 			continue
 		}
-		catalog[id] = NewChunkRecord(meta)
+		catalog[id] = s.NewChunkRecord(meta)
 		totalBytes += meta.Digest.Size
 	}
 
@@ -198,4 +198,15 @@ func (cs *ChunkInventory) BuildCatalog(
 	cs.metrics.ChunksTotalBytes.Set(float64(totalBytes))
 
 	return nil
+}
+
+func (ci *ChunkInventory) ListRecords() []s.ChunkRecord {
+  	ci.mu.RLock()
+  	defer ci.mu.RUnlock()
+
+  	records := make([]s.ChunkRecord, 0, len(ci.catalog))
+  	for _, record := range ci.catalog {
+  		records = append(records, *record.Clone())
+  	}
+  	return records
 }

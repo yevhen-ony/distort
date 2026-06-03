@@ -26,6 +26,7 @@ type Render interface {
 	DiscoverMaster(*app.DiscoverMasterResult) ([]byte, error)
 
 	ListNodes(*app.ListNodesResult) ([]byte, error)
+	InspectNode(*app.InspectNodeResult) ([]byte, error)
 
 	DescribeObject(*app.DescribeObjectResult) ([]byte, error)
 	ListObjects(*app.ListObjectsResult) ([]byte, error)

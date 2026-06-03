@@ -40,6 +40,7 @@ type App struct {
 
 	apiServer *api.Server
 	apiHealth *api.HealthServer
+	apiAdmin  *api.AdminServer
 }
 
 func NewApp(config *Config) (*App, error) {
@@ -127,6 +128,10 @@ func NewApp(config *Config) (*App, error) {
 		return nil, fmt.Errorf("api health init: %w", err)
 	}
 
+	apiAdmin, err := api.NewAdminServer(api.AdminDeps{
+		Inventory: inventoryS,
+	})
+
 	storageS.SetReporter(reportS)
 	reportS.SetReportProcessor(storageS)
 	master.router.SetOnMasterChange(func(context.Context) {
@@ -151,6 +156,7 @@ func NewApp(config *Config) (*App, error) {
 
 		apiServer: apiServer,
 		apiHealth: apiHealth,
+		apiAdmin:  apiAdmin,
 	}
 	return app, nil
 }
@@ -177,6 +183,7 @@ func (app *App) runGrpcServer(ctx context.Context) {
 	_ = listener.RunGRPCServer(ctx, &app.config.Listen, func(s *grpc.Server) {
 		spb.RegisterChunkServiceServer(s, app.apiServer)
 		cpb.RegisterHealthServiceServer(s, app.apiHealth)
+		spb.RegisterAdminServiceServer(s, app.apiAdmin)
 	})
 }
 
