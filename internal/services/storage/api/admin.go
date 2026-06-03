@@ -17,12 +17,19 @@ type Inventory interface {
 	ListRecords() []s.ChunkRecord
 }
 
+type Storage interface {
+	StageAndReportMany(context.Context, []t.ChunkID) *s.TriggerReportResult
+	StageAndReportAll(context.Context) *s.TriggerReportResult
+}
+
 type AdminDeps struct{
 	Inventory Inventory
+	Storage Storage
 }
 
 type AdminServer struct{
 	inventory Inventory
+	storage Storage
 
 	spb.UnimplementedAdminServiceServer
 }
@@ -31,9 +38,13 @@ func NewAdminServer(deps AdminDeps) (*AdminServer, error) {
 	if deps.Inventory == nil {
 		return nil, errors.New("missing inventory")
 	}
+	if deps.Storage == nil {
+		return nil, errors.New("missing storage")
+	}
 
 	admin := &AdminServer{
 		inventory: deps.Inventory,
+		storage: deps.Storage,
 	}
 	return admin, nil
 }
@@ -59,5 +70,33 @@ func (as *AdminServer) Inspect(ctx context.Context, _ *spb.InspectRequest) (*spb
 		Chunks: utils.Map(views, convert.ChunkStorageViewToPB),
 	}
 	return rsp, nil
+}
+
+func (as *AdminServer) TriggerReport(
+	ctx context.Context,
+	req *spb.TriggerReportRequest,
+) (*spb.TriggerReportResponse, error) {
+
+	ctx = dosctx.WithService(ctx, "admin")
+	ctx = dosctx.WithOperation(ctx, "trigger_reports")
+
+	slog.DebugContext(ctx, "trigger report requested")
+
+	var trr *s.TriggerReportResult
+	if req.GetAll() {
+		trr = as.storage.StageAndReportAll(ctx)
+	} else {
+		chunkIDs := utils.Map(req.GetChunkIds(), func(id string) t.ChunkID {
+			return t.ChunkID(id)
+		})
+		trr = as.storage.StageAndReportMany(ctx, chunkIDs)
+	}
+
+	toStr := func(id t.ChunkID) string { return string(id) }
+	res := &spb.TriggerReportResponse{
+		Scheduled: utils.Map(trr.Scheduled, toStr),
+		Failed: utils.Map(trr.Failed, toStr),
+	}
+	return res, nil
 }
 

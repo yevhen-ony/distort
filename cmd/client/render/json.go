@@ -113,6 +113,13 @@ func (r *JSONRender) InspectNode(res *app.InspectNodeResult) ([]byte, error) {
   	}, "", "  ")
 }
 
+func (r *JSONRender) TriggerReport(res *app.TriggerReportResult) ([]byte, error) {
+  	return json.MarshalIndent(&Envelope{
+  		Operation: "trigger_report",
+  		Result:    res.Report,
+  	}, "", "  ")
+}
+
 func (r *JSONRender) Progress(p *progress.ObjectProgress) ([]byte, error) {
 	return json.MarshalIndent(&Envelope{
 		Operation: "object_transfer_progress",

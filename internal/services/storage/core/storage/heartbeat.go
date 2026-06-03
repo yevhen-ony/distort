@@ -26,7 +26,7 @@ type IdentityProvider interface {
 }
 
 type CatalogRestager interface {
-	RestageCatalog(context.Context)
+	StageAndReportAll(context.Context) *s.TriggerReportResult
 }
 
 type MasterTransport interface {
@@ -108,7 +108,13 @@ func (s *HeartbeatService) doIteration(ctx context.Context) {
 			slog.WarnContext(ctx, "request new node id failed", "error", err)
 			return
 		}
-		s.storage.RestageCatalog(ctx)
+		res := s.storage.StageAndReportAll(ctx)
+		if len(res.Failed) != 0 {
+			slog.WarnContext(ctx,
+				"stage and report on re-registration partially failed",
+				"failed_chunks", res.Failed,
+			)
+		}
 	}
 }
 

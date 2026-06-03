@@ -58,3 +58,43 @@ func (at *Transport) Inspect(ctx context.Context, addr string) (*InspectResult, 
 
 	return res, nil
 }
+
+type TriggerReportQuery struct {
+	Addr string
+	All bool
+	ChunkIDs []t.ChunkID 
+}
+
+type TriggerReportResult struct {
+	Scheduled []t.ChunkID
+	Failed []t.ChunkID
+}
+
+func (at *Transport) TriggerReport(
+	ctx context.Context,
+	q TriggerReportQuery,
+) (*TriggerReportResult, error) {
+
+	admin, err := at.admin(q.Addr)
+	if err != nil {
+		return nil, err
+	}
+
+	req := &spb.TriggerReportRequest{All: q.All}
+	if !q.All {
+		toStr := func(id t.ChunkID) string { return string(id) }
+		req.ChunkIds = utils.Map(q.ChunkIDs, toStr)
+	}
+
+	rsp, err := admin.TriggerReport(ctx, req)
+	if err != nil {
+		return nil, fmt.Errorf("rpc: %w", err)
+	}
+
+	toChunkID := func(s string) t.ChunkID { return t.ChunkID(s) }
+	res := &TriggerReportResult{
+		Scheduled: utils.Map(rsp.GetScheduled(), toChunkID),
+		Failed: utils.Map(rsp.GetFailed(), toChunkID),
+	}
+	return res, nil
+}

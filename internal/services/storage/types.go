@@ -42,3 +42,15 @@ func (r *ChunkRecord) Clone() *ChunkRecord {
 }
 
 type ChunkCatalog map[t.ChunkID]*ChunkRecord
+
+type TriggerReportResult struct {
+	Scheduled []t.ChunkID
+	Failed []t.ChunkID
+}
+
+func NewTriggerReportResult() *TriggerReportResult {
+	return &TriggerReportResult{
+		Scheduled: []t.ChunkID{},
+		Failed: []t.ChunkID{},
+	}
+}

@@ -229,6 +229,29 @@ func (r *TextRender) InspectNode(res *app.InspectNodeResult) ([]byte, error) {
   	return b.Bytes(), nil
 }
 
+func (r *TextRender) TriggerReport(res *app.TriggerReportResult) ([]byte, error) {
+  	report := res.Report
+  	b := &bytes.Buffer{}
+
+  	fmt.Fprintln(b, "TRIGGER REPORT:")
+  	if len(report.Scheduled) > 0 {
+  		fmt.Fprintf(b, "SCHEDULED %d:\n", len(report.Scheduled))
+  		for _, chunkID := range report.Scheduled {
+  			fmt.Fprintf(b, "%-18s\n", chunkID)
+  		}
+  	}
+
+  	if len(report.Failed) > 0 {
+  		fmt.Fprintf(b, "FAILED %d:\n", len(report.Failed))
+  		for _, chunkID := range report.Failed {
+  			fmt.Fprintf(b, "%-18s\n", chunkID)
+  		}
+  	}
+
+  	return b.Bytes(), nil
+}
+
+
 func (r *TextRender) Progress(op *progress.ObjectProgress) ([]byte, error) {
 	b := &bytes.Buffer{}
 
@@ -256,6 +279,8 @@ func (r *TextRender) Progress(op *progress.ObjectProgress) ([]byte, error) {
 	}
 	return b.Bytes(), nil
 }
+
+
 
 func ToMBStr(bytes int64) string {
 	mb := float64(bytes) / float64(1024*1024)

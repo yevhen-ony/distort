@@ -162,6 +162,110 @@ func (x *ChunkStorageView) GetState() string {
 	return ""
 }
 
+type TriggerReportRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	All           bool                   `protobuf:"varint,1,opt,name=all,proto3" json:"all,omitempty"`
+	ChunkIds      []string               `protobuf:"bytes,2,rep,name=chunk_ids,json=chunkIds,proto3" json:"chunk_ids,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TriggerReportRequest) Reset() {
+	*x = TriggerReportRequest{}
+	mi := &file_storage_v1_admin_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TriggerReportRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TriggerReportRequest) ProtoMessage() {}
+
+func (x *TriggerReportRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_v1_admin_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TriggerReportRequest.ProtoReflect.Descriptor instead.
+func (*TriggerReportRequest) Descriptor() ([]byte, []int) {
+	return file_storage_v1_admin_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *TriggerReportRequest) GetAll() bool {
+	if x != nil {
+		return x.All
+	}
+	return false
+}
+
+func (x *TriggerReportRequest) GetChunkIds() []string {
+	if x != nil {
+		return x.ChunkIds
+	}
+	return nil
+}
+
+type TriggerReportResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Scheduled     []string               `protobuf:"bytes,1,rep,name=scheduled,proto3" json:"scheduled,omitempty"`
+	Failed        []string               `protobuf:"bytes,2,rep,name=failed,proto3" json:"failed,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *TriggerReportResponse) Reset() {
+	*x = TriggerReportResponse{}
+	mi := &file_storage_v1_admin_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *TriggerReportResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*TriggerReportResponse) ProtoMessage() {}
+
+func (x *TriggerReportResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_v1_admin_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use TriggerReportResponse.ProtoReflect.Descriptor instead.
+func (*TriggerReportResponse) Descriptor() ([]byte, []int) {
+	return file_storage_v1_admin_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *TriggerReportResponse) GetScheduled() []string {
+	if x != nil {
+		return x.Scheduled
+	}
+	return nil
+}
+
+func (x *TriggerReportResponse) GetFailed() []string {
+	if x != nil {
+		return x.Failed
+	}
+	return nil
+}
+
 var File_storage_v1_admin_proto protoreflect.FileDescriptor
 
 const file_storage_v1_admin_proto_rawDesc = "" +
@@ -173,9 +277,16 @@ const file_storage_v1_admin_proto_rawDesc = "" +
 	"\x06chunks\x18\x03 \x03(\v2\x1a.chunk.v1.ChunkStorageViewR\x06chunks\"R\n" +
 	"\x10ChunkStorageView\x12(\n" +
 	"\x04meta\x18\x01 \x01(\v2\x14.common.v1.ChunkMetaR\x04meta\x12\x14\n" +
-	"\x05state\x18\x02 \x01(\tR\x05state2N\n" +
+	"\x05state\x18\x02 \x01(\tR\x05state\"E\n" +
+	"\x14TriggerReportRequest\x12\x10\n" +
+	"\x03all\x18\x01 \x01(\bR\x03all\x12\x1b\n" +
+	"\tchunk_ids\x18\x02 \x03(\tR\bchunkIds\"M\n" +
+	"\x15TriggerReportResponse\x12\x1c\n" +
+	"\tscheduled\x18\x01 \x03(\tR\tscheduled\x12\x16\n" +
+	"\x06failed\x18\x02 \x03(\tR\x06failed2\xa0\x01\n" +
 	"\fAdminService\x12>\n" +
-	"\aInspect\x12\x18.chunk.v1.InspectRequest\x1a\x19.chunk.v1.InspectResponseB\"Z dos/gen/proto/storage/v1;storageb\x06proto3"
+	"\aInspect\x12\x18.chunk.v1.InspectRequest\x1a\x19.chunk.v1.InspectResponse\x12P\n" +
+	"\rTriggerReport\x12\x1e.chunk.v1.TriggerReportRequest\x1a\x1f.chunk.v1.TriggerReportResponseB\"Z dos/gen/proto/storage/v1;storageb\x06proto3"
 
 var (
 	file_storage_v1_admin_proto_rawDescOnce sync.Once
@@ -189,22 +300,26 @@ func file_storage_v1_admin_proto_rawDescGZIP() []byte {
 	return file_storage_v1_admin_proto_rawDescData
 }
 
-var file_storage_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 3)
+var file_storage_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_storage_v1_admin_proto_goTypes = []any{
-	(*InspectRequest)(nil),   // 0: chunk.v1.InspectRequest
-	(*InspectResponse)(nil),  // 1: chunk.v1.InspectResponse
-	(*ChunkStorageView)(nil), // 2: chunk.v1.ChunkStorageView
-	(*v1.NodeStats)(nil),     // 3: common.v1.NodeStats
-	(*v1.ChunkMeta)(nil),     // 4: common.v1.ChunkMeta
+	(*InspectRequest)(nil),        // 0: chunk.v1.InspectRequest
+	(*InspectResponse)(nil),       // 1: chunk.v1.InspectResponse
+	(*ChunkStorageView)(nil),      // 2: chunk.v1.ChunkStorageView
+	(*TriggerReportRequest)(nil),  // 3: chunk.v1.TriggerReportRequest
+	(*TriggerReportResponse)(nil), // 4: chunk.v1.TriggerReportResponse
+	(*v1.NodeStats)(nil),          // 5: common.v1.NodeStats
+	(*v1.ChunkMeta)(nil),          // 6: common.v1.ChunkMeta
 }
 var file_storage_v1_admin_proto_depIdxs = []int32{
-	3, // 0: chunk.v1.InspectResponse.stats:type_name -> common.v1.NodeStats
+	5, // 0: chunk.v1.InspectResponse.stats:type_name -> common.v1.NodeStats
 	2, // 1: chunk.v1.InspectResponse.chunks:type_name -> chunk.v1.ChunkStorageView
-	4, // 2: chunk.v1.ChunkStorageView.meta:type_name -> common.v1.ChunkMeta
+	6, // 2: chunk.v1.ChunkStorageView.meta:type_name -> common.v1.ChunkMeta
 	0, // 3: chunk.v1.AdminService.Inspect:input_type -> chunk.v1.InspectRequest
-	1, // 4: chunk.v1.AdminService.Inspect:output_type -> chunk.v1.InspectResponse
-	4, // [4:5] is the sub-list for method output_type
-	3, // [3:4] is the sub-list for method input_type
+	3, // 4: chunk.v1.AdminService.TriggerReport:input_type -> chunk.v1.TriggerReportRequest
+	1, // 5: chunk.v1.AdminService.Inspect:output_type -> chunk.v1.InspectResponse
+	4, // 6: chunk.v1.AdminService.TriggerReport:output_type -> chunk.v1.TriggerReportResponse
+	5, // [5:7] is the sub-list for method output_type
+	3, // [3:5] is the sub-list for method input_type
 	3, // [3:3] is the sub-list for extension type_name
 	3, // [3:3] is the sub-list for extension extendee
 	0, // [0:3] is the sub-list for field type_name
@@ -221,7 +336,7 @@ func file_storage_v1_admin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_v1_admin_proto_rawDesc), len(file_storage_v1_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   3,
+			NumMessages:   5,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

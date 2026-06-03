@@ -159,6 +159,10 @@ func (p *Presenter) resolve(state any) (FrameFn, error) {
 		frameFn := func() ([]byte, error) { return p.render.InspectNode(s) }
 		return frameFn, nil
 
+  	case *app.TriggerReportResult:
+		frameFn := func() ([]byte, error) { return p.render.TriggerReport(s) }
+		return frameFn, nil
+
 	case *progress.ObjectProgress:
 		frameFn := func() ([]byte, error) { return p.render.Progress(s) }
 		return frameFn, nil

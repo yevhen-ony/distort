@@ -103,13 +103,13 @@ func (cs *StorageService) Start(ctx context.Context) error {
 		return fmt.Errorf("build catalog: %w", err)
 	}
 
-	metas := cs.inventory.ListStaged()
-	for _, meta := range metas {
-		cs.reporter.Report(ctx, t.NewReplicaStaged(meta).ToRecord())
+	res := cs.StageAndReportAll(ctx)
+	if len(res.Failed) != 0 {
+		slog.WarnContext(ctx,
+			"stage and report on start partially failed",
+			"failed_chunks", res.Failed,
+		)
 	}
-
-	cs.reporter.Flush(ctx)
-	slog.DebugContext(ctx, "catalog built", "chunks", len(metas))
 	return nil
 }
 
@@ -192,7 +192,7 @@ func (cs *StorageService) commitUpload(
 		return err
 	}
 
-	cs.reporter.Report(ctx, t.NewReplicaStaged(*meta).ToRecord())
+	cs.StageAndReportOne(ctx, meta.ID)
 	return nil
 }
 
@@ -355,19 +355,29 @@ func (cs *StorageService) DeleteChunk(ctx context.Context, chunkID t.ChunkID) er
 	return nil
 }
 
-func (cs *StorageService) RestageCatalog(ctx context.Context) {
-	slog.InfoContext(ctx, "restage catalog")
-	cs.inventory.RestageActive()
-	for _, meta := range cs.inventory.ListStaged() {
-		cs.reporter.Report(ctx, t.NewReplicaStaged(meta).ToRecord())
-	}
-	cs.reporter.Flush(ctx)
+func (cs *StorageService) StageAndReportAll(ctx context.Context) *s.TriggerReportResult {
+	slog.InfoContext(ctx, "stage and report all chunks in catalog")
+	
+	return cs.StageAndReportMany(ctx, cs.inventory.ListIDs())
+}
+
+
+func (cs *StorageService) StageAndReportOne(ctx context.Context, chunkID t.ChunkID) error {
+  	meta, err := cs.inventory.Stage(chunkID)
+  	if err != nil {
+  		return err
+  	}
+  	cs.reporter.Report(ctx, t.NewReplicaStaged(meta).ToRecord())
+  	return nil
 }
 
 func (cs *StorageService) ProcessReport(ctx context.Context, r t.ReportResult) {
+	ctx = dosctx.WithOperation(ctx, "process_report")
 
 	for _, chunkID := range r.Accepted {
-		_ = cs.inventory.SetActive(chunkID)
+		if _, err := cs.inventory.Activate(chunkID); err != nil {
+			slog.WarnContext(ctx, "activation failed", "chunk_id", chunkID, "error", err)
+		}
 	}
 
 	for _, chunkID := range r.Rejected {
@@ -376,4 +386,23 @@ func (cs *StorageService) ProcessReport(ctx context.Context, r t.ReportResult) {
 			cs.reporter.Report(ctx, t.NewReplicaStaged(rec.Meta).ToRecord())
 		}
 	}
+}
+
+func (cs *StorageService) StageAndReportMany(
+	ctx context.Context,
+	chunkIDs []t.ChunkID,
+) *s.TriggerReportResult {
+	
+	res := s.NewTriggerReportResult()
+
+	for _, chunkID := range chunkIDs {
+		if err := cs.StageAndReportOne(ctx, chunkID); err != nil {
+			res.Failed = append(res.Failed, chunkID)
+			continue
+		}
+		res.Scheduled = append(res.Scheduled, chunkID)
+	}
+	cs.reporter.Flush(ctx)
+
+	return res
 }

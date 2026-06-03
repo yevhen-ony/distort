@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"maps"
+	"slices"
 	"sync"
 
 	t "dos/internal/common/types"
@@ -112,17 +114,6 @@ func (ci *ChunkInventory) GetStats() t.NodeStats {
 	}
 }
 
-func (ci *ChunkInventory) RestageActive() {
-	ci.mu.Lock()
-	defer ci.mu.Unlock()
-
-	for _, record := range ci.catalog {
-		if record.State == s.ChunkStateActive {
-			record.State = s.ChunkStateStaged
-		}
-	}
-}
-
 func (ci *ChunkInventory) ListStaged() []t.ChunkMeta {
 	ci.mu.RLock()
 	defer ci.mu.RUnlock()
@@ -136,17 +127,30 @@ func (ci *ChunkInventory) ListStaged() []t.ChunkMeta {
 	return metas
 }
 
-func (ci *ChunkInventory) SetActive(chunkID t.ChunkID) error {
+func (ci *ChunkInventory) Activate(chunkID t.ChunkID) (t.ChunkMeta, error) {
 	ci.mu.Lock()
 	defer ci.mu.Unlock()
 	
 	rec, ok := ci.catalog[chunkID]
 	if !ok {
-		return s.ErrChunkNotFound
+		return t.ChunkMeta{}, s.ErrChunkNotFound
 	}
 
 	rec.State = s.ChunkStateActive
-	return nil
+	return *rec.Meta.Clone(), nil 
+}
+
+func (ci *ChunkInventory) Stage(chunkID t.ChunkID) (t.ChunkMeta, error) {
+	ci.mu.Lock()
+	defer ci.mu.Unlock()
+	
+	rec, ok := ci.catalog[chunkID]
+	if !ok {
+		return t.ChunkMeta{}, s.ErrChunkNotFound
+	}
+
+	rec.State = s.ChunkStateStaged
+	return *rec.Meta.Clone(), nil
 }
 
 func (ci *ChunkInventory) GetState(chunkID t.ChunkID) (s.ChunkState, error)  {
@@ -209,4 +213,8 @@ func (ci *ChunkInventory) ListRecords() []s.ChunkRecord {
   		records = append(records, *record.Clone())
   	}
   	return records
+}
+
+func (ci *ChunkInventory) ListIDs() []t.ChunkID {
+	return slices.Collect(maps.Keys(ci.catalog))
 }

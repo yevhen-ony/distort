@@ -9,6 +9,7 @@ option go_package = "dos/gen/proto/storage/v1;storage";
 
 service AdminService {
   rpc Inspect(InspectRequest) returns (InspectResponse);
+  rpc TriggerReport(TriggerReportRequest) returns (TriggerReportResponse);
 }
 
 message InspectRequest {}
@@ -22,3 +23,15 @@ message ChunkStorageView {
   common.v1.ChunkMeta meta = 1;
   string state = 2;
 }
+
+message TriggerReportRequest {
+  bool all = 1;
+  repeated string chunk_ids = 2;
+}
+
+message TriggerReportResponse {
+  repeated string scheduled = 1;
+  repeated string failed = 2;
+
+}
+
