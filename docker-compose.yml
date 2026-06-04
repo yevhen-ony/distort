@@ -60,6 +60,10 @@ services:
     volumes:
       - ./sandbox:/work/in
     command: ["sleep", "infinity"]
-    environment:
-      - CLIENT__MASTER_ADDR=master:10000
+
+  e2e:
+    profiles: [e2e]
+    image: dos-e2e:latest
+    command: ["pytest", "-v", "tests/e2e"]
+
 

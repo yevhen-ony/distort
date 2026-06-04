@@ -21,4 +21,7 @@
 # Env
 .env
 
+# py venv
+.venv/
+
 /cmd/storage/storage_data/
