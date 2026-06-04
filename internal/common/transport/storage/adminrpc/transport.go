@@ -38,7 +38,9 @@ func (at *Transport) admin(addr string) (spb.AdminServiceClient, error) {
 type InspectResult struct {
 	Stats  t.NodeStats
 	Chunks []t.ChunkStorageView
+	Heartbeat t.HeartbeatView
 }
+
 
 func (at *Transport) Inspect(ctx context.Context, addr string) (*InspectResult, error) {
 	admin, err := at.admin(addr)
@@ -54,6 +56,7 @@ func (at *Transport) Inspect(ctx context.Context, addr string) (*InspectResult, 
 	res := &InspectResult{
 		Stats:  *convert.NodeStatsFromPB(rsp.GetStats()),
 		Chunks: utils.Map(rsp.GetChunks(), convert.ChunkStorageViewFromPB),
+		Heartbeat: convert.HeatbeatViewFromPB(rsp.GetHeartbeat()),
 	}
 
 	return res, nil
@@ -95,6 +98,46 @@ func (at *Transport) TriggerReport(
 	res := &TriggerReportResult{
 		Scheduled: utils.Map(rsp.GetScheduled(), toChunkID),
 		Failed: utils.Map(rsp.GetFailed(), toChunkID),
+	}
+	return res, nil
+}
+
+type HeartbeatControlResult struct {
+	State t.HeartbeatView
+}
+
+func (at *Transport) PauseHeartbeat(ctx context.Context, addr string) (*HeartbeatControlResult, error) {
+	
+	admin, err := at.admin(addr)
+	if err != nil {
+		return nil, err
+	}
+	
+	rsp, err := admin.PauseHeartbeat(ctx, &spb.HeartbeatControlRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("rpc: %w", err)
+	}
+
+	res := &HeartbeatControlResult{
+		State: convert.HeatbeatViewFromPB(rsp.GetState()),
+	}
+	return res, nil
+}
+
+func (at *Transport) ResumeHeartbeat(ctx context.Context, addr string) (*HeartbeatControlResult, error) {
+
+	admin, err := at.admin(addr)
+	if err != nil {
+		return nil, err
+	}
+	
+	rsp, err := admin.ResumeHeartbeat(ctx, &spb.HeartbeatControlRequest{})
+	if err != nil {
+		return nil, fmt.Errorf("rpc: %w", err)
+	}
+
+	res := &HeartbeatControlResult{
+		State: convert.HeatbeatViewFromPB(rsp.GetState()),
 	}
 	return res, nil
 }

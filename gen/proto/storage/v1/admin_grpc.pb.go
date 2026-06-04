@@ -19,8 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminService_Inspect_FullMethodName       = "/chunk.v1.AdminService/Inspect"
-	AdminService_TriggerReport_FullMethodName = "/chunk.v1.AdminService/TriggerReport"
+	AdminService_Inspect_FullMethodName         = "/chunk.v1.AdminService/Inspect"
+	AdminService_TriggerReport_FullMethodName   = "/chunk.v1.AdminService/TriggerReport"
+	AdminService_PauseHeartbeat_FullMethodName  = "/chunk.v1.AdminService/PauseHeartbeat"
+	AdminService_ResumeHeartbeat_FullMethodName = "/chunk.v1.AdminService/ResumeHeartbeat"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -29,6 +31,8 @@ const (
 type AdminServiceClient interface {
 	Inspect(ctx context.Context, in *InspectRequest, opts ...grpc.CallOption) (*InspectResponse, error)
 	TriggerReport(ctx context.Context, in *TriggerReportRequest, opts ...grpc.CallOption) (*TriggerReportResponse, error)
+	PauseHeartbeat(ctx context.Context, in *HeartbeatControlRequest, opts ...grpc.CallOption) (*HeartbeatControlResponse, error)
+	ResumeHeartbeat(ctx context.Context, in *HeartbeatControlRequest, opts ...grpc.CallOption) (*HeartbeatControlResponse, error)
 }
 
 type adminServiceClient struct {
@@ -59,12 +63,34 @@ func (c *adminServiceClient) TriggerReport(ctx context.Context, in *TriggerRepor
 	return out, nil
 }
 
+func (c *adminServiceClient) PauseHeartbeat(ctx context.Context, in *HeartbeatControlRequest, opts ...grpc.CallOption) (*HeartbeatControlResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HeartbeatControlResponse)
+	err := c.cc.Invoke(ctx, AdminService_PauseHeartbeat_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
+func (c *adminServiceClient) ResumeHeartbeat(ctx context.Context, in *HeartbeatControlRequest, opts ...grpc.CallOption) (*HeartbeatControlResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(HeartbeatControlResponse)
+	err := c.cc.Invoke(ctx, AdminService_ResumeHeartbeat_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility.
 type AdminServiceServer interface {
 	Inspect(context.Context, *InspectRequest) (*InspectResponse, error)
 	TriggerReport(context.Context, *TriggerReportRequest) (*TriggerReportResponse, error)
+	PauseHeartbeat(context.Context, *HeartbeatControlRequest) (*HeartbeatControlResponse, error)
+	ResumeHeartbeat(context.Context, *HeartbeatControlRequest) (*HeartbeatControlResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -80,6 +106,12 @@ func (UnimplementedAdminServiceServer) Inspect(context.Context, *InspectRequest)
 }
 func (UnimplementedAdminServiceServer) TriggerReport(context.Context, *TriggerReportRequest) (*TriggerReportResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method TriggerReport not implemented")
+}
+func (UnimplementedAdminServiceServer) PauseHeartbeat(context.Context, *HeartbeatControlRequest) (*HeartbeatControlResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method PauseHeartbeat not implemented")
+}
+func (UnimplementedAdminServiceServer) ResumeHeartbeat(context.Context, *HeartbeatControlRequest) (*HeartbeatControlResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method ResumeHeartbeat not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
@@ -138,6 +170,42 @@ func _AdminService_TriggerReport_Handler(srv interface{}, ctx context.Context, d
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_PauseHeartbeat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HeartbeatControlRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).PauseHeartbeat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_PauseHeartbeat_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).PauseHeartbeat(ctx, req.(*HeartbeatControlRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
+func _AdminService_ResumeHeartbeat_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(HeartbeatControlRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).ResumeHeartbeat(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_ResumeHeartbeat_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).ResumeHeartbeat(ctx, req.(*HeartbeatControlRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -152,6 +220,14 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "TriggerReport",
 			Handler:    _AdminService_TriggerReport_Handler,
+		},
+		{
+			MethodName: "PauseHeartbeat",
+			Handler:    _AdminService_PauseHeartbeat_Handler,
+		},
+		{
+			MethodName: "ResumeHeartbeat",
+			Handler:    _AdminService_ResumeHeartbeat_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

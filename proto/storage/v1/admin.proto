@@ -10,6 +10,8 @@ option go_package = "dos/gen/proto/storage/v1;storage";
 service AdminService {
   rpc Inspect(InspectRequest) returns (InspectResponse);
   rpc TriggerReport(TriggerReportRequest) returns (TriggerReportResponse);
+  rpc PauseHeartbeat(HeartbeatControlRequest) returns (HeartbeatControlResponse);
+  rpc ResumeHeartbeat(HeartbeatControlRequest) returns (HeartbeatControlResponse);
 }
 
 message InspectRequest {}
@@ -17,6 +19,11 @@ message InspectRequest {}
 message InspectResponse {
   common.v1.NodeStats stats = 2;
   repeated ChunkStorageView chunks = 3;
+  HeartbeatView heartbeat = 4;
+}
+
+message HeartbeatView {
+  string status = 1;
 }
 
 message ChunkStorageView {
@@ -32,6 +39,10 @@ message TriggerReportRequest {
 message TriggerReportResponse {
   repeated string scheduled = 1;
   repeated string failed = 2;
+}
 
+message HeartbeatControlRequest {}
+message HeartbeatControlResponse {
+  HeartbeatView state = 1;
 }
 

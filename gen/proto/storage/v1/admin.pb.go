@@ -62,6 +62,7 @@ type InspectResponse struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Stats         *v1.NodeStats          `protobuf:"bytes,2,opt,name=stats,proto3" json:"stats,omitempty"`
 	Chunks        []*ChunkStorageView    `protobuf:"bytes,3,rep,name=chunks,proto3" json:"chunks,omitempty"`
+	Heartbeat     *HeartbeatView         `protobuf:"bytes,4,opt,name=heartbeat,proto3" json:"heartbeat,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -110,6 +111,57 @@ func (x *InspectResponse) GetChunks() []*ChunkStorageView {
 	return nil
 }
 
+func (x *InspectResponse) GetHeartbeat() *HeartbeatView {
+	if x != nil {
+		return x.Heartbeat
+	}
+	return nil
+}
+
+type HeartbeatView struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Status        string                 `protobuf:"bytes,1,opt,name=status,proto3" json:"status,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HeartbeatView) Reset() {
+	*x = HeartbeatView{}
+	mi := &file_storage_v1_admin_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HeartbeatView) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HeartbeatView) ProtoMessage() {}
+
+func (x *HeartbeatView) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_v1_admin_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HeartbeatView.ProtoReflect.Descriptor instead.
+func (*HeartbeatView) Descriptor() ([]byte, []int) {
+	return file_storage_v1_admin_proto_rawDescGZIP(), []int{2}
+}
+
+func (x *HeartbeatView) GetStatus() string {
+	if x != nil {
+		return x.Status
+	}
+	return ""
+}
+
 type ChunkStorageView struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
 	Meta          *v1.ChunkMeta          `protobuf:"bytes,1,opt,name=meta,proto3" json:"meta,omitempty"`
@@ -120,7 +172,7 @@ type ChunkStorageView struct {
 
 func (x *ChunkStorageView) Reset() {
 	*x = ChunkStorageView{}
-	mi := &file_storage_v1_admin_proto_msgTypes[2]
+	mi := &file_storage_v1_admin_proto_msgTypes[3]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -132,7 +184,7 @@ func (x *ChunkStorageView) String() string {
 func (*ChunkStorageView) ProtoMessage() {}
 
 func (x *ChunkStorageView) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_v1_admin_proto_msgTypes[2]
+	mi := &file_storage_v1_admin_proto_msgTypes[3]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -145,7 +197,7 @@ func (x *ChunkStorageView) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use ChunkStorageView.ProtoReflect.Descriptor instead.
 func (*ChunkStorageView) Descriptor() ([]byte, []int) {
-	return file_storage_v1_admin_proto_rawDescGZIP(), []int{2}
+	return file_storage_v1_admin_proto_rawDescGZIP(), []int{3}
 }
 
 func (x *ChunkStorageView) GetMeta() *v1.ChunkMeta {
@@ -172,7 +224,7 @@ type TriggerReportRequest struct {
 
 func (x *TriggerReportRequest) Reset() {
 	*x = TriggerReportRequest{}
-	mi := &file_storage_v1_admin_proto_msgTypes[3]
+	mi := &file_storage_v1_admin_proto_msgTypes[4]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -184,7 +236,7 @@ func (x *TriggerReportRequest) String() string {
 func (*TriggerReportRequest) ProtoMessage() {}
 
 func (x *TriggerReportRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_v1_admin_proto_msgTypes[3]
+	mi := &file_storage_v1_admin_proto_msgTypes[4]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -197,7 +249,7 @@ func (x *TriggerReportRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TriggerReportRequest.ProtoReflect.Descriptor instead.
 func (*TriggerReportRequest) Descriptor() ([]byte, []int) {
-	return file_storage_v1_admin_proto_rawDescGZIP(), []int{3}
+	return file_storage_v1_admin_proto_rawDescGZIP(), []int{4}
 }
 
 func (x *TriggerReportRequest) GetAll() bool {
@@ -224,7 +276,7 @@ type TriggerReportResponse struct {
 
 func (x *TriggerReportResponse) Reset() {
 	*x = TriggerReportResponse{}
-	mi := &file_storage_v1_admin_proto_msgTypes[4]
+	mi := &file_storage_v1_admin_proto_msgTypes[5]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -236,7 +288,7 @@ func (x *TriggerReportResponse) String() string {
 func (*TriggerReportResponse) ProtoMessage() {}
 
 func (x *TriggerReportResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_storage_v1_admin_proto_msgTypes[4]
+	mi := &file_storage_v1_admin_proto_msgTypes[5]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -249,7 +301,7 @@ func (x *TriggerReportResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use TriggerReportResponse.ProtoReflect.Descriptor instead.
 func (*TriggerReportResponse) Descriptor() ([]byte, []int) {
-	return file_storage_v1_admin_proto_rawDescGZIP(), []int{4}
+	return file_storage_v1_admin_proto_rawDescGZIP(), []int{5}
 }
 
 func (x *TriggerReportResponse) GetScheduled() []string {
@@ -266,15 +318,98 @@ func (x *TriggerReportResponse) GetFailed() []string {
 	return nil
 }
 
+type HeartbeatControlRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HeartbeatControlRequest) Reset() {
+	*x = HeartbeatControlRequest{}
+	mi := &file_storage_v1_admin_proto_msgTypes[6]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HeartbeatControlRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HeartbeatControlRequest) ProtoMessage() {}
+
+func (x *HeartbeatControlRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_v1_admin_proto_msgTypes[6]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HeartbeatControlRequest.ProtoReflect.Descriptor instead.
+func (*HeartbeatControlRequest) Descriptor() ([]byte, []int) {
+	return file_storage_v1_admin_proto_rawDescGZIP(), []int{6}
+}
+
+type HeartbeatControlResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	State         *HeartbeatView         `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *HeartbeatControlResponse) Reset() {
+	*x = HeartbeatControlResponse{}
+	mi := &file_storage_v1_admin_proto_msgTypes[7]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *HeartbeatControlResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*HeartbeatControlResponse) ProtoMessage() {}
+
+func (x *HeartbeatControlResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_storage_v1_admin_proto_msgTypes[7]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use HeartbeatControlResponse.ProtoReflect.Descriptor instead.
+func (*HeartbeatControlResponse) Descriptor() ([]byte, []int) {
+	return file_storage_v1_admin_proto_rawDescGZIP(), []int{7}
+}
+
+func (x *HeartbeatControlResponse) GetState() *HeartbeatView {
+	if x != nil {
+		return x.State
+	}
+	return nil
+}
+
 var File_storage_v1_admin_proto protoreflect.FileDescriptor
 
 const file_storage_v1_admin_proto_rawDesc = "" +
 	"\n" +
 	"\x16storage/v1/admin.proto\x12\bchunk.v1\x1a\x15common/v1/types.proto\"\x10\n" +
-	"\x0eInspectRequest\"q\n" +
+	"\x0eInspectRequest\"\xa8\x01\n" +
 	"\x0fInspectResponse\x12*\n" +
 	"\x05stats\x18\x02 \x01(\v2\x14.common.v1.NodeStatsR\x05stats\x122\n" +
-	"\x06chunks\x18\x03 \x03(\v2\x1a.chunk.v1.ChunkStorageViewR\x06chunks\"R\n" +
+	"\x06chunks\x18\x03 \x03(\v2\x1a.chunk.v1.ChunkStorageViewR\x06chunks\x125\n" +
+	"\theartbeat\x18\x04 \x01(\v2\x17.chunk.v1.HeartbeatViewR\theartbeat\"'\n" +
+	"\rHeartbeatView\x12\x16\n" +
+	"\x06status\x18\x01 \x01(\tR\x06status\"R\n" +
 	"\x10ChunkStorageView\x12(\n" +
 	"\x04meta\x18\x01 \x01(\v2\x14.common.v1.ChunkMetaR\x04meta\x12\x14\n" +
 	"\x05state\x18\x02 \x01(\tR\x05state\"E\n" +
@@ -283,10 +418,15 @@ const file_storage_v1_admin_proto_rawDesc = "" +
 	"\tchunk_ids\x18\x02 \x03(\tR\bchunkIds\"M\n" +
 	"\x15TriggerReportResponse\x12\x1c\n" +
 	"\tscheduled\x18\x01 \x03(\tR\tscheduled\x12\x16\n" +
-	"\x06failed\x18\x02 \x03(\tR\x06failed2\xa0\x01\n" +
+	"\x06failed\x18\x02 \x03(\tR\x06failed\"\x19\n" +
+	"\x17HeartbeatControlRequest\"I\n" +
+	"\x18HeartbeatControlResponse\x12-\n" +
+	"\x05state\x18\x01 \x01(\v2\x17.chunk.v1.HeartbeatViewR\x05state2\xd3\x02\n" +
 	"\fAdminService\x12>\n" +
 	"\aInspect\x12\x18.chunk.v1.InspectRequest\x1a\x19.chunk.v1.InspectResponse\x12P\n" +
-	"\rTriggerReport\x12\x1e.chunk.v1.TriggerReportRequest\x1a\x1f.chunk.v1.TriggerReportResponseB\"Z dos/gen/proto/storage/v1;storageb\x06proto3"
+	"\rTriggerReport\x12\x1e.chunk.v1.TriggerReportRequest\x1a\x1f.chunk.v1.TriggerReportResponse\x12W\n" +
+	"\x0ePauseHeartbeat\x12!.chunk.v1.HeartbeatControlRequest\x1a\".chunk.v1.HeartbeatControlResponse\x12X\n" +
+	"\x0fResumeHeartbeat\x12!.chunk.v1.HeartbeatControlRequest\x1a\".chunk.v1.HeartbeatControlResponseB\"Z dos/gen/proto/storage/v1;storageb\x06proto3"
 
 var (
 	file_storage_v1_admin_proto_rawDescOnce sync.Once
@@ -300,29 +440,38 @@ func file_storage_v1_admin_proto_rawDescGZIP() []byte {
 	return file_storage_v1_admin_proto_rawDescData
 }
 
-var file_storage_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
+var file_storage_v1_admin_proto_msgTypes = make([]protoimpl.MessageInfo, 8)
 var file_storage_v1_admin_proto_goTypes = []any{
-	(*InspectRequest)(nil),        // 0: chunk.v1.InspectRequest
-	(*InspectResponse)(nil),       // 1: chunk.v1.InspectResponse
-	(*ChunkStorageView)(nil),      // 2: chunk.v1.ChunkStorageView
-	(*TriggerReportRequest)(nil),  // 3: chunk.v1.TriggerReportRequest
-	(*TriggerReportResponse)(nil), // 4: chunk.v1.TriggerReportResponse
-	(*v1.NodeStats)(nil),          // 5: common.v1.NodeStats
-	(*v1.ChunkMeta)(nil),          // 6: common.v1.ChunkMeta
+	(*InspectRequest)(nil),           // 0: chunk.v1.InspectRequest
+	(*InspectResponse)(nil),          // 1: chunk.v1.InspectResponse
+	(*HeartbeatView)(nil),            // 2: chunk.v1.HeartbeatView
+	(*ChunkStorageView)(nil),         // 3: chunk.v1.ChunkStorageView
+	(*TriggerReportRequest)(nil),     // 4: chunk.v1.TriggerReportRequest
+	(*TriggerReportResponse)(nil),    // 5: chunk.v1.TriggerReportResponse
+	(*HeartbeatControlRequest)(nil),  // 6: chunk.v1.HeartbeatControlRequest
+	(*HeartbeatControlResponse)(nil), // 7: chunk.v1.HeartbeatControlResponse
+	(*v1.NodeStats)(nil),             // 8: common.v1.NodeStats
+	(*v1.ChunkMeta)(nil),             // 9: common.v1.ChunkMeta
 }
 var file_storage_v1_admin_proto_depIdxs = []int32{
-	5, // 0: chunk.v1.InspectResponse.stats:type_name -> common.v1.NodeStats
-	2, // 1: chunk.v1.InspectResponse.chunks:type_name -> chunk.v1.ChunkStorageView
-	6, // 2: chunk.v1.ChunkStorageView.meta:type_name -> common.v1.ChunkMeta
-	0, // 3: chunk.v1.AdminService.Inspect:input_type -> chunk.v1.InspectRequest
-	3, // 4: chunk.v1.AdminService.TriggerReport:input_type -> chunk.v1.TriggerReportRequest
-	1, // 5: chunk.v1.AdminService.Inspect:output_type -> chunk.v1.InspectResponse
-	4, // 6: chunk.v1.AdminService.TriggerReport:output_type -> chunk.v1.TriggerReportResponse
-	5, // [5:7] is the sub-list for method output_type
-	3, // [3:5] is the sub-list for method input_type
-	3, // [3:3] is the sub-list for extension type_name
-	3, // [3:3] is the sub-list for extension extendee
-	0, // [0:3] is the sub-list for field type_name
+	8, // 0: chunk.v1.InspectResponse.stats:type_name -> common.v1.NodeStats
+	3, // 1: chunk.v1.InspectResponse.chunks:type_name -> chunk.v1.ChunkStorageView
+	2, // 2: chunk.v1.InspectResponse.heartbeat:type_name -> chunk.v1.HeartbeatView
+	9, // 3: chunk.v1.ChunkStorageView.meta:type_name -> common.v1.ChunkMeta
+	2, // 4: chunk.v1.HeartbeatControlResponse.state:type_name -> chunk.v1.HeartbeatView
+	0, // 5: chunk.v1.AdminService.Inspect:input_type -> chunk.v1.InspectRequest
+	4, // 6: chunk.v1.AdminService.TriggerReport:input_type -> chunk.v1.TriggerReportRequest
+	6, // 7: chunk.v1.AdminService.PauseHeartbeat:input_type -> chunk.v1.HeartbeatControlRequest
+	6, // 8: chunk.v1.AdminService.ResumeHeartbeat:input_type -> chunk.v1.HeartbeatControlRequest
+	1, // 9: chunk.v1.AdminService.Inspect:output_type -> chunk.v1.InspectResponse
+	5, // 10: chunk.v1.AdminService.TriggerReport:output_type -> chunk.v1.TriggerReportResponse
+	7, // 11: chunk.v1.AdminService.PauseHeartbeat:output_type -> chunk.v1.HeartbeatControlResponse
+	7, // 12: chunk.v1.AdminService.ResumeHeartbeat:output_type -> chunk.v1.HeartbeatControlResponse
+	9, // [9:13] is the sub-list for method output_type
+	5, // [5:9] is the sub-list for method input_type
+	5, // [5:5] is the sub-list for extension type_name
+	5, // [5:5] is the sub-list for extension extendee
+	0, // [0:5] is the sub-list for field type_name
 }
 
 func init() { file_storage_v1_admin_proto_init() }
@@ -336,7 +485,7 @@ func file_storage_v1_admin_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_storage_v1_admin_proto_rawDesc), len(file_storage_v1_admin_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   5,
+			NumMessages:   8,
 			NumExtensions: 0,
 			NumServices:   1,
 		},

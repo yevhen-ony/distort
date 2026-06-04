@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"log/slog"
+	"sync"
 	"time"
 
 	"dos/internal/common/dosctx"
@@ -53,6 +54,9 @@ type HeartbeatService struct {
 	config  HeartbeatConfig
 	metrics *HeartbeatMetrics
 	looper  *loop.Looper
+
+	mu     sync.RWMutex
+	paused bool
 }
 
 func NewHeartbeatService(deps HeartbeatDeps) (*HeartbeatService, error) {
@@ -87,6 +91,13 @@ func NewHeartbeatService(deps HeartbeatDeps) (*HeartbeatService, error) {
 }
 
 func (s *HeartbeatService) doIteration(ctx context.Context) {
+	s.mu.RLock()
+	paused := s.paused
+	s.mu.RUnlock()
+	if paused {
+		slog.DebugContext(ctx, "heartbeat paused")
+		return
+	}
 
 	nodeID, err := s.identity.GetID()
 	if err != nil {
@@ -125,4 +136,36 @@ func (s *HeartbeatService) RunLoop(ctx context.Context) {
 
 func (s *HeartbeatService) Flush() {
 	s.looper.Flush()
+}
+
+func (s *HeartbeatService) Pause() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.paused {
+		return false
+	}
+
+	s.paused = true
+	return true 
+}
+
+func (s *HeartbeatService) Resume() bool {
+	defer s.Flush()
+
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	if s.paused {
+		s.paused = false
+		return true
+	}
+	return false	
+}
+
+func (s *HeartbeatService) IsPaused() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	return s.paused
 }

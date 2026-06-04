@@ -22,14 +22,22 @@ type Storage interface {
 	StageAndReportAll(context.Context) *s.TriggerReportResult
 }
 
-type AdminDeps struct{
-	Inventory Inventory
-	Storage Storage
+type Heartbeat interface {
+	Pause() bool
+	Resume() bool
+	IsPaused() bool
 }
 
-type AdminServer struct{
+type AdminDeps struct {
+	Inventory Inventory
+	Storage   Storage
+	Heartbeat Heartbeat
+}
+
+type AdminServer struct {
 	inventory Inventory
-	storage Storage
+	storage   Storage
+	heartbeat Heartbeat
 
 	spb.UnimplementedAdminServiceServer
 }
@@ -41,16 +49,20 @@ func NewAdminServer(deps AdminDeps) (*AdminServer, error) {
 	if deps.Storage == nil {
 		return nil, errors.New("missing storage")
 	}
+	if deps.Heartbeat == nil {
+		return nil, errors.New("missing heartbeat")
+	}
 
 	admin := &AdminServer{
 		inventory: deps.Inventory,
-		storage: deps.Storage,
+		storage:   deps.Storage,
+		heartbeat: deps.Heartbeat,
 	}
 	return admin, nil
 }
 
 func (as *AdminServer) Inspect(ctx context.Context, _ *spb.InspectRequest) (*spb.InspectResponse, error) {
-	
+
 	ctx = dosctx.WithService(ctx, "admin")
 	ctx = dosctx.WithOperation(ctx, "inspect")
 
@@ -60,14 +72,15 @@ func (as *AdminServer) Inspect(ctx context.Context, _ *spb.InspectRequest) (*spb
 	recs := as.inventory.ListRecords()
 	views := utils.Map(recs, func(r s.ChunkRecord) t.ChunkStorageView {
 		return t.ChunkStorageView{
-			Meta: r.Meta,
+			Meta:  r.Meta,
 			State: r.State.String(),
 		}
 	})
-
+	
 	rsp := &spb.InspectResponse{
-		Stats: convert.NodeStatsToPB(stats),
+		Stats:  convert.NodeStatsToPB(stats),
 		Chunks: utils.Map(views, convert.ChunkStorageViewToPB),
+		Heartbeat: convert.HeartbeatViewToPB(as.getHeartbeatView()),
 	}
 	return rsp, nil
 }
@@ -95,8 +108,51 @@ func (as *AdminServer) TriggerReport(
 	toStr := func(id t.ChunkID) string { return string(id) }
 	res := &spb.TriggerReportResponse{
 		Scheduled: utils.Map(trr.Scheduled, toStr),
-		Failed: utils.Map(trr.Failed, toStr),
+		Failed:    utils.Map(trr.Failed, toStr),
 	}
 	return res, nil
 }
 
+func (as *AdminServer) PauseHeartbeat(
+	ctx context.Context,
+	req *spb.HeartbeatControlRequest,
+) (*spb.HeartbeatControlResponse, error) {
+
+	ctx = dosctx.WithService(ctx, "admin")
+	ctx = dosctx.WithOperation(ctx, "pause_heartbeat")
+	slog.DebugContext(ctx, "pause heartbeat requested")
+
+	as.heartbeat.Pause()
+
+	rsp := &spb.HeartbeatControlResponse{
+		State: convert.HeartbeatViewToPB(as.getHeartbeatView()),
+	}
+	return rsp, nil
+}
+
+func (as *AdminServer) ResumeHeartbeat(
+	ctx context.Context,
+	req *spb.HeartbeatControlRequest,
+) (*spb.HeartbeatControlResponse, error) {
+
+	ctx = dosctx.WithService(ctx, "admin")
+	ctx = dosctx.WithOperation(ctx, "resume_heartbeat")
+	slog.DebugContext(ctx, "resume heartbeat requested")
+
+	as.heartbeat.Resume()
+
+	rsp := &spb.HeartbeatControlResponse{
+		State: convert.HeartbeatViewToPB(as.getHeartbeatView()),
+	}
+	return rsp, nil
+}
+
+func (as *AdminServer) getHeartbeatView() t.HeartbeatView {
+	hbStatus := "running"
+	if as.heartbeat.IsPaused() {
+		hbStatus = "paused"
+	}
+	return t.HeartbeatView{
+		Status: hbStatus,
+	}
+}

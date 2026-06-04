@@ -175,3 +175,9 @@ func ChunkStorageViewToPB(v t.ChunkStorageView) *spb.ChunkStorageView {
 	}
 }
 
+func HeartbeatViewToPB(v t.HeartbeatView) *spb.HeartbeatView {
+	return &spb.HeartbeatView{
+		Status: v.Status,
+	}
+}
+

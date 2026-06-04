@@ -29,9 +29,10 @@ type InspectNodeResult struct {
 }
 
 type InspectReport struct {
-	Addr   string               `json:"addr"`
-	Stats  t.NodeStats          `json:"stats"`
-	Chunks []t.ChunkStorageView `json:"chunks"`
+	Addr      string               `json:"addr"`
+	Stats     t.NodeStats          `json:"stats"`
+	Chunks    []t.ChunkStorageView `json:"chunks"`
+	Heartbeat t.HeartbeatView      `json:"heartbeat"`
 }
 
 func (app *App) InspectNode(ctx context.Context, addr string) (*InspectNodeResult, error) {
@@ -42,9 +43,10 @@ func (app *App) InspectNode(ctx context.Context, addr string) (*InspectNodeResul
 
 	res := &InspectNodeResult{
 		Report: InspectReport{
-			Addr:   addr,
-			Stats:  insp.Stats,
-			Chunks: insp.Chunks,
+			Addr:      addr,
+			Stats:     insp.Stats,
+			Chunks:    insp.Chunks,
+			Heartbeat: insp.Heartbeat,
 		},
 	}
 	return res, nil
@@ -78,9 +80,34 @@ func (app *App) TriggerReport(ctx context.Context, q TriggerReportQuery) (*Trigg
 	res := &TriggerReportResult{
 		Report: TriggerReportReport{
 			Scheduled: out.Scheduled,
-			Failed: out.Failed,
+			Failed:    out.Failed,
 		},
 	}
 	return res, nil
 }
 
+type HeartbeatControlResult struct {
+	Heartbeat t.HeartbeatView `json:"heartbeat"`
+}
+
+func (app *App) PauseHeartbeat(ctx context.Context, addr string) (*HeartbeatControlResult, error) {
+	pauseRes, err := app.StorageAdminT.PauseHeartbeat(ctx, addr)
+	if err != nil {
+		return nil, err
+	}
+	res := &HeartbeatControlResult{
+		Heartbeat: pauseRes.State,
+	}
+	return res, nil
+}
+
+func (app *App) ResumeHeartbeat(ctx context.Context, addr string) (*HeartbeatControlResult, error) {
+	resumeRes, err := app.StorageAdminT.ResumeHeartbeat(ctx, addr)
+	if err != nil {
+		return nil, err
+	}
+	res := &HeartbeatControlResult{
+		Heartbeat: resumeRes.State,
+	}
+	return res, nil
+}

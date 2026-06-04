@@ -105,3 +105,7 @@ type ChunkStorageView struct {
 	Meta  ChunkMeta `json:"meta"`
 	State string    `json:"state"`
 }
+
+type HeartbeatView struct {
+	Status string `json:"status"`
+}

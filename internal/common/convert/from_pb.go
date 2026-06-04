@@ -228,3 +228,9 @@ func ChunkStorageViewFromPB(pb *spb.ChunkStorageView) t.ChunkStorageView {
 		State: pb.GetState(),
 	}
 }
+
+func HeatbeatViewFromPB(pb *spb.HeartbeatView) t.HeartbeatView {
+	return t.HeartbeatView{
+		Status: pb.GetStatus(), 
+	}
+}

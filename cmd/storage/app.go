@@ -131,6 +131,7 @@ func NewApp(config *Config) (*App, error) {
 	apiAdmin, err := api.NewAdminServer(api.AdminDeps{
 		Inventory: inventoryS,
 		Storage:   storageS,
+		Heartbeat: heartbeatS,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("api admin init: %w", err)
