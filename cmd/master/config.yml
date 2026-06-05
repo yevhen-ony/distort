@@ -36,10 +36,10 @@ service:
   frame_size: 3MB
   replication_count: 1
   chunk_allocation_margin_bytes: 512
-  node_inactivity_timeout: 30s
-  node_cleanup_interval: 15s
+  node_inactivity_timeout: 10s
+  node_cleanup_interval: 10s
   replication_queue_length: 100
-  catalog_cleanup_interval: 15s
+  catalog_cleanup_interval: 10s
   replication_interval: 3s
   chunk_stale_after: 15s
   replication_planner_interval: 15s

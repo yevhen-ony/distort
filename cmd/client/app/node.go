@@ -87,6 +87,11 @@ func (app *App) TriggerReport(ctx context.Context, q TriggerReportQuery) (*Trigg
 }
 
 type HeartbeatControlResult struct {
+	Report HeatbeatControlReport
+}
+
+type HeatbeatControlReport struct {
+	Addr      string          `json:"addr"`
 	Heartbeat t.HeartbeatView `json:"heartbeat"`
 }
 
@@ -96,7 +101,10 @@ func (app *App) PauseHeartbeat(ctx context.Context, addr string) (*HeartbeatCont
 		return nil, err
 	}
 	res := &HeartbeatControlResult{
-		Heartbeat: pauseRes.State,
+		Report: HeatbeatControlReport{
+			Heartbeat: pauseRes.State,
+			Addr:      addr,
+		},
 	}
 	return res, nil
 }
@@ -107,7 +115,10 @@ func (app *App) ResumeHeartbeat(ctx context.Context, addr string) (*HeartbeatCon
 		return nil, err
 	}
 	res := &HeartbeatControlResult{
-		Heartbeat: resumeRes.State,
+		Report: HeatbeatControlReport{
+			Heartbeat: resumeRes.State,
+			Addr:      addr,
+		},
 	}
 	return res, nil
 }

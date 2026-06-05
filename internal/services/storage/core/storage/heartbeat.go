@@ -94,6 +94,7 @@ func (s *HeartbeatService) doIteration(ctx context.Context) {
 	s.mu.RLock()
 	paused := s.paused
 	s.mu.RUnlock()
+
 	if paused {
 		slog.DebugContext(ctx, "heartbeat paused")
 		return

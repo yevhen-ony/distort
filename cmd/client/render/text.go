@@ -252,6 +252,17 @@ func (r *TextRender) TriggerReport(res *app.TriggerReportResult) ([]byte, error)
   	return b.Bytes(), nil
 }
 
+func (r *TextRender) HeartbeatControl(res *app.HeartbeatControlResult) ([]byte, error) {
+	report := res.Report
+
+	b := &bytes.Buffer{}
+	fmt.Fprintln(b, "HEARTBEAT:")
+	fmt.Fprintf(b, "\t * addr  : %s\n", report.Addr)
+	fmt.Fprintf(b, "\t * status: %s\n", report.Heartbeat.Status)
+	
+	return b.Bytes(), nil
+}
+
 
 func (r *TextRender) Progress(op *progress.ObjectProgress) ([]byte, error) {
 	b := &bytes.Buffer{}

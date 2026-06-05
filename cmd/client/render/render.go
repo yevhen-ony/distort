@@ -28,6 +28,7 @@ type Render interface {
 	ListNodes(*app.ListNodesResult) ([]byte, error)
 	InspectNode(*app.InspectNodeResult) ([]byte, error)
 	TriggerReport(*app.TriggerReportResult) ([]byte, error)
+	HeartbeatControl(*app.HeartbeatControlResult) ([]byte, error)
 
 	DescribeObject(*app.DescribeObjectResult) ([]byte, error)
 	ListObjects(*app.ListObjectsResult) ([]byte, error)

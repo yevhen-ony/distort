@@ -120,6 +120,13 @@ func (r *JSONRender) TriggerReport(res *app.TriggerReportResult) ([]byte, error)
   	}, "", "  ")
 }
 
+func (r *JSONRender) HeartbeatControl(res *app.HeartbeatControlResult) ([]byte, error) {
+	return json.MarshalIndent(&Envelope{
+		Operation: "heartbeat_control",
+		Result: res.Report,
+	}, "", "  ")
+}
+
 func (r *JSONRender) Progress(p *progress.ObjectProgress) ([]byte, error) {
 	return json.MarshalIndent(&Envelope{
 		Operation: "object_transfer_progress",

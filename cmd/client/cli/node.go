@@ -4,6 +4,7 @@ import (
 	"context"
 	"dos/cmd/client/app"
 	"dos/cmd/client/render"
+	"errors"
 	"fmt"
 	"os"
 	"os/signal"
@@ -21,6 +22,7 @@ func MakeNodeCmd(cfg *app.Config) *cobra.Command {
 		MakeListNodesCmd(cfg),
 		MakeInspectNodeCmd(cfg),
 		MakeTriggerReportCmd(cfg),
+		MakeHeartbeatNodeCmd(cfg),
 	)
 
 	return nodeCmd
@@ -142,3 +144,57 @@ func MakeTriggerReportCmd(cfg *app.Config) *cobra.Command {
   	return triggerReportCmd
 }
 
+func MakeHeartbeatNodeCmd(cfg *app.Config) *cobra.Command {
+  	heartbeatCmd := &cobra.Command{
+  		Use:   "heartbeat [addr]",
+  		Short: "control storage node heartbeat",
+  		Args:  cobra.ExactArgs(1),
+  		RunE: func(cmd *cobra.Command, args []string) error {
+  			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+  			defer stop()
+
+  			if err := ApplyFlags(cfg, cmd); err != nil {
+  				return fmt.Errorf("apply config flags: %w", err)
+  			}
+
+  			pause, err := cmd.Flags().GetBool("pause")
+  			if err != nil {
+  				return fmt.Errorf("pause flag: %w", err)
+  			}
+
+  			resume, err := cmd.Flags().GetBool("resume")
+  			if err != nil {
+  				return fmt.Errorf("resume flag: %w", err)
+  			}
+
+  			if pause == resume {
+  				return errors.New("exactly one of --pause or --resume is required")
+  			}
+
+  			a, err := RunApp(ctx, cfg)
+  			if err != nil {
+  				return err
+  			}
+  			defer a.Close()
+
+  			addr := args[0]
+
+  			var res *app.HeartbeatControlResult
+  			if pause {
+  				res, err = a.App.PauseHeartbeat(ctx, addr)
+  			} else {
+  				res, err = a.App.ResumeHeartbeat(ctx, addr)
+  			}
+
+  			if err != nil {
+  				return a.Presenter.Update(render.NewErrorResult("heartbeat_control", err))
+  			}
+  			return a.Presenter.Update(res)
+  		},
+  	}
+
+  	heartbeatCmd.Flags().Bool("pause", false, "pause storage node heartbeat")
+  	heartbeatCmd.Flags().Bool("resume", false, "resume storage node heartbeat")
+
+  	return heartbeatCmd
+}

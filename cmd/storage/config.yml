@@ -29,7 +29,7 @@ metrics:
   namespace: dos 
 
 service:
-  heartbeat_interval: 15s
+  heartbeat_interval: 3s
   registration_timeout: 30s
   replication_timeout: 30s
 

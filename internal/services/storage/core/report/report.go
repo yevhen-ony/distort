@@ -96,9 +96,8 @@ func (rs *ReportService) Report(ctx context.Context, report t.StorageNodeReport)
 
 func (rs *ReportService) RunReportIteration(ctx context.Context) {
 
-	slog.DebugContext(ctx, "exec report chunks")
-
 	if len(rs.pending) > 0 {
+		slog.DebugContext(ctx, "send pending reports")
 		result, err := rs.SendReports(ctx, rs.pending)
 		if err != nil {
 			slog.ErrorContext(ctx, "report chunks failed", "error", err)
@@ -109,11 +108,11 @@ func (rs *ReportService) RunReportIteration(ctx context.Context) {
 	}
 
 	rs.pending = rs.queue.Drain()
-	slog.DebugContext(ctx, "drain report queue", "length", len(rs.pending))
 	if len(rs.pending) == 0 {
 		return
 	}
 
+	slog.DebugContext(ctx, "send drained reports", "length", len(rs.pending))
 	rs.metrics.ReportsQueueBatchSize.Observe(float64(len(rs.pending)))
 
 	result, err := rs.SendReports(ctx, rs.pending)
