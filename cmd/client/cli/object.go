@@ -34,9 +34,10 @@ func MakeObjectCmd(cfg *app.Config) *cobra.Command {
 
 func MakeDescribeObjectCmd(cfg *app.Config) *cobra.Command {
 	descObjectCmd := &cobra.Command{
-		Use:     "object [object-id]",
-		Aliases: []string{"o"},
+		Use:     "describe [object-id]",
+		Aliases: []string{"desc"},
 		Short:   "describe object",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -73,6 +74,7 @@ func MakeScaleObjectCmd(cfg *app.Config) *cobra.Command {
 	scaleObjectCmd := &cobra.Command{
 		Use:   "scale [object-id]",
 		Short: "scale replication object",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -101,7 +103,8 @@ func MakeScaleObjectCmd(cfg *app.Config) *cobra.Command {
 			defer app.Close()
 
 			if err = app.App.ScaleObject(ctx, objectID, replicaCount); err != nil {
-				app.Presenter.Update(render.NewErrorResult("scale_object", err))
+				// app.Presenter.Update(render.NewErrorResult("scale_object", err))
+				return err
 			}
 			return nil
 		},

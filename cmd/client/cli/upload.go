@@ -42,8 +42,11 @@ func MakeUploadCmd(cfg *app.Config) *cobra.Command {
 			}
 			defer a.Close()
 
-			cancel := a.Presenter.RunLoop(ctx)
-			defer cancel()
+
+ 			if cfg.OutputFormat() == "text" {
+				cancel := a.Presenter.RunLoop(ctx)
+				defer cancel()
+  			}
 
 			a.App.SetOnProgress(func(p *progress.ObjectProgress) {
 				a.Presenter.Update(p)

@@ -28,3 +28,26 @@ def created_objects():
             errors.append(f"{object_id}: {err}")
 
     assert not errors, "cleanup failed:\n" + "\n".join(errors)
+
+
+
+@pytest.fixture
+def cleanup(request):
+    finalizers = []
+
+    def add(fn):
+        finalizers.append(fn)
+        return fn
+
+    def run_finalizers():
+        errors = []
+        for fn in reversed(finalizers):
+            try:
+                fn()
+            except AssertionError as err:
+                errors.append(str(err))
+
+        assert not errors, "cleanup failed:\n" + "\n".join(errors)
+
+    request.addfinalizer(run_finalizers)
+    return add

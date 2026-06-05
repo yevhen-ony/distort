@@ -39,8 +39,10 @@ func MakeDownloadCmd(cfg *app.Config) *cobra.Command {
 			}
 			defer app.Close()
 
-			cancel := app.Presenter.RunLoop(ctx)
-			defer cancel()
+ 			if cfg.OutputFormat() == "text" {
+				cancel := app.Presenter.RunLoop(ctx)
+				defer cancel()
+  			}
 
 			app.App.SetOnProgress(func(p *progress.ObjectProgress){
 				app.Presenter.Update(p)

@@ -29,7 +29,7 @@ type InspectNodeResult struct {
 }
 
 type InspectReport struct {
-	Addr      string               `json:"addr"`
+	Addr      string               `json:"address"`
 	Stats     t.NodeStats          `json:"stats"`
 	Chunks    []t.ChunkStorageView `json:"chunks"`
 	Heartbeat t.HeartbeatView      `json:"heartbeat"`
@@ -91,7 +91,7 @@ type HeartbeatControlResult struct {
 }
 
 type HeatbeatControlReport struct {
-	Addr      string          `json:"addr"`
+	Addr      string          `json:"address"`
 	Heartbeat t.HeartbeatView `json:"heartbeat"`
 }
 
