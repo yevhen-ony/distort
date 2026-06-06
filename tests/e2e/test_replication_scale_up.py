@@ -10,8 +10,8 @@ from helpers import (
 )
 
 
-def test_replication(workdir, run_id, cleanup):
-    object_id = f"e2e-replication-{run_id}"
+def test_replication_scale_up(workdir, run_id, cleanup):
+    object_id = f"e2e-replication-scale-up-{run_id}"
 
     source = workdir / "source.bin"
     downloaded = workdir / "downloaded.bin"
@@ -20,8 +20,8 @@ def test_replication(workdir, run_id, cleanup):
     write_random_file(source, size)
 
     # upload object
-    delete_obj = upload_object(object_id, source)
-    cleanup(delete_obj)
+    upload_object(object_id, source)
+    cleanup(lambda: scale_object(object_id, 0))
 
     wait_object_replicated(object_id)
 

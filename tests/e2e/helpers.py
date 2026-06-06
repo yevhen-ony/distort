@@ -89,10 +89,6 @@ def upload_object(object_id, source):
     res = assert_success(raw, "object_transfer_progress")
     assert res["status"] == "Done"
 
-    def cleanup():
-        run_dos("object", "scale", object_id, "--replicas", "0")
-    return cleanup
-
 
 def download_object(object_id, destination):
     raw = run_dos_json("download", object_id, "--dest", destination)
@@ -101,7 +97,6 @@ def download_object(object_id, destination):
 
 
 def wait_object_replicated(object_id):
-
     desc_obj = describe_object(object_id)
     replica_count = desc_obj["replication"]
 
@@ -112,6 +107,113 @@ def wait_object_replicated(object_id):
             message=f"chunk {chunk_id} was not replicated on time",
         )
 
+
 def scale_object(object_id, replica_count):
     run_dos("object", "scale", object_id, "--replicas", str(replica_count))
+
+
+def pause_node(node_addr):
+    pause_raw = run_dos_json("node", "heartbeat", node_addr, "--pause")
+    pause_res = assert_success(pause_raw, "heartbeat_control")
+    assert pause_res["address"] == node_addr 
+    assert pause_res["heartbeat"]["status"] == "paused"
+
+
+def resume_node(node_addr):
+    resume_raw = run_dos_json("node", "heartbeat", node_addr, "--resume")
+    resume_res = assert_success(resume_raw, "heartbeat_control")
+    assert resume_res["address"] == node_addr 
+    assert resume_res["heartbeat"]["status"] == "running"
+
+
+def is_node_listed(node_addr):
+    list_node_raw = run_dos_json("node", "list")
+    list_node_res = list_node_raw["result"]
+
+    node_addrs = [node_item["address"] for node_item in list_node_res]
+    return node_addr in node_addrs 
+
+
+def wait_node_paused(node_addr):
+    # wait master reaction
+    wait_until(
+        lambda: not is_node_listed(node_addr),
+        message=f"node {node_addr} is still listed",
+    )
+
+    inspect_paused = inspect_node(node_addr)
+    assert inspect_paused["heartbeat"]["status"] == "paused"
+
+
+def wait_node_resumed(node_addr):
+    # wait master reaction
+    wait_until(
+        lambda: is_node_listed(node_addr),
+        message=f"node {node_addr} is still not listed",
+    )
+
+    inspect_resumed = inspect_node(node_addr)
+    assert inspect_resumed["heartbeat"]["status"] == "running"
+
+
+def list_nodes():
+    list_raw = run_dos_json("node", "list")
+    list_res = assert_success(list_raw, "list_nodes")
+    return list_res
+
+
+def inspect_node(node_addr):
+    inspect_raw = run_dos_json("node", "inspect", node_addr)
+    inspect_res = assert_success(inspect_raw, "inspect_node")
+    return inspect_res
+
+
+def list_objects():
+    list_raw = run_dos_json("object", "list")
+    list_res = assert_success(list_raw, "list_objects")
+    return list_res
+
+
+def list_chunks():
+    list_raw = run_dos_json("chunk", "list")
+    list_res = assert_success(list_raw, "list_chunks")
+    return list_res
+
+
+def create_object(object_id):
+    create_raw = run_dos_json("object", "create", object_id)
+    assert_success(create_raw, "create_object")
+
+
+def allocate_chunk(object_id, chunk_key):
+    alloc_raw = run_dos_json("chunk", "allocate", object_id, "--key", chunk_key)
+    alloc_res = assert_success(alloc_raw, "allocate_chunk")
+    return alloc_res
+
+
+def push_chunk(chunk_id, node_id, node_addr, source):
+    push_raw = run_dos_json(
+        "chunk", "push", str(source),
+        "--id", chunk_id,
+        "--node-id", node_id,
+        "--node-addr", node_addr, 
+    )
+    assert_success(push_raw, "push_chunk")
+
+def pull_chunk(chunk_id, node_id, node_addr, dest):
+    pull_chunk_raw = run_dos_json(
+        "chunk", "get", chunk_id,
+        "--node-id", node_id,
+        "--node-addr", node_addr,
+        "--dest", dest,
+    )
+    assert_success(pull_chunk_raw, "download_chunk")
+
+def trigger_report(node_addr, chunk_id):
+    trigger_report_raw = run_dos_json(
+        "node", "report", node_addr,
+        "--chunk", chunk_id,
+    )
+    trigger_report_res = assert_success(trigger_report_raw, "trigger_report")
+    assert chunk_id in trigger_report_res["scheduled"]
 

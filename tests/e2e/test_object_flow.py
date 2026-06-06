@@ -1,12 +1,13 @@
 from helpers import (
     assert_same_bytes,
-    assert_success,
-    run_dos_json,
     write_random_file,
     describe_object,
     upload_object,
     download_object,
     wait_object_replicated,
+    list_objects,
+    scale_object,
+    list_chunks,
 )
 
 
@@ -19,23 +20,20 @@ def test_object_flow(workdir, run_id, cleanup):
     size = 10 * 1024 * 1024  # 10 MB
     write_random_file(source, size)
     
-    delete_obj_fn = upload_object(object_id, source)
-    cleanup(delete_obj_fn)
+    upload_object(object_id, source)
+    cleanup(lambda: scale_object(object_id, 0))
 
-    # list objects
-    list_objects_raw = run_dos_json("object", "list")
-    list_objects_res = assert_success(list_objects_raw, "list_objects")
-    object_ids = [object_item["object_id"] for object_item in list_objects_res]
-    assert object_id in object_ids
+    # ensure object listed 
+    objects = list_objects()
+    assert object_id in [item["object_id"] for item in objects]
 
-    # describe object
+    # ensure object with chunks 
     object_desc = describe_object(object_id) 
     assert len(object_desc["chunks"]) > 0
 
     # list chunks
-    list_chunks_raw = run_dos_json("chunk", "list")
-    list_chunks_res = assert_success(list_chunks_raw, "list_chunks")
-    listed_chunks = {chunk["chunk_id"]: chunk for chunk in list_chunks_res}
+    chunks = list_chunks()
+    listed_chunks = {item["chunk_id"]: item for item in chunks}
 
     # ensure chunks listed
     for chunk in object_desc["chunks"]:

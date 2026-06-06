@@ -1,9 +1,12 @@
 from helpers import (
-    run_dos,
-    run_dos_json,
-    write_random_file,
+    allocate_chunk,
     assert_same_bytes,
-    assert_success,
+    create_object,
+    pull_chunk,
+    push_chunk,
+    scale_object,
+    trigger_report,
+    write_random_file,
 )
 
 
@@ -17,40 +20,22 @@ def test_chunk_flow(workdir, run_id, cleanup):
     write_random_file(source, 1024 * 1024)
 
     # create empty object
-    create_object_raw = run_dos_json("object", "create", object_id)
-    assert_success(create_object_raw, "create_object")
-
-    cleanup(lambda: run_dos("object", "scale", object_id, "--replicas", "0"))
+    create_object(object_id)
+    cleanup(lambda: scale_object(object_id, 0))
 
     # allocate chunk
-    alloc_chunk_raw = run_dos_json("chunk", "allocate", object_id, "--key", chunk_key)
-    alloc_chunk_res = assert_success(alloc_chunk_raw, "allocate_chunk")
+    alloc_chunk = allocate_chunk(object_id, chunk_key)
 
-    chunk_id = alloc_chunk_res["chunk_id"]
-    target = alloc_chunk_res["targets"][0]
+    chunk_id = alloc_chunk["chunk_id"]
+    target = alloc_chunk["targets"][0]
 
     # push chunk bin
-    push_raw = run_dos_json(
-      "chunk", "push", str(source),
-      "--id", chunk_id,
-      "--node-id", target["node_id"],
-      "--node-addr", target["address"],
-    )
-    assert_success(push_raw, "push_chunk")
+    push_chunk(chunk_id, target["node_id"], target["address"], source)
 
     # force node to report
-    trigger_report_raw = run_dos_json(
-      "node", "report", target["address"],
-      "--chunk", chunk_id,
-    )
-    trigger_report_res = assert_success(trigger_report_raw, "trigger_report")
-    assert chunk_id in trigger_report_res["scheduled"]
+    trigger_report(target["address"], chunk_id)
 
-    download_chunk_raw = run_dos_json(
-      "chunk", "get", chunk_id,
-      "--node-id", target["node_id"],
-      "--node-addr", target["address"],
-      "--dest", str(downloaded),
-    )
-    assert_success(download_chunk_raw, "download_chunk")
+    # pull chunk bin
+    pull_chunk(chunk_id, target["node_id"], target["address"], str(downloaded))
+
     assert_same_bytes(source, downloaded)
