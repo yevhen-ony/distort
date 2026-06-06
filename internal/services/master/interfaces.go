@@ -116,5 +116,6 @@ type MasterState interface {
 	GetActiveMaster(context.Context) (t.MasterRef, error)
 	IsActiveMaster() bool
 	WatchState(context.Context, func(context.Context))
+	TransferLeadership(context.Context) error
 }
 

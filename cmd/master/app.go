@@ -230,7 +230,10 @@ func (app *App) initReplication(config *Config) (err error) {
 }
 
 func (app *App) initAPI(config *Config) (err error) {
-	app.adminAPI, err = api.NewAdminServer(app.clientFacade)
+	app.adminAPI, err = api.NewAdminServer(api.AdminDeps{
+		Facade: app.clientFacade,
+		State: app.masterMode.MasterState(),
+	})
 	if err != nil {
 		return fmt.Errorf("admin api init: %w", err)
 	}

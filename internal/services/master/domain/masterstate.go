@@ -41,3 +41,6 @@ func (s *LocalMasterStateService) WatchState(
   	<-ctx.Done()
 }
 
+func (s *LocalMasterStateService) TransferLeadership(_ context.Context) error {
+ 	return errors.New("leadership transfer is not supported")
+}

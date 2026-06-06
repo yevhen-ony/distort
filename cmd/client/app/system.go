@@ -23,6 +23,11 @@ func (app *App) DiscoverMaster(ctx context.Context) (*DiscoverMasterResult, erro
 	return res, nil
 }
 
+
+func (app *App) TransferLeadership(ctx context.Context) error {
+	return app.MasterT().TransferLeadership(ctx)
+}
+
 type PingResult struct {
 	Address   string `json:"address"`
 	Status    string `json:"status"`

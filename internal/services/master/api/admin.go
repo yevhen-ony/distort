@@ -16,17 +16,28 @@ type AdminServer struct {
 	mpb.UnimplementedAdminServiceServer
 
 	facade m.ClientFacade
+	state m.MasterState	
 }
 
-func NewAdminServer(facade m.ClientFacade) (*AdminServer, error) {
-	if facade == nil {
+type AdminDeps struct {
+	Facade m.ClientFacade
+	State m.MasterState
+}
+
+func NewAdminServer(deps AdminDeps) (*AdminServer, error) {
+	if deps.Facade == nil {
 		return nil, errors.New("missing facade service")
 	}
+	if deps.State == nil {
+		return nil, errors.New("missing master state")
+	}
 
-	s := &AdminServer{facade: facade}
+	s := &AdminServer{
+		facade: deps.Facade,
+		state: deps.State,
+	}
 	return s, nil
 }
-
 
 func (s *AdminServer) ListObjects(
 	ctx context.Context,
@@ -61,7 +72,7 @@ func (s *AdminServer) ListNodes(
 	req *mpb.ListNodesRequest,
 ) (*mpb.ListNodesResponse, error) {
 
-	slog.DebugContext(ctx, "list objects requested")
+	slog.DebugContext(ctx, "list nodes requested")
 
 	nodes := s.facade.ListNodes(ctx)
 
@@ -69,4 +80,17 @@ func (s *AdminServer) ListNodes(
 		Nodes: utils.Map(nodes, convert.NodeInfoToPB),
 	}
 	return rsp, nil
+}
+
+func (s *AdminServer) TransferLeadership(
+	ctx context.Context,
+	req *mpb.TransferLeadershipRequest,
+) (*mpb.TransferLeadershipResponse, error) {
+
+	slog.DebugContext(ctx, "transfer leadership requested")
+
+	if err := s.state.TransferLeadership(ctx); err != nil {
+		return nil, err 
+	}
+	return &mpb.TransferLeadershipResponse{}, nil
 }

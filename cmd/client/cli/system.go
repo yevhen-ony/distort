@@ -14,21 +14,34 @@ import (
 )
 
 func MakeSystemCmd(cfg *app.Config) *cobra.Command {
-	listCmd := &cobra.Command{
+	systemCmd := &cobra.Command{
 		Use: "system",
 		Short: "show system-level cluster information",
 	}
-	listCmd.AddCommand(
+	systemCmd.AddCommand(
 		MakeLeaderCmd(cfg),
 		MakePingCmd(cfg),
 	)
 
-	return listCmd
+	return systemCmd
 }
 
 func MakeLeaderCmd(cfg *app.Config) *cobra.Command {
-	listObjectsCmd := &cobra.Command{
+	leaderCmd := &cobra.Command{
 		Use: "leader",
+		Short: "master node leader information",
+	}
+	leaderCmd.AddCommand(
+		MakeShowLeaderCmd(cfg),
+		MakeTransferLeaderCmd(cfg),
+	)
+
+	return leaderCmd
+}
+
+func MakeShowLeaderCmd(cfg *app.Config) *cobra.Command {
+	listObjectsCmd := &cobra.Command{
+		Use: "show",
 		Short: "show current master leader",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
@@ -55,6 +68,35 @@ func MakeLeaderCmd(cfg *app.Config) *cobra.Command {
 		},
 	}
 	return listObjectsCmd
+}
+
+func MakeTransferLeaderCmd(cfg *app.Config) *cobra.Command {
+	transferLeaderCmd := &cobra.Command{
+		Use: "transfer",
+		Short: "transfer master leadership",
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
+			defer stop()
+
+			if err := ApplyFlags(cfg, cmd); err != nil {
+				return fmt.Errorf("apply config flags: %w", err)
+			}
+
+			app, err := RunApp(ctx, cfg)
+			if err != nil {
+				return err 
+			}
+			defer app.Close()
+
+			if err = app.App.TransferLeadership(ctx); err != nil {
+				app.Presenter.Update(render.NewErrorResult("transfer_leadership", err))
+				return err
+			} 
+			return nil
+		},
+	}
+	return transferLeaderCmd
 }
 
 func MakePingCmd(cfg *app.Config) *cobra.Command {

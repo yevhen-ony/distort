@@ -122,3 +122,12 @@ func (s *RaftMasterStateService) WatchState(
 		}
 	}
 }
+
+func (s *RaftMasterStateService) TransferLeadership(_ context.Context) error {
+	if !s.IsActiveMaster() {
+		return errors.New("not a leader")
+	}
+
+	f := s.raft.LeadershipTransfer()
+	return f.Error()	
+}

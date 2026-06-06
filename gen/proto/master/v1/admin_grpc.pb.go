@@ -19,9 +19,10 @@ import (
 const _ = grpc.SupportPackageIsVersion9
 
 const (
-	AdminService_ListObjects_FullMethodName = "/master.v1.AdminService/ListObjects"
-	AdminService_ListChunks_FullMethodName  = "/master.v1.AdminService/ListChunks"
-	AdminService_ListNodes_FullMethodName   = "/master.v1.AdminService/ListNodes"
+	AdminService_ListObjects_FullMethodName        = "/master.v1.AdminService/ListObjects"
+	AdminService_ListChunks_FullMethodName         = "/master.v1.AdminService/ListChunks"
+	AdminService_ListNodes_FullMethodName          = "/master.v1.AdminService/ListNodes"
+	AdminService_TransferLeadership_FullMethodName = "/master.v1.AdminService/TransferLeadership"
 )
 
 // AdminServiceClient is the client API for AdminService service.
@@ -31,6 +32,7 @@ type AdminServiceClient interface {
 	ListObjects(ctx context.Context, in *ListObjectsRequest, opts ...grpc.CallOption) (*ListObjectsResponse, error)
 	ListChunks(ctx context.Context, in *ListChunksRequest, opts ...grpc.CallOption) (*ListChunksResponse, error)
 	ListNodes(ctx context.Context, in *ListNodesRequest, opts ...grpc.CallOption) (*ListNodesResponse, error)
+	TransferLeadership(ctx context.Context, in *TransferLeadershipRequest, opts ...grpc.CallOption) (*TransferLeadershipResponse, error)
 }
 
 type adminServiceClient struct {
@@ -71,6 +73,16 @@ func (c *adminServiceClient) ListNodes(ctx context.Context, in *ListNodesRequest
 	return out, nil
 }
 
+func (c *adminServiceClient) TransferLeadership(ctx context.Context, in *TransferLeadershipRequest, opts ...grpc.CallOption) (*TransferLeadershipResponse, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(TransferLeadershipResponse)
+	err := c.cc.Invoke(ctx, AdminService_TransferLeadership_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // AdminServiceServer is the server API for AdminService service.
 // All implementations must embed UnimplementedAdminServiceServer
 // for forward compatibility.
@@ -78,6 +90,7 @@ type AdminServiceServer interface {
 	ListObjects(context.Context, *ListObjectsRequest) (*ListObjectsResponse, error)
 	ListChunks(context.Context, *ListChunksRequest) (*ListChunksResponse, error)
 	ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error)
+	TransferLeadership(context.Context, *TransferLeadershipRequest) (*TransferLeadershipResponse, error)
 	mustEmbedUnimplementedAdminServiceServer()
 }
 
@@ -96,6 +109,9 @@ func (UnimplementedAdminServiceServer) ListChunks(context.Context, *ListChunksRe
 }
 func (UnimplementedAdminServiceServer) ListNodes(context.Context, *ListNodesRequest) (*ListNodesResponse, error) {
 	return nil, status.Error(codes.Unimplemented, "method ListNodes not implemented")
+}
+func (UnimplementedAdminServiceServer) TransferLeadership(context.Context, *TransferLeadershipRequest) (*TransferLeadershipResponse, error) {
+	return nil, status.Error(codes.Unimplemented, "method TransferLeadership not implemented")
 }
 func (UnimplementedAdminServiceServer) mustEmbedUnimplementedAdminServiceServer() {}
 func (UnimplementedAdminServiceServer) testEmbeddedByValue()                      {}
@@ -172,6 +188,24 @@ func _AdminService_ListNodes_Handler(srv interface{}, ctx context.Context, dec f
 	return interceptor(ctx, in, info, handler)
 }
 
+func _AdminService_TransferLeadership_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(TransferLeadershipRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(AdminServiceServer).TransferLeadership(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: AdminService_TransferLeadership_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(AdminServiceServer).TransferLeadership(ctx, req.(*TransferLeadershipRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // AdminService_ServiceDesc is the grpc.ServiceDesc for AdminService service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -190,6 +224,10 @@ var AdminService_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "ListNodes",
 			Handler:    _AdminService_ListNodes_Handler,
+		},
+		{
+			MethodName: "TransferLeadership",
+			Handler:    _AdminService_TransferLeadership_Handler,
 		},
 	},
 	Streams:  []grpc.StreamDesc{},

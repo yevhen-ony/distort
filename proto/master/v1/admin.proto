@@ -8,7 +8,13 @@ service AdminService {
   rpc ListObjects(ListObjectsRequest) returns (ListObjectsResponse);
   rpc ListChunks(ListChunksRequest) returns (ListChunksResponse);
   rpc ListNodes(ListNodesRequest) returns (ListNodesResponse);
+
+  rpc TransferLeadership(TransferLeadershipRequest) returns (TransferLeadershipResponse);
 }
+
+message TransferLeadershipRequest {}
+message TransferLeadershipResponse {}
+
 
 message ListNodesRequest {}
 

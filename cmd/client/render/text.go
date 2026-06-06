@@ -263,7 +263,6 @@ func (r *TextRender) HeartbeatControl(res *app.HeartbeatControlResult) ([]byte, 
 	return b.Bytes(), nil
 }
 
-
 func (r *TextRender) Progress(op *progress.ObjectProgress) ([]byte, error) {
 	b := &bytes.Buffer{}
 
