@@ -1,4 +1,4 @@
-from helpers import (
+from tests.support.helpers import (
     assert_same_bytes,
     describe_object,
     download_object,

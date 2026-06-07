@@ -30,7 +30,6 @@ raft:
   apply_timeout: 1s
   snapshot_interval: 10m
   snapshot_threshold: 1000000
-  state_polling_interval: 1s
 
 service:
   frame_size: 3MB

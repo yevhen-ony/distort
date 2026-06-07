@@ -59,7 +59,7 @@ func (r *JSONRender) ListNodes(res *app.ListNodesResult) ([]byte, error) {
 
 func (r *JSONRender) DiscoverMaster(res *app.DiscoverMasterResult) ([]byte, error) {
 	return json.Marshal(&Envelope{
-		Operation: "leader",
+		Operation: "show_leader",
 		Result:    res.MasterRef,
 	})
 }

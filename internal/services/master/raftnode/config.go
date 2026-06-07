@@ -17,20 +17,11 @@ type Config struct {
 	ApplyTimeout      time.Duration `yaml:"apply_timeout"`
 	SnapshotInterval  time.Duration `yaml:"snapshot_interval"`
 	SnapshotThreshold uint64        `yaml:"snapshot_threshold"`
-
-	StatePollingInterval time.Duration `yaml:"state_polling_interval"`
-}
-
-func (c *Config) MasterStatePollingInterval() time.Duration {
-	return c.StatePollingInterval
 }
 
 func (c *Config) Validate() error {
 	if c == nil {
 		return fmt.Errorf("missing config")
-	}
-	if c.StatePollingInterval <= 0 {
-		return fmt.Errorf("state polling interval must be positive")
 	}
 	return nil
 }

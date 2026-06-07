@@ -52,7 +52,6 @@ func NewMasterRaftMode(config *Config) (*MasterRaftMode, error) {
 	mode.state, err = raftnode.NewRaftMasterStateService(raftnode.RaftMasterStateDeps{
 		Raft: mode.node.Raft,
 		Resolver: mode.resolver,
-		Config: &config.Raft, 
 	})
 	if err != nil {
 		return nil, fmt.Errorf("raft discovery service: %w", err)

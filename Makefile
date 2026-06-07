@@ -6,7 +6,7 @@ PROJECT := dos
 PROTO_FILES := $(shell find $(PROTO_DIR) -name "*.proto")
 COMPOSE = docker compose -f docker-compose.yml -p $(PROJECT)
 
-.PHONY: gen build up down client build-e2e e2e
+.PHONY: gen build up down client build-e2e e2e stress
 
 gen:
 	protoc -I $(PROTO_DIR) \
@@ -21,8 +21,8 @@ build:
 	docker build -f deploy/docker/storage.Dockerfile -t dos-storage:latest .
 	docker build -f deploy/docker/client.Dockerfile -t dos-client:latest .
 
-build-e2e:
-	docker build -f deploy/docker/e2e.Dockerfile -t dos-e2e:latest .
+build-test:
+	docker build -f deploy/docker/test.Dockerfile -t dos-test:latest .
 
 up:
 	$(COMPOSE) --profile main up
@@ -34,4 +34,7 @@ client:
 	$(COMPOSE) run --rm client /bin/bash
 
 e2e:
-	$(COMPOSE) --profile e2e run --rm e2e
+	$(COMPOSE) --profile test run --rm e2e
+
+stress:
+	$(COMPOSE) --profile test run --rm stress 

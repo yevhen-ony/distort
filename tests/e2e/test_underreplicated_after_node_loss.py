@@ -1,4 +1,4 @@
-from helpers import (
+from tests.support.helpers import (
     describe_object,
     list_nodes,
     pause_node,

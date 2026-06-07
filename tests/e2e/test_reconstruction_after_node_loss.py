@@ -1,4 +1,4 @@
-from helpers import (
+from tests.support.helpers import (
     write_random_file,
     upload_object,
     scale_object,

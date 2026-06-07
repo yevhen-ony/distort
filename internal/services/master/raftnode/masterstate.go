@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"log/slog"
-	"time"
 
 	"github.com/hashicorp/raft"
 
@@ -15,10 +14,6 @@ var (
 	ErrUnknownActiveMaster = errors.New("unknown active master")
 )
 
-type RaftMasterStateConfig interface {
-	MasterStatePollingInterval() time.Duration
-}
-
 type MasterResolver interface {
 	Ref(t.MasterID) (t.MasterRef, error)
 }
@@ -26,13 +21,11 @@ type MasterResolver interface {
 type RaftMasterStateService struct {
 	raft     *raft.Raft
 	resolver MasterResolver
-	config   RaftMasterStateConfig
 }
 
 type RaftMasterStateDeps struct {
 	Raft     *raft.Raft
 	Resolver MasterResolver
-	Config   RaftMasterStateConfig
 }
 
 func NewRaftMasterStateService(deps RaftMasterStateDeps) (*RaftMasterStateService, error) {
@@ -42,14 +35,10 @@ func NewRaftMasterStateService(deps RaftMasterStateDeps) (*RaftMasterStateServic
 	if deps.Resolver == nil {
 		return nil, errors.New("missing resolver")
 	}
-	if deps.Config == nil {
-		return nil, errors.New("missing config")
-	}
 
 	s := &RaftMasterStateService{
 		raft:     deps.Raft,
 		resolver: deps.Resolver,
-		config:   deps.Config,
 	}
 	return s, nil
 }
@@ -80,7 +69,7 @@ func (s *RaftMasterStateService) WatchState(
 		}
 		active = true
 
-		slog.DebugContext(ctx, "*** onActive is triggerd ***")
+		slog.DebugContext(ctx, "master activated")
 
 		activeCtx, cancel := context.WithCancel(ctx)
 		activeCancel = cancel
@@ -105,20 +94,18 @@ func (s *RaftMasterStateService) WatchState(
 		start()
 	}
 
-	ticker := time.NewTicker(s.config.MasterStatePollingInterval())
-	defer ticker.Stop()
-
 	for {
 		select {
 		case <-ctx.Done():
 			return
 
-		case <-ticker.C:
-			if s.IsActiveMaster() {
-				start()
-			} else {
-				stop()
-			}
+		case isLeader := <-s.raft.LeaderCh():
+				if isLeader {
+					start()
+				} else {
+					stop()
+				}
+
 		}
 	}
 }

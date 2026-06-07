@@ -3,6 +3,7 @@ FROM dos-client:latest AS client
 FROM python:3.12-slim
 
 WORKDIR /work
+ENV PYTHONPATH=/work
 
 COPY --from=client /usr/local/bin/dos /usr/local/bin/dos
 COPY --from=client /work/config.yml /work/config.yml

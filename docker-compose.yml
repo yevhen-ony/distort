@@ -62,8 +62,14 @@ services:
     command: ["sleep", "infinity"]
 
   e2e:
-    profiles: [e2e]
-    image: dos-e2e:latest
+    profiles: [test]
+    image: dos-test:latest
     command: ["pytest", "-v", "tests/e2e"]
+
+  stress:
+    profiles: [test]
+    image: dos-test:latest
+    command: ["python", "tests/stress/object_lifecycle.py", "--rate", "5", "--workers", "10"]
+
 
 

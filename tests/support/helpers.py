@@ -217,3 +217,25 @@ def trigger_report(node_addr, chunk_id):
     trigger_report_res = assert_success(trigger_report_raw, "trigger_report")
     assert chunk_id in trigger_report_res["scheduled"]
 
+
+def show_leader():
+    show_raw = run_dos_json("system", "leader", "show")
+    show_res = assert_success(show_raw, "show_leader")
+    return show_res
+
+
+def change_leader():
+    leader_before = show_leader()
+    leader_after = leader_before 
+
+    for _ in range(3):
+        run_dos("system", "leader", "transfer")
+        leader_after = show_leader()
+        if leader_before["master_id"] != leader_after["master_id"]:
+            return leader_after
+
+    raise AssertionError(
+        f"leader did not change after transfer attempts: "
+        f"{leader_before['master_id']}"
+    )
+
