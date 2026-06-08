@@ -30,6 +30,7 @@ type ServiceConfig struct {
 	NodeCleanupInterval        time.Duration `yaml:"node_cleanup_interval"`
 	CatalogCleanupInterval     time.Duration `yaml:"catalog_cleanup_interval"`
 	ChunkStaleAfter            time.Duration `yaml:"chunk_stale_after"`
+	RPCTimeout                 time.Duration `yaml:"rpc_timeout"`
 }
 
 func (c *Config) FrameSize() int64 {
@@ -75,3 +76,8 @@ func (c *Config) ReplicationPlannerInterval() time.Duration {
 func (c *Config) RaftEnabled() bool {
 	return c.Raft.Enable
 }
+
+func (c *Config) RPCTimeout() time.Duration {
+	return c.Service.RPCTimeout
+}
+

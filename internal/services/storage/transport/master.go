@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	mpb "dos/gen/proto/master/v1"
 	"dos/internal/common/convert"
@@ -16,19 +17,32 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type Master struct {
-	router *route.MasterRouter
+type MasterTransportConfig interface {
+	RPCTimeout() time.Duration
 }
 
+type Master struct {
+	router *route.MasterRouter
+	config MasterTransportConfig
+}
 
-func NewMaster(router *route.MasterRouter) (*Master, error) {
-	if router == nil {
+type MasterTransportDeps struct {
+	Router *route.MasterRouter
+	Config MasterTransportConfig
+}
+
+func NewMaster(deps MasterTransportDeps) (*Master, error) {
+	if deps.Router == nil {
 		return nil, errors.New("missing master router")
 	}
-	mt := &Master{
-		router: router,
+	if deps.Config == nil {
+		return nil, errors.New("missing config")
 	}
-	return mt, nil 
+	mt := &Master{
+		router: deps.Router,
+		config: deps.Config,
+	}
+	return mt, nil
 }
 
 func (mt *Master) client(ctx context.Context) (mpb.MasterStorageServiceClient, error) {
@@ -43,12 +57,15 @@ func (mt *Master) client(ctx context.Context) (mpb.MasterStorageServiceClient, e
 
 func (mt *Master) RegisterNode(ctx context.Context, addr string) (t.NodeID, error) {
 
+	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
+	defer cancel()
+
 	client, err := mt.client(ctx)
 	if err != nil {
 		return "", err
 	}
 
-	req := &mpb.RegisterStorageNodeRequest{ Addr: addr }
+	req := &mpb.RegisterStorageNodeRequest{Addr: addr}
 	rsp, err := client.RegisterStorageNode(ctx, req)
 	if err != nil {
 		return "", fmt.Errorf("register node %s: %w", addr, err)
@@ -63,6 +80,9 @@ func (mt *Master) Heartbeat(
 	ctx context.Context, nodeID t.NodeID, stats t.NodeStats,
 ) (s.HeartbeatResult, error) {
 
+	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
+	defer cancel()
+
 	client, err := mt.client(ctx)
 	if err != nil {
 		return s.HeartbeatResult{}, err
@@ -70,7 +90,7 @@ func (mt *Master) Heartbeat(
 
 	req := &mpb.HeartbeatRequest{
 		NodeId: string(nodeID),
-		Stats: convert.NodeStatsToPB(stats),
+		Stats:  convert.NodeStatsToPB(stats),
 	}
 
 	_, err = client.Heartbeat(ctx, req)
@@ -83,24 +103,26 @@ func (mt *Master) Heartbeat(
 	return s.HeartbeatResult{}, nil
 }
 
-
-
 func (mt *Master) ReportChunks(
 	ctx context.Context, nodeID t.NodeID, reports []t.StorageNodeReport,
 ) (t.ReportResult, error) {
 
+	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
+	defer cancel()
+
+
 	client, err := mt.client(ctx)
 	if err != nil {
-		return t.ReportResult{}, err 
+		return t.ReportResult{}, err
 	}
 
 	req := &mpb.ReportStorageRequest{
-		NodeId: string(nodeID),
+		NodeId:  string(nodeID),
 		Reports: utils.Map(reports, convert.ReplicaReportToPB),
 	}
 	rsp, err := client.ReportStorage(ctx, req)
 	if err != nil {
-		return t.ReportResult{}, fmt.Errorf("report storage: %w", err) 
+		return t.ReportResult{}, fmt.Errorf("report storage: %w", err)
 	}
 	rejected := make([]t.ChunkID, len(rsp.GetRejected()))
 	for i, idVal := range rsp.GetRejected() {
@@ -116,5 +138,3 @@ func (mt *Master) ReportChunks(
 	}
 	return res, nil
 }
-
-

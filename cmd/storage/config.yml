@@ -22,6 +22,7 @@ master:
 transport:
   advertise_addr: localhost:10001
   frame_size: 1MB
+  rpc_timeout: 10s
 
 metrics:
   scrape_port: 9100

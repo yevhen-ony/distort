@@ -11,6 +11,9 @@ import (
 )
 
 func (mt *MasterTransport) ListObjects(ctx context.Context) ([]t.ObjectInfo, error) {
+
+	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
+	defer cancel()
 	
 	admin, err := mt.admin(ctx)
 	if err != nil {
@@ -27,6 +30,9 @@ func (mt *MasterTransport) ListObjects(ctx context.Context) ([]t.ObjectInfo, err
 
 func (mt *MasterTransport) ListChunks(ctx context.Context) ([]t.ChunkInfo, error) {
 
+	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
+	defer cancel()
+
 	admin, err := mt.admin(ctx)
 	if err != nil {
 		return nil, err
@@ -42,6 +48,9 @@ func (mt *MasterTransport) ListChunks(ctx context.Context) ([]t.ChunkInfo, error
 
 func (mt *MasterTransport) ListNodes(ctx context.Context) ([]t.NodeInfo, error) {
 
+	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
+	defer cancel()
+
 	admin, err := mt.admin(ctx)
 	if err != nil {
 		return nil, err
@@ -56,10 +65,18 @@ func (mt *MasterTransport) ListNodes(ctx context.Context) ([]t.NodeInfo, error) 
 }
 
 func (mt *MasterTransport) DiscoverMaster(ctx context.Context) (t.MasterRef, error) {
+
+	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
+	defer cancel()
+
 	return mt.mrouter.Rediscover(ctx)
 }
 
 func (mt *MasterTransport) TransferLeadership(ctx context.Context) error {
+
+	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
+	defer cancel()
+
 	admin, err := mt.admin(ctx)
 	if err != nil {
 		return err

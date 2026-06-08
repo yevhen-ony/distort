@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	pb "dos/gen/proto/master/v1"
 	"dos/internal/common/convert"
@@ -12,18 +13,31 @@ import (
 	"dos/internal/common/utils"
 )
 
-type MasterTransport struct {
-	mrouter *route.MasterRouter
+type MasterTransportConfig interface {
+	RPCTimeout() time.Duration
 }
 
+type MasterTransportDeps struct {
+	Config MasterTransportConfig
+	Router *route.MasterRouter
+}
 
-func NewMasterTransport(mrouter *route.MasterRouter) (*MasterTransport, error) {
-	if mrouter == nil {
+type MasterTransport struct {
+	mrouter *route.MasterRouter
+	config MasterTransportConfig 
+}
+
+func NewMasterTransport(deps MasterTransportDeps) (*MasterTransport, error) {
+	if deps.Router == nil {
 		return nil, errors.New("missing master router")
+	}
+	if deps.Config == nil {
+		return nil, errors.New("missing config")
 	}
 
 	mt := &MasterTransport{
-		mrouter: mrouter,
+		mrouter: deps.Router,
+		config: deps.Config,
 	}
 	return mt, nil
 }
@@ -46,6 +60,9 @@ func (mt *MasterTransport) admin(ctx context.Context) (pb.AdminServiceClient, er
 
 
 func (mt *MasterTransport) CreateObject(ctx context.Context, oid t.ObjectID) error {
+
+	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
+	defer cancel()
 
 	req := &pb.CreateObjectRequest{ObjectId: string(oid)}
 
@@ -70,6 +87,9 @@ func (mt *MasterTransport) AllocateChunk(
 	ctx context.Context,
 	query *AllocateChunkCommand,
 ) (*t.ChunkAllocation1, error) {
+
+	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
+	defer cancel()
 
 	req := &pb.AllocateChunkRequest{
 		ObjectSlot: convert.ObjectSlotToPB(query.Slot),
@@ -100,6 +120,9 @@ func (mt *MasterTransport) SetReplication(ctx context.Context, objectID t.Object
 		Count:    int64(count),
 	}
 
+	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
+	defer cancel()
+
 	client, err := mt.client(ctx)
 	if err != nil {
 		return err
@@ -121,6 +144,9 @@ func (mt *MasterTransport) DescribeChunk(
 		ChunkId: string(chunkID),
 	}
 
+	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
+	defer cancel()
+
 	client, err := mt.client(ctx)
 	if err != nil {
 		return nil, err
@@ -139,6 +165,9 @@ func (mt *MasterTransport) DescribeObject(
 	ctx context.Context,
 	objectID t.ObjectID,
 ) (*t.ObjectDesc1, error) {
+
+	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
+	defer cancel()
 
 	req := &pb.DescribeObjectRequest{
 		ObjectId: string(objectID),

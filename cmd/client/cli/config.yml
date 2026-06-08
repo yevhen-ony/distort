@@ -3,9 +3,10 @@ cli:
   render_refresh: 0.2s
 
 client:
-  frame_size: 1MB 
-  chunk_size: 5MB
+  frame_size: 3MB 
+  chunk_size: 20MB
   concurrency: 4  
+  rpc_timeout: 10s
 
 master:
   peers:

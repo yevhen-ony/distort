@@ -26,9 +26,10 @@ type StoreConfig struct {
 }
 
 type TransportConfig struct {
-	AdvertiseAddr string      `yaml:"advertise_addr"`
-	MasterAddr    string      `yaml:"master_addr"`
-	FrameSize     config.Size `yaml:"frame_size"`
+	AdvertiseAddr string        `yaml:"advertise_addr"`
+	MasterAddr    string        `yaml:"master_addr"`
+	FrameSize     config.Size   `yaml:"frame_size"`
+	RPCTimeout    time.Duration `yaml:"rpc_timeout"`
 }
 
 type ServiceConfig struct {
@@ -82,4 +83,8 @@ func (cfg *Config) QueueCapacity() int {
 
 func (cfg *Config) MaxParallelHeavyOps() int {
 	return cfg.Service.MaxParallelHeavyOps
+}
+
+func (cfg *Config) RPCTimeout() time.Duration {
+	return cfg.Transport.RPCTimeout
 }

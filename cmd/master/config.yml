@@ -42,3 +42,4 @@ service:
   replication_interval: 3s
   chunk_stale_after: 3s
   replication_planner_interval: 3s
+  rpc_timeout: 10s

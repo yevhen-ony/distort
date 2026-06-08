@@ -14,9 +14,10 @@ type Config struct {
 }
 
 type ClientConfig struct {
-	ChunkSize           config.Size `yaml:"chunk_size"`
-	FrameSize           config.Size `yaml:"frame_size"`
-	TransferConcurrency int         `yaml:"concurrency"`
+	ChunkSize           config.Size   `yaml:"chunk_size"`
+	FrameSize           config.Size   `yaml:"frame_size"`
+	TransferConcurrency int           `yaml:"concurrency"`
+	RPCTimeout          time.Duration `yaml:"rpc_timeout"`
 }
 
 type CLIConfig struct {
@@ -42,4 +43,8 @@ func (c *Config) RenderRefreshInterval() time.Duration {
 
 func (c *Config) OutputFormat() string {
 	return c.CLI.OutputFormat
+}
+
+func (c *Config) RPCTimeout() time.Duration {
+	return c.Client.RPCTimeout
 }

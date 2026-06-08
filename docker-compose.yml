@@ -11,30 +11,39 @@ services:
     profiles: [main]
     image: dos-master:latest
     environment:
-      - SERVICE__REPLICATION_COUNT=1
       - MASTER__SELF=master0
+      - SERVICE__REPLICATION_COUNT=${DEFAULT_REPLICATION:-1}
+      - SERVICE__FRAME_SIZE=${FRAME_SIZE:-1MB}
+      - SERVICE__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
   
   master1:
     profiles: [main]
     image: dos-master:latest
     environment:
-      - SERVICE__REPLICATION_COUNT=1
       - MASTER__SELF=master1
+      - SERVICE__REPLICATION_COUNT=${DEFAULT_REPLICATION:-1}
+      - SERVICE__FRAME_SIZE=${FRAME_SIZE:-1MB}
+      - SERVICE__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
   
   master2:
     profiles: [main]
     image: dos-master:latest
     environment:
-      - SERVICE__REPLICATION_COUNT=1
       - MASTER__SELF=master2
+      - SERVICE__REPLICATION_COUNT=${DEFAULT_REPLICATION:-1}
+      - SERVICE__FRAME_SIZE=${FRAME_SIZE:-1MB}
+      - SERVICE__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
 
   storage1:
     profiles: [main]
     image: dos-storage:latest
     environment:
-      - TRANSPORT__MASTER_ADDR=master:10000
       - TRANSPORT__ADVERTISE_ADDR=storage1:10001
-      - STORE__ROOT_DIR=/data
+      - TRANSPORT__FRAME_SIZE=${FRAME_SIZE:-1MB}
+      - TRANSPORT__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
+      - SERVICE__HEARTBEAT_INTERVAL=${HEARTBEAT_INTERVAL:-1s}
+      - SERVICE__REPORT_INTERVAL=${REPORT_INTERVAL:-3s}
+      - SERVICE__MAX_PARALLEL_HEAVY_OPS=${MAX_PARALLEL_HEAVY_OPS:-2}
 
   storage2:
     profiles: [main]
@@ -42,17 +51,23 @@ services:
     ports:
       - "9101:9100"
     environment:
-      - TRANSPORT__MASTER_ADDR=master:10000
       - TRANSPORT__ADVERTISE_ADDR=storage2:10001
-      - STORE__ROOT_DIR=/data
+      - TRANSPORT__FRAME_SIZE=${FRAME_SIZE:-1MB}
+      - TRANSPORT__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
+      - SERVICE__HEARTBEAT_INTERVAL=${HEARTBEAT_INTERVAL:-1s}
+      - SERVICE__REPORT_INTERVAL=${REPORT_INTERVAL:-3s}
+      - SERVICE__MAX_PARALLEL_HEAVY_OPS=${MAX_PARALLEL_HEAVY_OPS:-2}
   
   storage3:
     profiles: [main]
     image: dos-storage:latest
     environment:
-      - TRANSPORT__MASTER_ADDR=master:10000
       - TRANSPORT__ADVERTISE_ADDR=storage3:10001
-      - STORE__ROOT_DIR=/data
+      - TRANSPORT__FRAME_SIZE=${FRAME_SIZE:-1MB}
+      - TRANSPORT__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
+      - SERVICE__HEARTBEAT_INTERVAL=${HEARTBEAT_INTERVAL:-1s}
+      - SERVICE__REPORT_INTERVAL=${REPORT_INTERVAL:-3s}
+      - SERVICE__MAX_PARALLEL_HEAVY_OPS=${MAX_PARALLEL_HEAVY_OPS:-2}
 
   client:
     profiles: [manual] 
@@ -60,16 +75,25 @@ services:
     volumes:
       - ./sandbox:/work/in
     command: ["sleep", "infinity"]
+    environment:
+      - CLIENT__CHUNK_SIZE=${CHUNK_SIZE:-10MB}
+      - CLIENT__FRAME_SIZE=${FRAME_SIZE:-1MB}
+      - CLIENT__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
 
   e2e-test:
     profiles: [test]
     image: dos-test:latest
     command: ["pytest", "-v", "tests/e2e"]
+    environment:
+      - CLIENT__CHUNK_SIZE=${CHUNK_SIZE:-10MB}
+      - CLIENT__FRAME_SIZE=${FRAME_SIZE:-1MB}
+      - CLIENT__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
 
   load-test:
     profiles: [test]
     image: dos-test:latest
     command: ["python", "tests/load/load.py", "--rate", "5", "--workers", "10"]
-
-
-
+    environment:
+      - CLIENT__CHUNK_SIZE=${CHUNK_SIZE:-10MB}
+      - CLIENT__FRAME_SIZE=${FRAME_SIZE:-1MB}
+      - CLIENT__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}

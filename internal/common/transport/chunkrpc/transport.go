@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"time"
 
 	spb "dos/gen/proto/storage/v1"
 	"dos/internal/common/connect"
@@ -14,6 +15,8 @@ import (
 
 type Config interface {
 	FrameSize() int64
+	RPCTimeout() time.Duration
+
 }
 
 type Transport struct {
@@ -67,6 +70,10 @@ func (t *Transport) ReplicateChunk(
 		ChunkId: string(chunkID),
 		Targets: utils.Map(targets, convert.NodeRefToPB),
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, t.config.RPCTimeout())
+	defer cancel()
+
 	if _, err = client.ReplicateChunk(ctx, req); err != nil {
 		return fmt.Errorf("replicate chunk rpc: %w", err)
 	}
@@ -85,6 +92,10 @@ func (t *Transport) DeleteChunk(ctx context.Context, chunkID t.ChunkID, node t.N
 		NodeId:  string(node.ID),
 		ChunkId: string(chunkID),
 	}
+
+	ctx, cancel := context.WithTimeout(ctx, t.config.RPCTimeout())
+	defer cancel()
+
 	if _, err = client.DeleteChunk(ctx, req); err != nil {
 		return fmt.Errorf("delete chunk rpc: %w", err)
 	}

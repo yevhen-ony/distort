@@ -17,17 +17,17 @@ class LoadResult:
     def __str__(self) -> str:
         return "\n".join([
             "REPORT:",
-            "=========================",
+            "==============================",
             f"workers:          {self.worker_count}",
             f"elapsed:          {self.elapsed_sec:.2f} s",
-            "-------------------------",
+            "------------------------------",
             f"jobs failed:      {self.error_count}",
             f"jobs succeeded:   {self.success_count}",
-            "-------------------------",
+            "------------------------------",
             f"transferred:      {mb(self.success_bytes):.2f} MB",
             f"throughput:       {mb(self.success_bytes_per_sec):.2f} MB/s",
             f"latency:          {self.avg_op_sec:.2f} s",
-            "=========================",
+            "==============================",
         ])
 
 

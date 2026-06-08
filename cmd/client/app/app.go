@@ -102,7 +102,10 @@ func initMasterTransport(config *Config) (*MasterHolder, error) {
 		return nil, fmt.Errorf("master router init: %w", err)
 	}
 
-	mtransport, err := transport.NewMasterTransport(mrouter)
+	mtransport, err := transport.NewMasterTransport(transport.MasterTransportDeps{
+		Router: mrouter,
+		Config: config,
+	})
 	if err != nil {
 		return nil, fmt.Errorf("master transport init: %w", err)
 	}

@@ -16,9 +16,9 @@ import (
 )
 
 type Session struct {
-	config     Config
-	conn       *connect.ConnCache
-	targets      []t.NodeRef
+	config  Config
+	conn    *connect.ConnCache
+	targets []t.NodeRef
 
 	onProgress ProgressHandler
 	progress   Progress
@@ -32,7 +32,9 @@ func (s *Session) Upload(ctx context.Context, chunk *t.Chunk) (t.NodeRef, error)
 		others = append(others, s.targets[:i]...)
 		others = append(others, s.targets[i+1:]...)
 
-		err := s.uploadToNode(ctx, target, chunk, others)
+		uploadCtx, cancel := context.WithTimeout(ctx, s.config.RPCTimeout())
+		err := s.uploadToNode(uploadCtx, target, chunk, others)
+		cancel()
 		if err == nil {
 			return target, nil
 		}
@@ -81,7 +83,8 @@ func (s *Session) uploadToNode(
 		return fmt.Errorf("send header: %w", err)
 	}
 
-	if err = s.uploadData(stream, chunk.Data); err != nil {
+	err = s.uploadData(stream, chunk.Data)
+	if err != nil && !errors.Is(err, io.EOF) {
 		s.progress.Fail("send data failed")
 		return fmt.Errorf("send data: %w", err)
 	}
@@ -105,7 +108,7 @@ func (s *Session) uploadData(stream spb.ChunkService_PutChunkClient, data []byte
 		if err != nil {
 			return err
 		}
-		
+
 		s.progress.SentBytes += int64(len(frame))
 		s.emitProgress()
 	}
@@ -115,7 +118,10 @@ func (s *Session) uploadData(stream spb.ChunkService_PutChunkClient, data []byte
 func (s *Session) Download(ctx context.Context, chunkID t.ChunkID) (t.Chunk, error) {
 	var errs []error
 	for _, node := range s.targets {
-		chunk, err := s.downloadFromNode(ctx, node, chunkID)
+		dlCtx, cancel := context.WithTimeout(ctx, s.config.RPCTimeout())
+		chunk, err := s.downloadFromNode(dlCtx, node, chunkID)
+		cancel()
+
 		if err == nil {
 			return chunk, nil
 		}
@@ -123,7 +129,6 @@ func (s *Session) Download(ctx context.Context, chunkID t.ChunkID) (t.Chunk, err
 		errs = append(errs, fmt.Errorf("receive chunk %s from %s: %w", chunkID, node.Addr, err))
 	}
 	return t.Chunk{}, fmt.Errorf("all candidate nodes failed: %w", errors.Join(errs...))
-
 }
 
 func (s *Session) downloadFromNode(
@@ -169,7 +174,7 @@ func (s *Session) downloadFromNode(
 		s.progress.Fail(err.Error())
 		return t.Chunk{}, fmt.Errorf("recv data: %w", err)
 	}
-	
+
 	if err := headerMeta.Match(chunk.Meta); err != nil {
 		s.progress.Fail(err.Error())
 		return t.Chunk{}, err
