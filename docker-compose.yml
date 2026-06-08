@@ -61,15 +61,15 @@ services:
       - ./sandbox:/work/in
     command: ["sleep", "infinity"]
 
-  e2e:
+  e2e-test:
     profiles: [test]
     image: dos-test:latest
     command: ["pytest", "-v", "tests/e2e"]
 
-  stress:
+  load-test:
     profiles: [test]
     image: dos-test:latest
-    command: ["python", "tests/stress/object_lifecycle.py", "--rate", "5", "--workers", "10"]
+    command: ["python", "tests/load/load.py", "--rate", "5", "--workers", "10"]
 
 
 

@@ -61,10 +61,9 @@ func MakeDescribeObjectCmd(cfg *app.Config) *cobra.Command {
 			res, err := app.App.DescribeObject(ctx, objectID)
 			if err != nil {
 				app.Presenter.Update(render.NewErrorResult("describe_object", err))
-			} else {
-				app.Presenter.Update(res)
+				return err
 			}
-			return nil
+			return app.Presenter.Update(res)
 		},
 	}
 	return descObjectCmd
@@ -103,7 +102,7 @@ func MakeScaleObjectCmd(cfg *app.Config) *cobra.Command {
 			defer app.Close()
 
 			if err = app.App.ScaleObject(ctx, objectID, replicaCount); err != nil {
-				// app.Presenter.Update(render.NewErrorResult("scale_object", err))
+				app.Presenter.Update(render.NewErrorResult("scale_object", err))
 				return err
 			}
 			return nil
@@ -137,10 +136,9 @@ func MakeListObjectsCmd(cfg *app.Config) *cobra.Command {
 			res, err := app.App.ListObjects(ctx)
 			if err != nil {
 				app.Presenter.Update(render.NewErrorResult("list_objects", err))
-			} else {
-				app.Presenter.Update(res)
+				return err
 			}
-			return nil
+			return app.Presenter.Update(res)
 		},
 	}
 	return listObjectsCmd
@@ -169,7 +167,9 @@ func MakeCreateObjectCmd(cfg *app.Config) *cobra.Command {
 
 			res, err := a.App.CreateObject(ctx, objectID)
 			if err != nil {
-				return a.Presenter.Update(render.NewErrorResult("create_object", err))
+				a.Presenter.Update(render.NewErrorResult("create_object", err))
+				return err 
+				
 			}
 			return a.Presenter.Update(res)
 		},

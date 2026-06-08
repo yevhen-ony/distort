@@ -61,9 +61,9 @@ func MakeShowLeaderCmd(cfg *app.Config) *cobra.Command {
 			res, err := app.App.DiscoverMaster(ctx)
 			if err != nil {
 				app.Presenter.Update(render.NewErrorResult("discover_master", err))
-			} else {
-				app.Presenter.Update(res)
-			}
+				return err 
+			} 
+			app.Presenter.Update(res)
 			return nil
 		},
 	}
@@ -127,9 +127,9 @@ func MakePingCmd(cfg *app.Config) *cobra.Command {
 			res, err := app.App.Ping(ctx, addr)
 			if err != nil {
 				app.Presenter.Update(render.NewErrorResult("ping", err))
-			} else {
-				app.Presenter.Update(res)
+				return err
 			}
+			app.Presenter.Update(res)
 			return nil
 		},
 	}

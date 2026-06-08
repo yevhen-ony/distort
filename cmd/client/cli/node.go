@@ -51,10 +51,9 @@ func MakeListNodesCmd(cfg *app.Config) *cobra.Command {
 			res, err := app.App.ListNodes(ctx)
 			if err != nil {
 				app.Presenter.Update(render.NewErrorResult("list_nodes", err))
-			} else {
-				app.Presenter.Update(res)
+				return err
 			}
-			return nil
+			return app.Presenter.Update(res)
 		},
 	}
 	return listNodesCmd
@@ -85,10 +84,9 @@ func MakeInspectNodeCmd(cfg *app.Config) *cobra.Command {
 			res, err := app.App.InspectNode(ctx, addr)
 			if err != nil {
 				app.Presenter.Update(render.NewErrorResult("inspect_node", err))
-			} else {
-				app.Presenter.Update(res)
+				return err
 			}
-			return nil
+			return app.Presenter.Update(res)
 		},
 	}
 	return inspectNodeCmd
@@ -132,7 +130,8 @@ func MakeTriggerReportCmd(cfg *app.Config) *cobra.Command {
   				ChunkIDs: chunkIDs,
   			})
   			if err != nil {
-  				return a.Presenter.Update(render.NewErrorResult("trigger_report", err))
+  				a.Presenter.Update(render.NewErrorResult("trigger_report", err))
+				return err
   			}
   			return a.Presenter.Update(res)
   		},
@@ -187,7 +186,8 @@ func MakeHeartbeatNodeCmd(cfg *app.Config) *cobra.Command {
   			}
 
   			if err != nil {
-  				return a.Presenter.Update(render.NewErrorResult("heartbeat_control", err))
+  				a.Presenter.Update(render.NewErrorResult("heartbeat_control", err))
+				return err
   			}
   			return a.Presenter.Update(res)
   		},

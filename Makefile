@@ -34,7 +34,7 @@ client:
 	$(COMPOSE) run --rm client /bin/bash
 
 e2e:
-	$(COMPOSE) --profile test run --rm e2e
+	$(COMPOSE) --profile test run --rm e2e-test
 
-stress:
-	$(COMPOSE) --profile test run --rm stress 
+load:
+	$(COMPOSE) --profile test run --rm load-test /bin/bash

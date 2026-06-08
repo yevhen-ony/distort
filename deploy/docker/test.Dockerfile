@@ -12,4 +12,7 @@ RUN pip install --no-cache-dir pytest
 
 COPY tests /work/tests
 
+RUN chmod +x /work/tests/load/load.py \
+    && ln -s /work/tests/load/load.py /usr/local/bin/dos-load
+
 CMD ["pytest", "tests/e2e"]

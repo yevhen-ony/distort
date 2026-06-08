@@ -9,6 +9,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"dos/cmd/client/app"
+	"dos/cmd/client/render"
 	"dos/internal/services/client/domain/progress"
 )
 
@@ -47,7 +48,10 @@ func MakeDownloadCmd(cfg *app.Config) *cobra.Command {
 			app.App.SetOnProgress(func(p *progress.ObjectProgress){
 				app.Presenter.Update(p)
 			})	
-			_ = app.App.Download(ctx, objectID, destPath)
+			if err = app.App.Download(ctx, objectID, destPath); err != nil {
+				app.Presenter.Update(render.NewErrorResult("download", err))
+				return err
+			}
 			return nil
 		},
 	}

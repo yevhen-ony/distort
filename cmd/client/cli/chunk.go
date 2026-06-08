@@ -78,10 +78,9 @@ func MakeGetChunkCmd(cfg *app.Config) *cobra.Command {
 			})
 			if err != nil {
 				a.Presenter.Update(render.NewErrorResult("get_chunk", err))
-			} else {
-				a.Presenter.Update(res)
+				return err
 			}
-			return nil
+			return a.Presenter.Update(res)
 		},
 	}
 	getChunkCmd.Flags().String(destKey, "", "dest file or dir chunk to be stored")
@@ -128,10 +127,9 @@ func MakeAllocChunkCmd(cfg *app.Config) *cobra.Command {
 			})
 			if err != nil {
 				a.Presenter.Update(render.NewErrorResult("allocate_chunk", err))
-			} else {
-				a.Presenter.Update(res)
+				return err 
 			}
-			return nil
+			return a.Presenter.Update(res)
 		},
 	}
 
@@ -183,10 +181,9 @@ func MakePushChunkCmd(cfg *app.Config) *cobra.Command {
 			})
 			if err != nil {
 				a.Presenter.Update(render.NewErrorResult("push_chunk", err))
-			} else {
-				a.Presenter.Update(res)
+				return err
 			}
-			return nil
+			return a.Presenter.Update(res)
 		},
 	}
 
@@ -228,10 +225,9 @@ func MakeDescribeChunkCmd(cfg *app.Config) *cobra.Command {
 			res, err := app.App.DescribeChunk(ctx, chunkID)
 			if err != nil {
 				app.Presenter.Update(render.NewErrorResult("describe_chunk", err))
-			} else {
-				app.Presenter.Update(res)
+				return err
 			}
-			return nil
+			return app.Presenter.Update(res)
 		},
 	}
 	return descChunkCmd
@@ -257,14 +253,12 @@ func MakeListChunksCmd(cfg *app.Config) *cobra.Command {
 			}
 			defer app.Close()
 			
-			var rerr error
 			res, err := app.App.ListChunks(ctx)
 			if err != nil {
 				app.Presenter.Update(render.NewErrorResult("list_chunks", err))
-			} else {
-				app.Presenter.Update(res)
+				return err
 			}
-			return rerr
+			return app.Presenter.Update(res)
 		},
 	}
 	return listChunksCmd

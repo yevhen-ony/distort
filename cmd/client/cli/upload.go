@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"dos/cmd/client/app"
+	"dos/cmd/client/render"
 	"dos/internal/services/client/domain/progress"
 	"fmt"
 	"os"
@@ -24,6 +25,10 @@ func MakeUploadCmd(cfg *app.Config) *cobra.Command {
 			defer stop()
 
 			path := args[0]
+			if err := EnsureFileExists(path); err != nil {
+				return fmt.Errorf("read file: %w", err)
+			}
+
 			objectID, err := cmd.Flags().GetString("id")
 			if err != nil {
 				return fmt.Errorf("read id flag: %w", err)
@@ -51,7 +56,11 @@ func MakeUploadCmd(cfg *app.Config) *cobra.Command {
 			a.App.SetOnProgress(func(p *progress.ObjectProgress) {
 				a.Presenter.Update(p)
 			})
-			_ = a.App.Upload(ctx, objectID, path)
+			err = a.App.Upload(ctx, objectID, path)
+			if err != nil {
+				a.Presenter.Update(render.NewErrorResult("upload", err))
+				return err
+			}
 			return nil
 		},
 	}

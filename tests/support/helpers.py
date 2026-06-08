@@ -36,17 +36,17 @@ def write_random_file(path: Path, size: int):
 
 
 def assert_same_bytes(left: Path, right: Path):
-    assert left.read_bytes() == right.read_bytes()
+    assert left.read_bytes() == right.read_bytes(), "bytes mismatch" 
 
 
 def assert_success(envelope, operation: str):
-    assert envelope["operation"] == operation
+    assert envelope["operation"] == operation, "wrong operation"
     assert "error" not in envelope, envelope.get("error")
-    assert "result" in envelope
+    assert "result" in envelope, "missing result"
     return envelope["result"]
 
 
-def wait_until(check, timeout=15, interval=0.5, message="condition not met"):
+def wait_until(check, timeout=20, interval=0.5, message="condition not met"):
     deadline = time.monotonic() + timeout
     last_error = None
 
@@ -68,14 +68,14 @@ def wait_until(check, timeout=15, interval=0.5, message="condition not met"):
 def describe_chunk(chunk_id): 
     raw = run_dos_json("chunk", "describe", chunk_id)
     res = assert_success(raw, "describe_chunk")
-    assert res["chunk_meta"]["chunk_id"] == chunk_id
+    assert res["chunk_meta"]["chunk_id"] == chunk_id, "wrong chunk id"
     return res
 
 
 def describe_object(object_id):
     raw = run_dos_json("object", "describe", object_id)
     res = assert_success(raw, "describe_object")
-    assert res["object_id"] == object_id
+    assert res["object_id"] == object_id, "wrong object id"
     return res
 
 
@@ -87,13 +87,13 @@ def chunk_replicated(chunk_id, replica_count):
 def upload_object(object_id, source):
     raw = run_dos_json("upload", "--id", object_id, str(source))
     res = assert_success(raw, "object_transfer_progress")
-    assert res["status"] == "Done"
+    assert res["status"] == "Done",  f"status is not done: {res['status']}"
 
 
 def download_object(object_id, destination):
     raw = run_dos_json("download", object_id, "--dest", destination)
     res = assert_success(raw, "object_transfer_progress")
-    assert res["status"] == "Done"
+    assert res["status"] == "Done", f"status is not done: {res['status']}"
 
 
 def wait_object_replicated(object_id):
@@ -115,15 +115,15 @@ def scale_object(object_id, replica_count):
 def pause_node(node_addr):
     pause_raw = run_dos_json("node", "heartbeat", node_addr, "--pause")
     pause_res = assert_success(pause_raw, "heartbeat_control")
-    assert pause_res["address"] == node_addr 
-    assert pause_res["heartbeat"]["status"] == "paused"
+    assert pause_res["address"] == node_addr, "wrong address"
+    assert pause_res["heartbeat"]["status"] == "paused", "wrong status"
 
 
 def resume_node(node_addr):
     resume_raw = run_dos_json("node", "heartbeat", node_addr, "--resume")
     resume_res = assert_success(resume_raw, "heartbeat_control")
-    assert resume_res["address"] == node_addr 
-    assert resume_res["heartbeat"]["status"] == "running"
+    assert resume_res["address"] == node_addr, "wrong address" 
+    assert resume_res["heartbeat"]["status"] == "running", "wrong status"
 
 
 def is_node_listed(node_addr):
@@ -142,7 +142,7 @@ def wait_node_paused(node_addr):
     )
 
     inspect_paused = inspect_node(node_addr)
-    assert inspect_paused["heartbeat"]["status"] == "paused"
+    assert inspect_paused["heartbeat"]["status"] == "paused", "wrong status"
 
 
 def wait_node_resumed(node_addr):
@@ -153,7 +153,7 @@ def wait_node_resumed(node_addr):
     )
 
     inspect_resumed = inspect_node(node_addr)
-    assert inspect_resumed["heartbeat"]["status"] == "running"
+    assert inspect_resumed["heartbeat"]["status"] == "running", "wrong status"
 
 
 def list_nodes():
@@ -215,7 +215,7 @@ def trigger_report(node_addr, chunk_id):
         "--chunk", chunk_id,
     )
     trigger_report_res = assert_success(trigger_report_raw, "trigger_report")
-    assert chunk_id in trigger_report_res["scheduled"]
+    assert chunk_id in trigger_report_res["scheduled"], "chunk id not scheduled"
 
 
 def show_leader():

@@ -17,7 +17,7 @@ const (
 
 func main() {
 	if err := run(); err != nil {
-		fmt.Println(os.Stderr, err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
@@ -28,9 +28,10 @@ func run() error {
 		return fmt.Errorf("load config: %w", err)
 	}
 
-	root := &cobra.Command{
-		Use: "dos",
-	}
+	root := &cobra.Command{Use: "dos"}
+  	root.SilenceUsage = true
+  	root.SilenceErrors = true
+
 	BindFlags(cfg, root)
 
 	root.AddCommand(MakeUploadCmd(cfg))
@@ -41,7 +42,7 @@ func run() error {
 	root.AddCommand(MakeNodeCmd(cfg))
 
 	if err := root.Execute(); err != nil {
-		return fmt.Errorf("execute: %w")
+		return fmt.Errorf("execute: %w", err)
 	}
 	return nil
 }
