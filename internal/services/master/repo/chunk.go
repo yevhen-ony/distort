@@ -142,7 +142,7 @@ func (r *InMemChunkRepo) DecReplicaCount(ctx context.Context, chunkID t.ChunkID)
 	return nil
 }
 
-func (r *InMemChunkRepo) List(_ context.Context) ([]m.Chunk, error) {
+func (r *InMemChunkRepo) List(_ context.Context) []m.Chunk {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -150,7 +150,14 @@ func (r *InMemChunkRepo) List(_ context.Context) ([]m.Chunk, error) {
 	for _, chunk := range r.chunks {
 		result = append(result, *chunk.Clone())
 	}
-	return result, nil
+	return result
+}
+
+func (r *InMemChunkRepo) Drop(_ context.Context, chunkID t.ChunkID) {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+	
+	delete(r.chunks, chunkID)
 }
 
 func (r *InMemChunkRepo) Delete(_ context.Context, chunkID t.ChunkID) (bool, error) {

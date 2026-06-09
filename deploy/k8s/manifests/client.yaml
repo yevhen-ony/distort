@@ -1,0 +1,31 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: client
+  namespace: dos
+  labels:
+    app: dos-client
+spec:
+  containers:
+    - name: client
+      image: dos-client:latest
+      imagePullPolicy: Never
+      command: ["sleep", "infinity"]
+      env:
+        - name: MASTER__PEERS
+          value: "master-0.master,master-1.master,master-2.master"
+        - name: CLIENT__FRAME_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: dos-config
+              key: FRAME_SIZE
+        - name: CLIENT__CHUNK_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: dos-config
+              key: CHUNK_SIZE
+        - name: CLIENT__RPC_TIMEOUT
+          valueFrom:
+            configMapKeyRef:
+              name: dos-config
+              key: RPC_TIMEOUT

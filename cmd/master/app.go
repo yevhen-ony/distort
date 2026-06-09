@@ -137,7 +137,7 @@ func (app *App) Run(ctx context.Context) error {
 	}
 
 	guard := api.NewMasterGuard(app.masterMode.MasterState())
-	err := listener.RunGRPCServer(ctx, &app.config.Listen, reg, guard.AsOption())
+	err := listener.RunGRPCServer(ctx, app.config, reg, guard.AsOption())
 	return err
 }
 

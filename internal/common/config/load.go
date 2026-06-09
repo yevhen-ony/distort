@@ -40,6 +40,7 @@ func LoadConfig[TConfig any](path string, config *TConfig) error {
 			WeaklyTypedInput: true,
 			DecodeHook: mapstructure.ComposeDecodeHookFunc(
 				mapstructure.StringToTimeDurationHookFunc(),
+				mapstructure.StringToSliceHookFunc(","),
 				mapstructure.TextUnmarshallerHookFunc(),
 			),
 		},

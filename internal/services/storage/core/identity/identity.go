@@ -86,7 +86,7 @@ func (is *IdentityService) RequestNewID(ctx context.Context) error {
 
 	nodeID, err := is.getNewID(ctx)
 	if err != nil {
-		slog.ErrorContext(ctx, "fail to get new node ID: %w", err)
+		slog.ErrorContext(ctx, "fail to get new node ID", "error", err)
 		return err
 	}
 	is.nodeID = nodeID

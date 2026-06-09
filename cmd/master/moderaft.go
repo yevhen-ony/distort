@@ -21,7 +21,7 @@ type MasterRaftMode struct {
 	writer     *object.ObjectWriterImpl
 	codec      *object.JSONCommandCodec
 
-	resolver *resolve.ResolverWithRaft
+	resolver *resolve.Resolver
 }
 
 func (mode *MasterRaftMode) ObjectAuthority() *object.Authority {
@@ -61,7 +61,7 @@ func NewMasterRaftMode(config *Config) (*MasterRaftMode, error) {
 }
 
 func (mode *MasterRaftMode) initObjectAuthority(
-	resolver *resolve.ResolverWithRaft,
+	resolver *resolve.Resolver,
 	config *Config,
 ) (err error) {
 

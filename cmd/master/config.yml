@@ -2,22 +2,14 @@ logger:
   level: debug
   component: master
 
-listen:
-  host: "0.0.0.0"
-  port: 10000
-
 master:
-  self: master
+  self: master-0
+  api_port: 10000
+  raft_port: 12000
   peers:
-    - id: master0
-      api_addr: master0:10000
-      raft_addr: master0:12000
-    - id: master1
-      api_addr: master1:10000
-      raft_addr: master1:12000
-    - id: master2
-      api_addr: master2:10000
-      raft_addr: master2:12000
+    - master-0
+    - master-1
+    - master-2
 
 metrics:
   scrape_port: 9100

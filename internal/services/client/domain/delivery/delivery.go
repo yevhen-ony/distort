@@ -92,7 +92,7 @@ func (d *ObjectDelivery) Upload(ctx context.Context, source ChunkSource) error {
 	for chunkKey, chunkData := range source.Chunks() {  
 		eg.Go(func() error {
 			if err := d.uploadChunk(ctx, chunkKey, chunkData); err != nil {
-				return fmt.Errorf("upload chunk failed %s", chunkKey)
+				return fmt.Errorf("upload chunk failed %s: %w", chunkKey, err)
 			}
 			return nil 
 		})

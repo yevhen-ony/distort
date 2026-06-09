@@ -9,14 +9,18 @@ import (
 	"google.golang.org/grpc"
 )
 
+type ListenerConfig interface{
+	ListeningAddr() string
+}
+
 func RunGRPCServer(
 	ctx context.Context,
-	config *Config,
+	config ListenerConfig,
 	register func(*grpc.Server),
 	options ...grpc.ServerOption,
 ) error {
 
-    lis, err := net.Listen("tcp", config.Addr())
+    lis, err := net.Listen("tcp", config.ListeningAddr())
     if err != nil {
         return fmt.Errorf("listen: %w", err)
     }
@@ -27,7 +31,7 @@ func RunGRPCServer(
 
     errCh := make(chan error, 1)
 
-    slog.Info("grpc server listening", "addr", config.Addr())
+    slog.Info("grpc server listening", "addr", config.ListeningAddr())
 
     go func() { errCh <- gs.Serve(lis) }()
 
@@ -38,7 +42,7 @@ func RunGRPCServer(
         }
         return nil
     case <-ctx.Done():
-        slog.Info("grpc server shutting down", "addr", config.Addr())
+        slog.Info("grpc server shutting down", "addr", config.ListeningAddr())
         gs.GracefulStop()
         return nil
     }

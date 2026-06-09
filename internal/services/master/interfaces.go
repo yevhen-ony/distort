@@ -50,10 +50,11 @@ type ChunkRepo interface {
 	Create(context.Context, t.ChunkID, t.ObjectSlot) error
 	Delete(context.Context, t.ChunkID) (bool, error)
 	Touch(context.Context, t.ChunkID) error
+	Drop(context.Context, t.ChunkID)
 
 	Exists(context.Context, t.ChunkID) (bool, error)
 	Get(context.Context, t.ChunkID) (Chunk, error)
-	List(context.Context) ([]Chunk, error)
+	List(context.Context) []Chunk
 
 	SetDigest(context.Context, t.ChunkID, digest.Digest) error
 	GetDigest(context.Context, t.ChunkID) (digest.Digest, error)

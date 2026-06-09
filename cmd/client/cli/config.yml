@@ -9,10 +9,8 @@ client:
   rpc_timeout: 10s
 
 master:
+  api_port: 10000
   peers:
-    - id: master0
-      api_addr: master0:10000
-    - id: master1
-      api_addr: master1:10000
-    - id: master2
-      api_addr: master2:10000
+    - master-0
+    - master-1
+    - master-2

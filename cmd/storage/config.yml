@@ -2,22 +2,16 @@ logger:
   level: debug
   component: storage 
 
-listen:
-  host: "0.0.0.0"
-  port: 10001
-
 store:
   max_storage: 10GB
   root_dir: ./storage_data
 
 master:
+  api_port: 10000
   peers:
-    - id: master0
-      api_addr: master0:10000
-    - id: master1
-      api_addr: master1:10000
-    - id: master2
-      api_addr: master2:10000
+    - master-0
+    - master-1
+    - master-2
 
 transport:
   advertise_addr: localhost:10001

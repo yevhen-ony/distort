@@ -64,6 +64,34 @@ func NewCleanupService(deps CleanupDeps) (*CleanupService, error) {
 func (cs *CleanupService) ReconcileChunks(ctx context.Context) error {
 	ctx = dosctx.WithOperation(ctx, "reconcile_chunks")
 
+	for _, chunk := range cs.chunks.List(ctx) {
+		slot := chunk.Slot
+		chunkID, err := cs.objects.GetChunk(ctx, chunk.Slot)
+		if errors.Is(err, m.ErrObjectNotFound) || errors.Is(err, m.ErrChunkKeyNotFound) { 
+			slog.ErrorContext(ctx, "missing slot",
+				"chunk_id", chunk.Meta.ID,
+				"object_id", slot.ObjectID,
+				"chunk_key", slot.ChunkKey,
+			)
+			cs.chunks.Drop(ctx, chunk.Meta.ID)
+			continue
+		}
+		if err != nil {
+			slog.ErrorContext(ctx, "access chunk", "chunk_id", chunk.Meta.ID, "error", err)
+			continue
+		}
+		if chunkID != chunk.Meta.ID {
+			slog.ErrorContext(ctx, "wrong chunk",
+				"wanted_chunk_id", chunk.Meta.ID,
+				"object_id", slot.ObjectID,
+				"chunk_key", slot.ChunkKey,
+				"actual_chunk_id", chunkID,
+			)
+			cs.chunks.Drop(ctx, chunk.Meta.ID)
+			continue
+		}
+	}
+
 	var reconcileErr error
 	for _, object := range cs.objects.List(ctx) {
 		for chunkKey, chunkID := range object.Chunks {

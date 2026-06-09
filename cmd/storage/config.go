@@ -1,10 +1,10 @@
 package main
 
 import (
+	"net"
 	"time"
 
 	"dos/internal/common/config"
-	"dos/internal/common/listener"
 	"dos/internal/common/logger"
 	"dos/internal/common/master/resolve"
 	"dos/internal/common/metrics/prom"
@@ -12,7 +12,6 @@ import (
 
 type Config struct {
 	Logger    logger.Config   `yaml:"logger"`
-	Listen    listener.Config `yaml:"listen"`
 	Metrics   prom.Config     `yaml:"metrics"`
 	Store     StoreConfig     `yaml:"store"`
 	Transport TransportConfig `yaml:"transport"`
@@ -27,7 +26,6 @@ type StoreConfig struct {
 
 type TransportConfig struct {
 	AdvertiseAddr string        `yaml:"advertise_addr"`
-	MasterAddr    string        `yaml:"master_addr"`
 	FrameSize     config.Size   `yaml:"frame_size"`
 	RPCTimeout    time.Duration `yaml:"rpc_timeout"`
 }
@@ -51,10 +49,6 @@ func (cfg *Config) StorageRootDir() string {
 
 func (cfg *Config) AdvertiseAddr() string {
 	return cfg.Transport.AdvertiseAddr
-}
-
-func (cfg *Config) MasterAddr() string {
-	return cfg.Transport.MasterAddr
 }
 
 func (cfg *Config) FrameSize() int64 {
@@ -87,4 +81,9 @@ func (cfg *Config) MaxParallelHeavyOps() int {
 
 func (cfg *Config) RPCTimeout() time.Duration {
 	return cfg.Transport.RPCTimeout
+}
+
+func (cfg *Config) ListeningAddr() string {
+	_, port, _ := net.SplitHostPort(cfg.Transport.AdvertiseAddr)
+	return net.JoinHostPort("0.0.0.0", port)
 }

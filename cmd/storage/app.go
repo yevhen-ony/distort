@@ -185,7 +185,7 @@ func (app *App) Start(ctx context.Context) error {
 }
 
 func (app *App) runGrpcServer(ctx context.Context) {
-	_ = listener.RunGRPCServer(ctx, &app.config.Listen, func(s *grpc.Server) {
+	_ = listener.RunGRPCServer(ctx, app.config, func(s *grpc.Server) {
 		spb.RegisterChunkServiceServer(s, app.apiServer)
 		cpb.RegisterHealthServiceServer(s, app.apiHealth)
 		spb.RegisterAdminServiceServer(s, app.apiAdmin)

@@ -11,6 +11,7 @@ from tests.support.helpers import (
     scale_object,
     show_leader,
     change_leader,
+    wait_nodes,
 )
 
 
@@ -37,6 +38,9 @@ def test_on_leader_transfer(workdir, run_id, cleanup):
     # download object
     download_object(obj_before.id, str(obj_before.target))
     assert_same_bytes(obj_before.source, obj_before.target)
+
+    # ensure nodes registered
+    wait_nodes(3)
 
     # new object writable
     obj_after = gen_upload_wait(workdir, run_id, cleanup)

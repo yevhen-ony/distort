@@ -157,8 +157,7 @@ func (s *CatalogService) ListObjects(ctx context.Context) []t.ObjectInfo {
 }
 
 func (s *CatalogService) ListChunks(ctx context.Context) []t.ChunkInfo {
-	chunks, _ := s.chunks.List(ctx)
-	return utils.Map(chunks, func(c m.Chunk) t.ChunkInfo {
+	return utils.Map(s.chunks.List(ctx), func(c m.Chunk) t.ChunkInfo {
 		size := int64(0)
 		if c.ReplicaCount > 0 {
 			size = c.Meta.Digest.Size

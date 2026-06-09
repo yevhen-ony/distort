@@ -17,11 +17,16 @@ type ObjectNode struct {
 	Raft      *raft.Raft
 }
 
+type Resolver interface {
+	RaftSelfRef() (resolve.RaftRef, error)
+	RaftRefs() []resolve.RaftRef
+}
+
 type ObjectNodeDeps struct {
 	Config   *Config
 	Codec    object.CommandCodec
 	Applier  object.CommandApplier
-	Resolver *resolve.ResolverWithRaft
+	Resolver Resolver
 }
 
 func NewObjectNode(deps ObjectNodeDeps) (*ObjectNode, error) {
@@ -84,7 +89,7 @@ func NewObjectNode(deps ObjectNodeDeps) (*ObjectNode, error) {
 	return node, nil
 }
 
-func bootstrapRaft(r *raft.Raft, resolver *resolve.ResolverWithRaft) error {
+func bootstrapRaft(r *raft.Raft, resolver Resolver) error {
 	servers := utils.Map(resolver.RaftRefs(), func(ref resolve.RaftRef) raft.Server {
 		return raft.Server{
 			ID:      raft.ServerID(ref.ID),

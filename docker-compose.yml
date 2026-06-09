@@ -7,62 +7,65 @@ services:
     volumes:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       
-  master0:
+  master-0:
     profiles: [main]
     image: dos-master:latest
     environment:
-      - MASTER__SELF=master0
+      - MASTER__SELF=master-0
+      - MASTER__PEERS=master-0,master-1,master-2
       - SERVICE__REPLICATION_COUNT=${DEFAULT_REPLICATION:-1}
       - SERVICE__FRAME_SIZE=${FRAME_SIZE:-1MB}
       - SERVICE__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
   
-  master1:
+  master-1:
     profiles: [main]
     image: dos-master:latest
     environment:
-      - MASTER__SELF=master1
+      - MASTER__SELF=master-1
+      - MASTER__PEERS=master-0,master-1,master-2
       - SERVICE__REPLICATION_COUNT=${DEFAULT_REPLICATION:-1}
       - SERVICE__FRAME_SIZE=${FRAME_SIZE:-1MB}
       - SERVICE__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
   
-  master2:
+  master-2:
     profiles: [main]
     image: dos-master:latest
     environment:
-      - MASTER__SELF=master2
+      - MASTER__SELF=master-2
+      - MASTER__PEERS=master-0,master-1,master-2
       - SERVICE__REPLICATION_COUNT=${DEFAULT_REPLICATION:-1}
       - SERVICE__FRAME_SIZE=${FRAME_SIZE:-1MB}
       - SERVICE__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
 
-  storage1:
+  storage-0:
     profiles: [main]
     image: dos-storage:latest
     environment:
-      - TRANSPORT__ADVERTISE_ADDR=storage1:10001
+      - TRANSPORT__ADVERTISE_ADDR=storage-0:10001
       - TRANSPORT__FRAME_SIZE=${FRAME_SIZE:-1MB}
       - TRANSPORT__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
       - SERVICE__HEARTBEAT_INTERVAL=${HEARTBEAT_INTERVAL:-1s}
       - SERVICE__REPORT_INTERVAL=${REPORT_INTERVAL:-3s}
       - SERVICE__MAX_PARALLEL_HEAVY_OPS=${MAX_PARALLEL_HEAVY_OPS:-2}
 
-  storage2:
+  storage-1:
     profiles: [main]
     image: dos-storage:latest
     ports:
       - "9101:9100"
     environment:
-      - TRANSPORT__ADVERTISE_ADDR=storage2:10001
+      - TRANSPORT__ADVERTISE_ADDR=storage-1:10001
       - TRANSPORT__FRAME_SIZE=${FRAME_SIZE:-1MB}
       - TRANSPORT__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
       - SERVICE__HEARTBEAT_INTERVAL=${HEARTBEAT_INTERVAL:-1s}
       - SERVICE__REPORT_INTERVAL=${REPORT_INTERVAL:-3s}
       - SERVICE__MAX_PARALLEL_HEAVY_OPS=${MAX_PARALLEL_HEAVY_OPS:-2}
   
-  storage3:
+  storage-2:
     profiles: [main]
     image: dos-storage:latest
     environment:
-      - TRANSPORT__ADVERTISE_ADDR=storage3:10001
+      - TRANSPORT__ADVERTISE_ADDR=storage-2:10001
       - TRANSPORT__FRAME_SIZE=${FRAME_SIZE:-1MB}
       - TRANSPORT__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
       - SERVICE__HEARTBEAT_INTERVAL=${HEARTBEAT_INTERVAL:-1s}

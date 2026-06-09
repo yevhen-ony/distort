@@ -2,18 +2,17 @@ package main
 
 import (
 	"dos/internal/common/config"
-	"dos/internal/common/listener"
 	"dos/internal/common/logger"
 	mresolve "dos/internal/common/master/resolve"
 	"dos/internal/common/metrics/prom"
 	"dos/internal/services/master/raftnode"
+	"fmt"
 	"time"
 )
 
 type Config struct {
 	Master  mresolve.Config `yaml:"master"`
 	Logger  logger.Config   `yaml:"logger"`
-	Listen  listener.Config `yaml:"listen"`
 	Metrics prom.Config     `yaml:"metrics"`
 	Raft    raftnode.Config `yaml:"raft"`
 	Service ServiceConfig   `yaml:"service"`
@@ -79,5 +78,9 @@ func (c *Config) RaftEnabled() bool {
 
 func (c *Config) RPCTimeout() time.Duration {
 	return c.Service.RPCTimeout
+}
+
+func (c *Config) ListeningAddr() string {
+	return fmt.Sprintf("0.0.0.0:%d", c.Master.APIPort)
 }
 

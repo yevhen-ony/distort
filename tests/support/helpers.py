@@ -156,6 +156,13 @@ def wait_node_resumed(node_addr):
     assert inspect_resumed["heartbeat"]["status"] == "running", "wrong status"
 
 
+def wait_nodes(count):
+    wait_until(
+        lambda: len(list_nodes()) >= count,
+        message="not enough nodes",
+    )
+
+
 def list_nodes():
     list_raw = run_dos_json("node", "list")
     list_res = assert_success(list_raw, "list_nodes")
