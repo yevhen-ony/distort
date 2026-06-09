@@ -1,0 +1,6 @@
+apiVersion: v2
+name: dos
+description: DOS Kubernetes deployment
+type: application
+version: 0.1.0
+appVersion: "latest"

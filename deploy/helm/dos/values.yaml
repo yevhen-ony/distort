@@ -1,0 +1,33 @@
+namespace:
+  name: dos
+
+config:
+  defaultReplication: "1"
+  frameSize: 3MB
+  chunkSize: 20MB
+  rpcTimeout: 10s
+  heartbeatInterval: 3s
+  reportInterval: 3s
+  maxParallelHeavyOps: "4"
+
+master:
+  replicas: 3
+  serviceName: master
+  image: dos-master:latest
+  apiPort: 10000
+  raftPort: 12000
+  metricsPort: 9100
+
+storage:
+  replicas: 3
+  serviceName: storage
+  image: dos-storage:latest
+  apiPort: 10001
+  metricsPort: 9100
+
+client:
+  image: dos-client:latest
+
+test:
+  enabled: true 
+  image: dos-test:latest

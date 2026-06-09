@@ -1,0 +1,33 @@
+{{- if .Values.test.enabled }}
+apiVersion: v1
+kind: Pod
+metadata:
+  name: test 
+  namespace: {{ .Values.namespace.name }}
+  labels:
+    app: dos-test
+spec:
+  containers:
+    - name: test 
+      image: {{ .Values.test.image | quote }}
+      imagePullPolicy: Never
+      command: ["sleep", "infinity"]
+      env:
+        - name: MASTER__PEERS
+          value: {{ include "dos.masterPeers" . | quote }}
+        - name: CLIENT__FRAME_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: dos-config
+              key: FRAME_SIZE
+        - name: CLIENT__CHUNK_SIZE
+          valueFrom:
+            configMapKeyRef:
+              name: dos-config
+              key: CHUNK_SIZE
+        - name: CLIENT__RPC_TIMEOUT
+          valueFrom:
+            configMapKeyRef:
+              name: dos-config
+              key: RPC_TIMEOUT
+{{- end }}

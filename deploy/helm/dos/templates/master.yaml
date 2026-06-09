@@ -1,0 +1,74 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.master.serviceName }}
+  namespace: {{ .Values.namespace.name }}
+spec:
+  clusterIP: None
+  publishNotReadyAddresses: true
+  selector:
+    app: dos-master
+  ports:
+    - name: grpc
+      port: {{ .Values.master.apiPort }}
+      targetPort: grpc
+    - name: raft
+      port: {{ .Values.master.raftPort }}
+      targetPort: raft
+    - name: metrics
+      port: {{ .Values.master.metricsPort }}
+      targetPort: metrics
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: master
+  namespace: {{ .Values.namespace.name }}
+spec:
+  podManagementPolicy: Parallel
+  serviceName: {{ .Values.master.serviceName }}
+  replicas: {{ .Values.master.replicas }}
+  selector:
+    matchLabels:
+      app: dos-master
+  template:
+    metadata:
+      labels:
+        app: dos-master
+    spec:
+      containers:
+        - name: master
+          image: {{ .Values.master.image | quote }}
+          imagePullPolicy: Never 
+          ports:
+            - name: grpc
+              containerPort: {{ .Values.master.apiPort }}
+            - name: raft
+              containerPort: {{ .Values.master.raftPort }}
+            - name: metrics
+              containerPort: {{ .Values.master.metricsPort }}
+          env:
+            - name: POD_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: MASTER__SELF
+              value: "$(POD_NAME).{{ .Values.master.serviceName }}"
+            - name: MASTER__PEERS
+              value: {{ include "dos.masterPeers" . | quote }}
+            - name: SERVICE__REPLICATION_COUNT
+              valueFrom:
+                configMapKeyRef:
+                  name: dos-config
+                  key: DEFAULT_REPLICATION
+            - name: SERVICE__FRAME_SIZE
+              valueFrom:
+                configMapKeyRef:
+                  name: dos-config
+                  key: FRAME_SIZE
+            - name: SERVICE__RPC_TIMEOUT
+              valueFrom:
+                configMapKeyRef:
+                  name: dos-config
+                  key: RPC_TIMEOUT

@@ -1,0 +1,13 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dos-config
+  namespace: {{ .Values.namespace.name }}
+data:
+  DEFAULT_REPLICATION: {{ .Values.config.defaultReplication | quote }}
+  FRAME_SIZE: {{ .Values.config.frameSize | quote }}
+  RPC_TIMEOUT: {{ .Values.config.rpcTimeout | quote }}
+  CHUNK_SIZE: {{ .Values.config.chunkSize | quote }}
+  HEARTBEAT_INTERVAL: {{ .Values.config.heartbeatInterval | quote }}
+  REPORT_INTERVAL: {{ .Values.config.reportInterval | quote }}
+  MAX_PARALLEL_HEAVY_OPS: {{ .Values.config.maxParallelHeavyOps | quote }}
