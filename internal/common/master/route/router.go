@@ -6,16 +6,12 @@ import (
 	"log/slog"
 	"sync"
 
-	mpb "dos/gen/proto/master/v1"
 	"dos/internal/common/connect"
-	"dos/internal/common/convert"
 	"dos/internal/common/dosctx"
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
 
 	"google.golang.org/grpc"
-	"google.golang.org/grpc/codes"
-	"google.golang.org/grpc/status"
 )
 
 var (
@@ -26,11 +22,21 @@ type Resolver interface {
 	Refs() []t.MasterRef
 }
 
-type MasterRouter struct {
-	discoveryConn *connect.ConnCache
-	apiConn *connect.ConnCache
+type ConnCache interface {
+	Close() error
+	Get(string) (*grpc.ClientConn, error)
+}
 
-	resolver Resolver
+type MasterDiscovery interface {
+	DiscoverActive(context.Context, string) (t.MasterRef, error)
+	Close() error
+}
+
+type MasterRouter struct {
+	apiConn ConnCache
+
+	discovery MasterDiscovery
+	resolver  Resolver
 
 	mu     sync.RWMutex
 	active t.MasterRef
@@ -44,11 +50,17 @@ func New(resolver Resolver) (*MasterRouter, error) {
 	if resolver == nil {
 		return nil, errors.New("missing resolver")
 	}
-	
+
+	interceptor := NewOnUnavailableInterceptor()
 	router := &MasterRouter{
-		resolver: resolver,
+		resolver:  resolver,
+		discovery: NewMasterDiscoveryService(),
+		apiConn:   connect.NewConnCache(grpc.WithUnaryInterceptor(interceptor.UnaryIntercept)),
 	}
-	router.setupConnCaches()
+	interceptor.SetOnUnavailable(func(ctx context.Context) error {
+		_, err := router.Rediscover(ctx)
+		return err
+	})
 	return router, nil
 }
 
@@ -59,20 +71,13 @@ func (r *MasterRouter) SetOnMasterChange(fn func(ctx context.Context)) {
 	r.onMasterChange = fn
 }
 
-func (r *MasterRouter) setupConnCaches() {
-	r.discoveryConn = connect.NewConnCache()
-	r.apiConn = connect.NewConnCache(grpc.WithUnaryInterceptor(r.UnaryIntercept))
-}
-
 func (r *MasterRouter) Close() error {
 	var errs []error
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	if err := r.discoveryConn.Close(); err != nil {
+	if err := r.discovery.Close(); err != nil {
 		errs = append(errs, err)
-	} else {
-		r.discoveryConn = nil
 	}
 
 	if err := r.apiConn.Close(); err != nil {
@@ -80,7 +85,7 @@ func (r *MasterRouter) Close() error {
 	} else {
 		r.apiConn = nil
 	}
-	return errors.Join(errs...) 
+	return errors.Join(errs...)
 }
 
 func (r *MasterRouter) Conn(ctx context.Context) (*grpc.ClientConn, error) {
@@ -110,20 +115,11 @@ func (r *MasterRouter) Rediscover(ctx context.Context) (t.MasterRef, error) {
 
 	refs := r.resolver.Refs()
 	for _, seed := range utils.RandomSelect(refs, len(refs)) {
-
-		conn, err := r.discoveryConn.Get(seed.Addr)
+		active, err := r.discovery.DiscoverActive(ctx, seed.Addr)
 		if err != nil {
-			slog.ErrorContext(ctx, "create connection", "addr", seed.Addr, "error", err)
+			slog.ErrorContext(ctx, "rediscovery", "error", err)
 			continue
 		}
-		client := mpb.NewMasterDiscoveryServiceClient(conn)
-		rsp, err := client.GetActiveMaster(ctx, &mpb.GetActiveMasterRequest{})
-		if err != nil {
-			slog.ErrorContext(ctx, "get active master", "addr", seed.Addr, "error", err)
-			continue
-		}
-
-		active := convert.MasterRefFromPB(rsp.GetActive())
 		if err := active.Validate(); err != nil {
 			slog.ErrorContext(ctx, "got invalid master ref")
 			continue
@@ -137,36 +133,6 @@ func (r *MasterRouter) Rediscover(ctx context.Context) (t.MasterRef, error) {
 		return active, nil
 	}
 	return t.MasterRef{}, ErrRediscoveryExhausted
-}
-
-func (r *MasterRouter) UnaryIntercept(
-	ctx context.Context,
-	method string,
-	req any,
-	reply any,
-	cc *grpc.ClientConn,
-	invoker grpc.UnaryInvoker,
-	opts ...grpc.CallOption,
-) error {
-
-	err := invoker(ctx, method, req, reply, cc, opts...)
-	if err == nil {
-		return nil
-	}
-
-	if status.Code(err) != codes.Unavailable {
-		return err
-	}
-
-	if _, rediscoverErr := r.Rediscover(ctx); rediscoverErr != nil {
-		slog.ErrorContext(ctx,
-			"rediscover active master failed",
-			"method", method,
-			"error", rediscoverErr,
-		)
-	}
-
-	return err
 }
 
 func (r *MasterRouter) setActive(ref t.MasterRef) bool {
@@ -188,7 +154,7 @@ func (r *MasterRouter) waitRediscovery() (t.MasterRef, error) {
 	active := r.active
 	r.mu.Unlock()
 
-	if err := active.Validate() ; err != nil {
+	if err := active.Validate(); err != nil {
 		return t.MasterRef{}, err
 	}
 	return active, active.Validate()

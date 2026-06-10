@@ -39,7 +39,7 @@ func NodeID(ctx context.Context) (t.NodeID, bool) {
 	return nodeID, ok
 }
 
-func WithService(ctx context.Context, service string)  context.Context {
+func WithService(ctx context.Context, service string) context.Context {
 	return context.WithValue(ctx, serviceKey{}, service)
 }
 
@@ -49,14 +49,10 @@ func Service(ctx context.Context) (string, bool) {
 }
 
 func WithOperation(ctx context.Context, operation string) context.Context {
-	return context.WithValue(ctx, operationKey{}, operation) 
+	return context.WithValue(ctx, operationKey{}, operation)
 }
 
 func Operation(ctx context.Context) (string, bool) {
 	operation, ok := ctx.Value(operationKey{}).(string)
 	return operation, ok
 }
-
-
-
-

@@ -25,7 +25,7 @@ func NodeRefFromPB(pbNode *pb.NodeRef) t.NodeRef {
 }
 
 func ObjectSlotFromPB(pbSlot *pb.ObjectSlot) t.ObjectSlot {
-	return t.ObjectSlot {
+	return t.ObjectSlot{
 		ObjectID: t.ObjectID(pbSlot.GetObjectId()),
 		ChunkKey: t.ChunkKey(pbSlot.GetChunkKey()),
 	}
@@ -33,24 +33,24 @@ func ObjectSlotFromPB(pbSlot *pb.ObjectSlot) t.ObjectSlot {
 
 func ChunkPlacement1FromPB(pbP *mpb.ChunkPlacement1) t.ChunkPlacement1 {
 	return t.ChunkPlacement1{
-		Meta: ChunkMetaFromPB(pbP.GetChunkMeta()),
-		Slot: ObjectSlotFromPB(pbP.GetObjectSlot()),
+		Meta:    ChunkMetaFromPB(pbP.GetChunkMeta()),
+		Slot:    ObjectSlotFromPB(pbP.GetObjectSlot()),
 		Sources: utils.Map(pbP.GetSources(), NodeRefFromPB),
 	}
 }
 
 func ChunkDesc1FromPB(pbD *mpb.ChunkDesc1) t.ChunkDesc1 {
-	return t.ChunkDesc1 {
+	return t.ChunkDesc1{
 		Placement: ChunkPlacement1FromPB(pbD.GetPlacement()),
 	}
 }
 
 func ObjectDesc1FromPB(pbD *mpb.ObjectDesc1) t.ObjectDesc1 {
 	return t.ObjectDesc1{
-		ID: t.ObjectID(pbD.GetObjectId()), 
-		Size: pbD.GetSize(),
+		ID:          t.ObjectID(pbD.GetObjectId()),
+		Size:        pbD.GetSize(),
 		Replication: int(pbD.GetReplication()),
-		Chunks: utils.Map(pbD.GetChunks(), ChunkPlacement1FromPB),
+		Chunks:      utils.Map(pbD.GetChunks(), ChunkPlacement1FromPB),
 	}
 }
 
@@ -138,11 +138,10 @@ type ChunkStorageRejectLike interface {
 	GetReason() string
 }
 
-
 func ObjectInfoFromPB(pbInfo *mpb.ObjectInfo) t.ObjectInfo {
 	return t.ObjectInfo{
-		ID:         t.ObjectID(pbInfo.GetObjectId()),
-		ChunkCount: int(pbInfo.GetChunkCount()),
+		ID:          t.ObjectID(pbInfo.GetObjectId()),
+		ChunkCount:  int(pbInfo.GetChunkCount()),
 		Replication: int(pbInfo.GetReplication()),
 	}
 }
@@ -158,10 +157,10 @@ func ChunkInfoFromPB(pbInfo *mpb.ChunkInfo) t.ChunkInfo {
 
 func NodeInfoFromPB(pbInfo *mpb.NodeInfo) t.NodeInfo {
 	return t.NodeInfo{
-		ID: t.NodeID(pbInfo.GetNodeId()),
-		Addr: pbInfo.GetAddr(),
+		ID:         t.NodeID(pbInfo.GetNodeId()),
+		Addr:       pbInfo.GetAddr(),
 		ChunkCount: int(pbInfo.GetChunkCount()),
-		UsedBytes: pbInfo.GetUsedBytes(),
+		UsedBytes:  pbInfo.GetUsedBytes(),
 	}
 }
 
@@ -206,7 +205,7 @@ func ReplicaReportFromPB(pb *mpb.ReplicaReport) t.StorageNodeReport {
 
 	case *mpb.ReplicaReport_ChainFailed:
 		return ReplicaChainFailedReportFromPB(rec.ChainFailed).ToRecord()
-	
+
 	case *mpb.ReplicaReport_Deleted:
 		return ReplicaDeletedReportFromPB(rec.Deleted).ToRecord()
 
@@ -217,20 +216,20 @@ func ReplicaReportFromPB(pb *mpb.ReplicaReport) t.StorageNodeReport {
 
 func MasterRefFromPB(pb *mpb.MasterRef) t.MasterRef {
 	return t.MasterRef{
-		ID: t.MasterID(pb.GetMasterId()),
+		ID:   t.MasterID(pb.GetMasterId()),
 		Addr: pb.GetAddr(),
 	}
 }
 
 func ChunkStorageViewFromPB(pb *spb.ChunkStorageView) t.ChunkStorageView {
 	return t.ChunkStorageView{
-		Meta: ChunkMetaFromPB(pb.GetMeta()),
+		Meta:  ChunkMetaFromPB(pb.GetMeta()),
 		State: pb.GetState(),
 	}
 }
 
 func HeatbeatViewFromPB(pb *spb.HeartbeatView) t.HeartbeatView {
 	return t.HeartbeatView{
-		Status: pb.GetStatus(), 
+		Status: pb.GetStatus(),
 	}
 }

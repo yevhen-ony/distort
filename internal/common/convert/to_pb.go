@@ -58,27 +58,27 @@ func ChunkMetaToPB(meta t.ChunkMeta) *cpb.ChunkMeta {
 
 func ObjectInfoToPB(info t.ObjectInfo) *mpb.ObjectInfo {
 	return &mpb.ObjectInfo{
-		ObjectId:   string(info.ID),
-		ChunkCount: int64(info.ChunkCount),
+		ObjectId:    string(info.ID),
+		ChunkCount:  int64(info.ChunkCount),
 		Replication: int64(info.Replication),
 	}
 }
 
 func ChunkInfoToPB(info t.ChunkInfo) *mpb.ChunkInfo {
 	return &mpb.ChunkInfo{
-		ChunkId: string(info.ID),
-		ChunkSize: info.Size,
+		ChunkId:      string(info.ID),
+		ChunkSize:    info.Size,
 		ReplicaCount: int64(info.ReplicaCount),
-		ObjectId: string(info.ObjectID),
+		ObjectId:     string(info.ObjectID),
 	}
 }
 
 func NodeInfoToPB(info t.NodeInfo) *mpb.NodeInfo {
 	return &mpb.NodeInfo{
-		NodeId: string(info.ID),
-		Addr: info.Addr,
+		NodeId:     string(info.ID),
+		Addr:       info.Addr,
 		ChunkCount: int64(info.ChunkCount),
-		UsedBytes: info.UsedBytes,
+		UsedBytes:  info.UsedBytes,
 	}
 }
 
@@ -113,27 +113,26 @@ func ReplicaDeletedReportToPB(r t.ReplicaDeletedReport) *mpb.ReplicaDeleted {
 
 func ChunkPlacement1ToPB(p t.ChunkPlacement1) *mpb.ChunkPlacement1 {
 	return &mpb.ChunkPlacement1{
-		ChunkMeta: ChunkMetaToPB(p.Meta),
+		ChunkMeta:  ChunkMetaToPB(p.Meta),
 		ObjectSlot: ObjectSlotToPB(p.Slot),
-		Sources: utils.Map(p.Sources, NodeRefToPB), 
+		Sources:    utils.Map(p.Sources, NodeRefToPB),
 	}
 }
 
 func ChunkDesc1ToPB(d t.ChunkDesc1) *mpb.ChunkDesc1 {
-	return &mpb.ChunkDesc1 {
+	return &mpb.ChunkDesc1{
 		Placement: ChunkPlacement1ToPB(d.Placement),
 	}
 }
 
 func ObjectDesc1ToPB(d t.ObjectDesc1) *mpb.ObjectDesc1 {
 	return &mpb.ObjectDesc1{
-		ObjectId: string(d.ID),
-		Size: d.Size,
+		ObjectId:    string(d.ID),
+		Size:        d.Size,
 		Replication: int64(d.Replication),
-		Chunks: utils.Map(d.Chunks, ChunkPlacement1ToPB),
+		Chunks:      utils.Map(d.Chunks, ChunkPlacement1ToPB),
 	}
 }
-
 
 func ReplicaReportToPB(rr t.StorageNodeReport) *mpb.ReplicaReport {
 	switch {
@@ -162,15 +161,15 @@ func ReplicaReportToPB(rr t.StorageNodeReport) *mpb.ReplicaReport {
 }
 
 func MasterRefToPB(mr t.MasterRef) *mpb.MasterRef {
-	return &mpb.MasterRef {
+	return &mpb.MasterRef{
 		MasterId: string(mr.ID),
-		Addr: mr.Addr,
+		Addr:     mr.Addr,
 	}
 }
 
 func ChunkStorageViewToPB(v t.ChunkStorageView) *spb.ChunkStorageView {
 	return &spb.ChunkStorageView{
-		Meta: ChunkMetaToPB(v.Meta),
+		Meta:  ChunkMetaToPB(v.Meta),
 		State: v.State,
 	}
 }
@@ -180,4 +179,3 @@ func HeartbeatViewToPB(v t.HeartbeatView) *spb.HeartbeatView {
 		Status: v.Status,
 	}
 }
-
