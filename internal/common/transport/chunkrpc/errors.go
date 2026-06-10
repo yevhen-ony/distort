@@ -4,7 +4,5 @@ import "errors"
 
 var (
 	ErrInvalidHeader = errors.New("missing or invalid header")
-	ErrInvalidData = errors.New("missing or invalid data")
-	
+	ErrInvalidData   = errors.New("missing or invalid data")
 )
-	

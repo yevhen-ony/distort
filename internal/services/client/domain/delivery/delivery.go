@@ -134,7 +134,7 @@ func (d *ObjectDelivery) uploadChunk(ctx context.Context, chunkKey t.ChunkKey, d
 		d.emitProgress()
 	})
 
-	session := d.chunkT.NewTransferSession(loc.Targets, opt)
+	session := d.chunkT.NewUploadSession(loc.Targets, opt)
 	if _, err := session.Upload(ctx, &chunk); err != nil {
 		return err
 	}
@@ -185,7 +185,7 @@ func (d *ObjectDelivery) downloadChunk(ctx context.Context, placement t.ChunkPla
 		d.progress.UpdateChunk(placement.Slot.ChunkKey, prog)
 		d.emitProgress()
 	})
-	session := d.chunkT.NewTransferSession(placement.Sources, opt)
+	session := d.chunkT.NewDownloadSession(placement.Sources, opt)
 	chunk, err := session.Download(ctx, placement.Meta.ID)
 	if err != nil {
 		return fmt.Errorf("download chunk %s: %w", placement.Meta.ID, err)

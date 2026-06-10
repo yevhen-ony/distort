@@ -16,7 +16,6 @@ import (
 type Config interface {
 	FrameSize() int64
 	RPCTimeout() time.Duration
-
 }
 
 type Transport struct {
@@ -34,25 +33,29 @@ func NewTransport(conn *connect.ConnCache, config Config) (*Transport, error) {
 	return &Transport{conn: conn, config: config}, nil
 }
 
-type SessionOption func(*Session)
-
-func WithProgress(h ProgressHandler) SessionOption {
-	return func(s *Session) {
-		s.onProgress = h
+func (st *Transport) NewUploadSession(nodes []t.NodeRef, opts ...SessionOption) *UploadSession {
+	features := applySessionOptions(opts)
+	return &UploadSession{
+		config:  st.config,
+		targets: nodes,
+		uploader: &ChunkUploader{
+			conn:       st.conn,
+			config:     st.config,
+			onProgress: features.onProgress,
+		},
 	}
 }
 
-func (st *Transport) NewTransferSession(nodes []t.NodeRef, opts ...SessionOption) *Session {
-
-	session := &Session{
+func (st *Transport) NewDownloadSession(nodes []t.NodeRef, opts ...SessionOption) *DownloadSession {
+	features := applySessionOptions(opts)
+	return &DownloadSession{
 		config:  st.config,
-		conn:    st.conn,
 		targets: nodes,
+		downloader: &ChunkDownloader{
+			conn:       st.conn,
+			onProgress: features.onProgress,
+		},
 	}
-	for _, opt := range opts {
-		opt(session)
-	}
-	return session
 }
 
 func (t *Transport) ReplicateChunk(

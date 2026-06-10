@@ -19,7 +19,7 @@ func (q *Queue[T]) Enq(ctx context.Context, t T) error {
 	case q.ch <- t:
 		return nil
 	case <-ctx.Done():
-		return ctx.Err() 
+		return ctx.Err()
 	}
 }
 

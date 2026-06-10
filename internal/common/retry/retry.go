@@ -8,16 +8,16 @@ import (
 )
 
 type Retry struct {
-	Delay time.Duration
-	Timeout time.Duration
+	Delay       time.Duration
+	Timeout     time.Duration
 	MaxAttempts int
-	ExpBackoff bool 
-	MaxDelay time.Duration
+	ExpBackoff  bool
+	MaxDelay    time.Duration
 }
 
 func (r Retry) Run(ctx context.Context, fn func(context.Context) error) (err error) {
 	delay := r.Delay
-	if delay  == 0 {
+	if delay == 0 {
 		delay = time.Second
 	}
 
@@ -26,7 +26,6 @@ func (r Retry) Run(ctx context.Context, fn func(context.Context) error) (err err
 		maxDelay = 30 * time.Second
 	}
 
-	
 	attempt := 0
 	for {
 		var attemptCtx context.Context = ctx
@@ -48,13 +47,13 @@ func (r Retry) Run(ctx context.Context, fn func(context.Context) error) (err err
 		if r.MaxAttempts > 0 && attempt >= r.MaxAttempts {
 			return fmt.Errorf("retry failed after %d attempts: %w", attempt, err)
 		}
-		
+
 		select {
 		case <-time.After(delay):
 		case <-ctx.Done():
 			return ctx.Err()
 		}
-		if r.ExpBackoff  {
+		if r.ExpBackoff {
 			delay *= 2
 			if delay > maxDelay {
 				delay = maxDelay
@@ -62,4 +61,3 @@ func (r Retry) Run(ctx context.Context, fn func(context.Context) error) (err err
 		}
 	}
 }
-

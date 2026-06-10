@@ -47,27 +47,22 @@ func NewApp(config *Config) (*App, error) {
 		return nil, err
 	}
 
-	storageHealthT, err := healthrpc.NewTransport(conn)
-	if err != nil {
-		conn.Close()
-		return nil, fmt.Errorf("init health transport: %w", err)
-	}
-
 	chunkT, err := chunkrpc.NewTransport(conn, config)
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("init storage transport: %w", err)
 	}
 
+	storageHealthT, err := healthrpc.NewTransport(conn)
+	if err != nil {
+		conn.Close()
+		return nil, fmt.Errorf("init health transport: %w", err)
+	}
+
 	storageAdminT, err := adminrpc.NewTransport(conn)
 	if err != nil {
 		conn.Close()
 		return nil, fmt.Errorf("init admin storage node transport: %w", err)
-	}
-
-	if err != nil {
-		conn.Close()
-		return nil, fmt.Errorf("init service: %w", err)
 	}
 
 	app := &App{

@@ -296,7 +296,7 @@ func (cs *StorageService) SendChunk(
 
 	start := time.Now()
 
-	session := cs.chunkT.NewTransferSession(targets)
+	session := cs.chunkT.NewUploadSession(targets)
 	chosen, err := session.Upload(ctx, &chunk)
 	if err != nil {
 		cs.metrics.SendsFailedDuration.Observe(time.Since(start).Seconds())

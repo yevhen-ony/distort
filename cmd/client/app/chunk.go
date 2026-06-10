@@ -26,7 +26,7 @@ type DownloadChunkResult struct {
 func (app *App) DownloadChunk(ctx context.Context, q DownloadChunkQuery) (*DownloadChunkResult, error) {
 
 	source := t.NodeRef{ID: t.NodeID(q.NodeID), Addr: q.NodeAddr}
-	session := app.ChunkT.NewTransferSession([]t.NodeRef{source})
+	session := app.ChunkT.NewDownloadSession([]t.NodeRef{source})
 
 	chunk, err := session.Download(ctx, t.ChunkID(q.ChunkID))
 	if err != nil {
@@ -106,7 +106,7 @@ type PushChunkResult struct {
 
 func (app *App) PushChunk(ctx context.Context, q PushChunkQuery) (*PushChunkResult, error) {
 	target := t.NodeRef{ID: t.NodeID(q.NodeID), Addr: q.NodeAddr}
-	session := app.ChunkT.NewTransferSession([]t.NodeRef{target})
+	session := app.ChunkT.NewUploadSession([]t.NodeRef{target})
 
 	data, err := os.ReadFile(q.Path)
 	if err != nil {
