@@ -20,31 +20,10 @@ type MasterRef struct {
 	Addr string   `json:"address"`
 }
 
-type ChunkDesc struct {
-	ChunkID   ChunkID
-	ChunkKey  ChunkKey
-	ChunkSize int64
-}
-
-type ChunkPlacement struct {
-	ChunkDesc
-	Nodes []NodeRef
-}
-
-type ObjectDesc struct {
-	ID        ObjectID
-	TotalSize int64
-}
-
 type ObjectInfo struct {
 	ID          ObjectID `json:"object_id"`
 	ChunkCount  int      `json:"chunk_count"`
 	Replication int      `json:"replication"`
-}
-
-type ObjectAccess struct {
-	ObjectDesc
-	Chunks []ChunkPlacement
 }
 
 type NodeStats struct {

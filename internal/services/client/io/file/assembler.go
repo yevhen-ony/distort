@@ -24,7 +24,7 @@ func NewObjectAssembler(destPath string) (*ObjectAssembler, error) {
 	return asm, nil
 }
 
-func (a *ObjectAssembler) NewSink(chunks []t.ChunkPlacement1) (*ObjectSink, error) {
+func (a *ObjectAssembler) NewSink(chunks []t.ChunkPlacement) (*ObjectSink, error) {
 	layoutSpec := ObjectLayoutSpecFromChunkPlacments(chunks) 
 	layout, err := NewObjectLayout(layoutSpec)	
 	if err != nil {
@@ -59,8 +59,8 @@ func (os *ObjectSink) Close() error {
 	return os.writer.Close()
 }
 
-func ObjectLayoutSpecFromChunkPlacments(chunks []t.ChunkPlacement1) *LayoutSpec {
-	lcs := utils.Map(chunks, func(p t.ChunkPlacement1) LayoutChunk {
+func ObjectLayoutSpecFromChunkPlacments(chunks []t.ChunkPlacement) *LayoutSpec {
+	lcs := utils.Map(chunks, func(p t.ChunkPlacement) LayoutChunk {
 		return LayoutChunk {
 			Key: p.Slot.ChunkKey, 
 			Size: p.Meta.Digest.Size,

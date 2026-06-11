@@ -31,64 +31,26 @@ func ObjectSlotFromPB(pbSlot *pb.ObjectSlot) t.ObjectSlot {
 	}
 }
 
-func ChunkPlacement1FromPB(pbP *mpb.ChunkPlacement1) t.ChunkPlacement1 {
-	return t.ChunkPlacement1{
+func ChunkPlacement1FromPB(pbP *mpb.ChunkPlacement1) t.ChunkPlacement {
+	return t.ChunkPlacement{
 		Meta:    ChunkMetaFromPB(pbP.GetChunkMeta()),
 		Slot:    ObjectSlotFromPB(pbP.GetObjectSlot()),
 		Sources: utils.Map(pbP.GetSources(), NodeRefFromPB),
 	}
 }
 
-func ChunkDesc1FromPB(pbD *mpb.ChunkDesc1) t.ChunkDesc1 {
-	return t.ChunkDesc1{
+func ChunkDesc1FromPB(pbD *mpb.ChunkDesc1) t.ChunkDesc {
+	return t.ChunkDesc{
 		Placement: ChunkPlacement1FromPB(pbD.GetPlacement()),
 	}
 }
 
-func ObjectDesc1FromPB(pbD *mpb.ObjectDesc1) t.ObjectDesc1 {
-	return t.ObjectDesc1{
+func ObjectDesc1FromPB(pbD *mpb.ObjectDesc1) t.ObjectDesc {
+	return t.ObjectDesc{
 		ID:          t.ObjectID(pbD.GetObjectId()),
 		Size:        pbD.GetSize(),
 		Replication: int(pbD.GetReplication()),
 		Chunks:      utils.Map(pbD.GetChunks(), ChunkPlacement1FromPB),
-	}
-}
-
-func ChunkPlacementFromPB(pbObj ChunkPlacementLike) *t.ChunkPlacement {
-	pbNodes := pbObj.GetNodes()
-	nodes := make([]t.NodeRef, 0, len(pbNodes))
-	for _, pbNode := range pbNodes {
-		nodes = append(nodes, NodeRefFromPB(pbNode))
-	}
-	return &t.ChunkPlacement{
-		ChunkDesc: t.ChunkDesc{
-			ChunkID:   t.ChunkID(pbObj.GetChunkId()),
-			ChunkKey:  t.ChunkKey(pbObj.GetChunkKey()),
-			ChunkSize: pbObj.GetChunkSize(),
-		},
-		Nodes: nodes,
-	}
-}
-
-type ObjectAccessLike interface {
-	GetObjectId() string
-	GetTotalSize() int64
-	GetChunks() []*mpb.ChunkPlacement
-}
-
-func ObjectAccessFromPB(pbObj ObjectAccessLike) *t.ObjectAccess {
-
-	pbChunks := pbObj.GetChunks()
-	chunks := make([]t.ChunkPlacement, 0, len(pbChunks))
-	for _, pbChunk := range pbChunks {
-		chunks = append(chunks, *ChunkPlacementFromPB(pbChunk))
-	}
-	return &t.ObjectAccess{
-		ObjectDesc: t.ObjectDesc{
-			ID:        t.ObjectID(pbObj.GetObjectId()),
-			TotalSize: pbObj.GetTotalSize(),
-		},
-		Chunks: chunks,
 	}
 }
 

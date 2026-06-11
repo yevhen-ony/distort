@@ -9,7 +9,7 @@ const (
 	HealthUnavailable HealthStatus = "unavailable"
 )
 
-type ChunkAllocation1 struct {
+type ChunkAllocation struct {
 	ID      ChunkID
 	Slot    ObjectSlot
 	Targets []NodeRef
@@ -20,19 +20,19 @@ type ObjectSlot struct {
 	ChunkKey ChunkKey `json:"chunk_key"`
 }
 
-type ChunkPlacement1 struct {
+type ChunkPlacement struct {
 	Meta    ChunkMeta  `json:"chunk_meta"`
 	Slot    ObjectSlot `json:"object_slog"`
 	Sources []NodeRef  `json:"sources"`
 }
 
-type ChunkDesc1 struct {
-	Placement ChunkPlacement1 `json:"chunk_placement"`
+type ChunkDesc struct {
+	Placement ChunkPlacement `json:"chunk_placement"`
 }
 
-type ObjectDesc1 struct {
+type ObjectDesc struct {
 	ID          ObjectID          `json:"object_id"`
 	Size        int64             `json:"total_size"`
 	Replication int               `json:"replication"`
-	Chunks      []ChunkPlacement1 `json:"chunks"`
+	Chunks      []ChunkPlacement `json:"chunks"`
 }

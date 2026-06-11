@@ -86,7 +86,7 @@ type AllocateChunkCommand struct {
 func (mt *MasterTransport) AllocateChunk(
 	ctx context.Context,
 	query *AllocateChunkCommand,
-) (*t.ChunkAllocation1, error) {
+) (*t.ChunkAllocation, error) {
 
 	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
 	defer cancel()
@@ -106,7 +106,7 @@ func (mt *MasterTransport) AllocateChunk(
 		return nil, fmt.Errorf("transport: %w", err)
 	}
 
-	alloc := &t.ChunkAllocation1{
+	alloc := &t.ChunkAllocation{
 		ID:      t.ChunkID(rsp.GetChunkId()),
 		Slot:    convert.ObjectSlotFromPB(rsp.GetObjectSlot()),
 		Targets: utils.Map(rsp.GetTargets(), convert.NodeRefFromPB),
@@ -138,7 +138,7 @@ func (mt *MasterTransport) SetReplication(ctx context.Context, objectID t.Object
 func (mt *MasterTransport) DescribeChunk(
 	ctx context.Context,
 	chunkID t.ChunkID,
-) (*t.ChunkDesc1, error) {
+) (*t.ChunkDesc, error) {
 
 	req := &pb.DescribeChunkRequest{
 		ChunkId: string(chunkID),
@@ -164,7 +164,7 @@ func (mt *MasterTransport) DescribeChunk(
 func (mt *MasterTransport) DescribeObject(
 	ctx context.Context,
 	objectID t.ObjectID,
-) (*t.ObjectDesc1, error) {
+) (*t.ObjectDesc, error) {
 
 	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
 	defer cancel()

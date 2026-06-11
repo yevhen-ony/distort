@@ -145,7 +145,7 @@ func (app *App) ListChunks(ctx context.Context) (*ListChunksResult, error) {
 }
 
 type DescribeChunkResult struct {
-	Description *t.ChunkDesc1
+	Description *t.ChunkDesc
 }
 
 func (app *App) DescribeChunk(ctx context.Context, chunkID string) (*DescribeChunkResult, error) {

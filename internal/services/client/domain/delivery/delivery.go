@@ -180,7 +180,7 @@ type ChunkSink interface {
 	WriteChunk(t.ChunkKey, []byte) error
 }
 
-func (d *ObjectDelivery) downloadChunk(ctx context.Context, placement t.ChunkPlacement1, sink ChunkSink) error {
+func (d *ObjectDelivery) downloadChunk(ctx context.Context, placement t.ChunkPlacement, sink ChunkSink) error {
 	opt := chunkrpc.WithProgress(func(prog chunkrpc.Progress) {
 		d.progress.UpdateChunk(placement.Slot.ChunkKey, prog)
 		d.emitProgress()

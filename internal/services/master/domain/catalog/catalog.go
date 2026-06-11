@@ -127,25 +127,6 @@ func (s *CatalogService) GetObjectChunks(ctx context.Context, objectID t.ObjectI
 	return result, nil
 }
 
-func (s *CatalogService) DescribeChunk(ctx context.Context, chunkID t.ChunkID) (t.ChunkDesc, error) {
-
-	chunk, err := s.chunks.Get(ctx, chunkID)
-	if err != nil {
-		return t.ChunkDesc{}, fmt.Errorf("get chunk: %w", err)
-	}
-
-	size := int64(0)
-	if chunk.ReplicaCount > 0 {
-		size = chunk.Meta.Digest.Size
-	}
-	desc := t.ChunkDesc{
-		ChunkID:   chunk.Meta.ID,
-		ChunkKey:  chunk.Slot.ChunkKey,
-		ChunkSize: size,
-	}
-	return desc, nil
-}
-
 func (s *CatalogService) ListObjects(ctx context.Context) []t.ObjectInfo {
 	return utils.Map(s.objects.List(ctx), func(o m.Object) t.ObjectInfo {
 		return t.ObjectInfo{

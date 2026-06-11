@@ -23,17 +23,6 @@ func ObjectSlotToPB(ref t.ObjectSlot) *cpb.ObjectSlot {
 	}
 }
 
-func ChunkPlacementToPB(cp t.ChunkPlacement) *mpb.ChunkPlacement {
-	return &mpb.ChunkPlacement{
-		ChunkId:   string(cp.ChunkID),
-		ChunkKey:  string(cp.ChunkKey),
-		ChunkSize: cp.ChunkSize,
-		Nodes: utils.Map(cp.Nodes, func(ref t.NodeRef) *cpb.NodeRef {
-			return NodeRefToPB(ref)
-		}),
-	}
-}
-
 func DigestToPB(d digest.Digest) *cpb.Digest {
 	return &cpb.Digest{
 		Checksum: string(d.Checksum),
@@ -111,7 +100,7 @@ func ReplicaDeletedReportToPB(r t.ReplicaDeletedReport) *mpb.ReplicaDeleted {
 	}
 }
 
-func ChunkPlacement1ToPB(p t.ChunkPlacement1) *mpb.ChunkPlacement1 {
+func ChunkPlacement1ToPB(p t.ChunkPlacement) *mpb.ChunkPlacement1 {
 	return &mpb.ChunkPlacement1{
 		ChunkMeta:  ChunkMetaToPB(p.Meta),
 		ObjectSlot: ObjectSlotToPB(p.Slot),
@@ -119,13 +108,13 @@ func ChunkPlacement1ToPB(p t.ChunkPlacement1) *mpb.ChunkPlacement1 {
 	}
 }
 
-func ChunkDesc1ToPB(d t.ChunkDesc1) *mpb.ChunkDesc1 {
+func ChunkDesc1ToPB(d t.ChunkDesc) *mpb.ChunkDesc1 {
 	return &mpb.ChunkDesc1{
 		Placement: ChunkPlacement1ToPB(d.Placement),
 	}
 }
 
-func ObjectDesc1ToPB(d t.ObjectDesc1) *mpb.ObjectDesc1 {
+func ObjectDesc1ToPB(d t.ObjectDesc) *mpb.ObjectDesc1 {
 	return &mpb.ObjectDesc1{
 		ObjectId:    string(d.ID),
 		Size:        d.Size,

@@ -33,7 +33,7 @@ func (app *App) ScaleObject(ctx context.Context, objectID string, count int) err
 }
 
 type DescribeObjectResult struct {
-	Description *t.ObjectDesc1
+	Description *t.ObjectDesc
 }
 
 func (app *App) DescribeObject(ctx context.Context, objectID string) (*DescribeObjectResult, error) {

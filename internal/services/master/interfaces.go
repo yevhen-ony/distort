@@ -24,24 +24,15 @@ type StorageNodeReport interface {
 
 type ClientFacade interface {
 	CreateObject(context.Context, t.ObjectID) error
-	AllocateChunk(context.Context, AllocateChunkCommand) (*t.ChunkAllocation1, error)
+	AllocateChunk(context.Context, AllocateChunkCommand) (*t.ChunkAllocation, error)
 
 	ListObjects(context.Context) []t.ObjectInfo
 	ListChunks(context.Context) []t.ChunkInfo
 	ListNodes(context.Context) []t.NodeInfo
 	SetReplication(context.Context, t.ObjectID, int) error
 
-	DescribeChunk(context.Context, t.ChunkID) (*t.ChunkDesc1, error)
-	DescribeObject(context.Context, t.ObjectID) (*t.ObjectDesc1, error)
-}
-
-type ObjectCatalog interface {
-	CreateObject(context.Context, t.ObjectID, int) error
-	GetObject(ctx context.Context, objectID t.ObjectID) (Object, error)
-
-	GetReplicaCount(context.Context, t.ObjectID) (int, error)
-	AllocateChunk(context.Context, t.ObjectID, t.ChunkKey, int64) (t.ChunkDesc, error)
-	GetChunks(ctx context.Context, objectID t.ObjectID) ([]t.ChunkDesc, error)
+	DescribeChunk(context.Context, t.ChunkID) (*t.ChunkDesc, error)
+	DescribeObject(context.Context, t.ObjectID) (*t.ObjectDesc, error)
 }
 
 type ChunkRepo interface {

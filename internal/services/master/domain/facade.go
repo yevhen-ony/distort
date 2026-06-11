@@ -70,14 +70,14 @@ func (s *ClientFacadeService) CreateObject(ctx context.Context, oid t.ObjectID) 
 func (s *ClientFacadeService) DescribeObject(
 	ctx context.Context,
 	objectID t.ObjectID,
-) (*t.ObjectDesc1, error) {
+) (*t.ObjectDesc, error) {
 	
 	obj, err := s.catalog.GetObject(ctx, objectID)
 	if err != nil {
 		return nil, fmt.Errorf("get object: %w", err)
 	}
 	
-	placements := make([]t.ChunkPlacement1, 0, len(obj.Chunks))
+	placements := make([]t.ChunkPlacement, 0, len(obj.Chunks))
 	size := int64(0)
 	for _, chunkID := range obj.Chunks {
 		desc, err := s.DescribeChunk(ctx, chunkID)
@@ -88,7 +88,7 @@ func (s *ClientFacadeService) DescribeObject(
 		size += desc.Placement.Meta.Digest.Size
 	}
 
-	objDesc := t.ObjectDesc1 {
+	objDesc := t.ObjectDesc {
 		ID: obj.ID,
 		Size: size,
 		Replication: obj.Replication,
@@ -101,7 +101,7 @@ func (s *ClientFacadeService) DescribeObject(
 func (s *ClientFacadeService) DescribeChunk(
 	ctx context.Context,
 	chunkID t.ChunkID,
-) (*t.ChunkDesc1, error) {
+) (*t.ChunkDesc, error) {
 
 	chunk, err := s.catalog.GetChunk(ctx, chunkID)
 	if err != nil {
@@ -111,19 +111,19 @@ func (s *ClientFacadeService) DescribeChunk(
 	if err != nil {
 		return nil, fmt.Errorf("get chunk's nodes: %w", err)
 	}
-	placement := t.ChunkPlacement1{
+	placement := t.ChunkPlacement{
 		Meta:    chunk.Meta,
 		Slot:    chunk.Slot,
 		Sources: nodes,
 	}
-	desc := &t.ChunkDesc1{Placement: placement}
+	desc := &t.ChunkDesc{Placement: placement}
 	return desc, nil
 }
 
 func (s *ClientFacadeService) AllocateChunk(
 	ctx context.Context,
 	cmd m.AllocateChunkCommand,
-) (*t.ChunkAllocation1, error) {
+) (*t.ChunkAllocation, error) {
 
 	exists, err := s.catalog.ExistsChunk(ctx, cmd.Slot)
 	if err != nil {
@@ -171,8 +171,7 @@ func (s *ClientFacadeService) AllocateChunk(
 		}
 	}
 
- 
-	res := &t.ChunkAllocation1{
+	res := &t.ChunkAllocation{
 		ID:      chunkID,
 		Slot:    cmd.Slot,
 		Targets: candidates,
