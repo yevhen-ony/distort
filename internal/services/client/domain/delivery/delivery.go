@@ -3,16 +3,12 @@ package delivery
 import (
 	"context"
 	"errors"
-	"fmt"
 	"iter"
 
 	"dos/internal/common/transport/chunkrpc"
 	t "dos/internal/common/types"
 	"dos/internal/services/client/domain/progress"
-	"dos/internal/services/client/io/file"
 	"dos/internal/services/client/transport"
-
-	"golang.org/x/sync/errgroup"
 )
 
 type ObjectDeliveryConfig interface {
@@ -24,9 +20,20 @@ type ChunkSource interface {
 	Err() error
 }
 
+type MasterTransport interface {
+	CreateObject(context.Context, t.ObjectID) error
+	AllocateChunk(context.Context, *transport.AllocateChunkCommand) (*t.ChunkAllocation, error)
+	DescribeObject(context.Context, t.ObjectID) (*t.ObjectDesc, error)
+}
+
+type ChunkTransport interface {
+	NewDownloadSession([]t.NodeRef, ...chunkrpc.SessionOption) chunkrpc.DownloadSession
+	NewUploadSession([]t.NodeRef, ...chunkrpc.SessionOption) chunkrpc.UploadSession
+}
+
 type ObjectDeliveryDeps struct {
-	MasterT *transport.MasterTransport
-	ChunkT  *chunkrpc.Transport
+	MasterT MasterTransport
+	ChunkT  ChunkTransport
 	Config  ObjectDeliveryConfig
 
 	ObjectID t.ObjectID
@@ -37,8 +44,8 @@ type ObjectDelivery struct {
 	progress   *progress.ObjectProgress
 	onProgress func(*progress.ObjectProgress)
 
-	masterT *transport.MasterTransport
-	chunkT  *chunkrpc.Transport
+	masterT MasterTransport
+	chunkT  ChunkTransport
 
 	config ObjectDeliveryConfig
 }
@@ -76,124 +83,6 @@ func NewObjectDelivery(deps ObjectDeliveryDeps) (*ObjectDelivery, error) {
 
 func (d *ObjectDelivery) WithProgress(h progress.ProgressHandler) {
 	d.onProgress = h
-}
-
-func (d *ObjectDelivery) Upload(ctx context.Context, source ChunkSource) error {
-
-	if err := d.masterT.CreateObject(ctx, d.objectID); err != nil {
-		return fmt.Errorf("create object: %w", err)
-	}
-	d.emitProgress()
-	defer d.emitProgress()
-
-	eg := errgroup.Group{}
-	eg.SetLimit(d.config.TransferConcurrency())
-
-	for chunkKey, chunkData := range source.Chunks() {  
-		eg.Go(func() error {
-			if err := d.uploadChunk(ctx, chunkKey, chunkData); err != nil {
-				return fmt.Errorf("upload chunk failed %s: %w", chunkKey, err)
-			}
-			return nil 
-		})
-	}
-
-	readErr := source.Err()
-	uploadErr := eg.Wait()
-
-	switch {
-	case readErr != nil:  
-		d.progress.Fail("read chunk failed")
-		return readErr 
-	case uploadErr != nil:
-		d.progress.Fail("upload chunk failed")
-		return uploadErr 
-	default:
-		d.progress.Done()
-		return nil
-	}
-}
-
-func (d *ObjectDelivery) uploadChunk(ctx context.Context, chunkKey t.ChunkKey, data []byte) error {
-
-	loc, err := d.masterT.AllocateChunk(ctx, &transport.AllocateChunkCommand{
-		Slot: t.ObjectSlot{
-			ObjectID: d.objectID,
-			ChunkKey: chunkKey,
-		},
-		ChunkSize: int64(len(data)),
-	})
-	if err != nil {
-		return fmt.Errorf("alloc chunk: %w", err)
-	}
-
-	chunk := t.NewChunk(loc.ID, data)
-
-	opt := chunkrpc.WithProgress(func(cp chunkrpc.Progress) {
-		d.progress.UpdateChunk(chunkKey, cp)
-		d.emitProgress()
-	})
-
-	session := d.chunkT.NewUploadSession(loc.Targets, opt)
-	if _, err := session.Upload(ctx, &chunk); err != nil {
-		return err
-	}
-	return nil
-}
-
-func (d *ObjectDelivery) Download(ctx context.Context, asm *file.ObjectAssembler) error {
-
-	objDesc, err := d.masterT.DescribeObject(ctx, d.objectID)
-	if err != nil {
-		return fmt.Errorf("describe object: %w", err)
-	}
-
-	d.emitProgress()
-	defer d.emitProgress()
-
-
-	sink, err := asm.NewSink(objDesc.Chunks)
-	if err != nil {
-		return fmt.Errorf("new object writer: %w", err)
-	}
-	defer sink.Close()
-	
-	eg := errgroup.Group{}
-	eg.SetLimit(d.config.TransferConcurrency())
-
-	for _, placement := range objDesc.Chunks {
-		eg.Go(func() error {
-			return d.downloadChunk(ctx, placement, sink)
-		})
-	}
-	if err := eg.Wait(); err != nil {
-		d.progress.Fail("download chunk failed")
-		return err
-	} else {
-		d.progress.Done()
-	}
-
-	return nil
-}
-
-type ChunkSink interface {
-	WriteChunk(t.ChunkKey, []byte) error
-}
-
-func (d *ObjectDelivery) downloadChunk(ctx context.Context, placement t.ChunkPlacement, sink ChunkSink) error {
-	opt := chunkrpc.WithProgress(func(prog chunkrpc.Progress) {
-		d.progress.UpdateChunk(placement.Slot.ChunkKey, prog)
-		d.emitProgress()
-	})
-	session := d.chunkT.NewDownloadSession(placement.Sources, opt)
-	chunk, err := session.Download(ctx, placement.Meta.ID)
-	if err != nil {
-		return fmt.Errorf("download chunk %s: %w", placement.Meta.ID, err)
-	}
-	if err := sink.WriteChunk(placement.Slot.ChunkKey, chunk.Data); err != nil {
-		return fmt.Errorf("write chunk %s: %w", placement.Meta.ID, err)
-	}
-	return nil
 }
 
 func (d *ObjectDelivery) emitProgress() {

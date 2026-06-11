@@ -16,13 +16,13 @@ type Downloader interface {
 	Download(context.Context, t.NodeRef, t.ChunkID) (*t.Chunk, error)
 }
 
-type UploadSession struct {
+type uploadSession struct {
 	config   Config
 	targets  []t.NodeRef
 	uploader Uploader
 }
 
-func (s *UploadSession) Upload(ctx context.Context, chunk *t.Chunk) (t.NodeRef, error) {
+func (s *uploadSession) Upload(ctx context.Context, chunk *t.Chunk) (t.NodeRef, error) {
 	var errs []error
 	others := make([]t.NodeRef, 0, len(s.targets))
 	for i, target := range s.targets {
@@ -47,13 +47,13 @@ func (s *UploadSession) Upload(ctx context.Context, chunk *t.Chunk) (t.NodeRef, 
 	return t.NodeRef{}, fmt.Errorf("all candidate nodes failed: %w", errors.Join(errs...))
 }
 
-type DownloadSession struct {
+type downloadSession struct {
 	config     Config
 	targets    []t.NodeRef
 	downloader Downloader
 }
 
-func (s *DownloadSession) Download(ctx context.Context, chunkID t.ChunkID) (t.Chunk, error) {
+func (s *downloadSession) Download(ctx context.Context, chunkID t.ChunkID) (t.Chunk, error) {
 	var errs []error
 	for _, node := range s.targets {
 		dlCtx, cancel := context.WithTimeout(ctx, s.config.RPCTimeout())

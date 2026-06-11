@@ -33,9 +33,13 @@ func NewTransport(conn *connect.ConnCache, config Config) (*Transport, error) {
 	return &Transport{conn: conn, config: config}, nil
 }
 
-func (st *Transport) NewUploadSession(nodes []t.NodeRef, opts ...SessionOption) *UploadSession {
+type UploadSession interface {
+	Upload(context.Context, *t.Chunk) (t.NodeRef, error)
+}
+
+func (st *Transport) NewUploadSession(nodes []t.NodeRef, opts ...SessionOption) UploadSession {
 	features := applySessionOptions(opts)
-	return &UploadSession{
+	return &uploadSession{
 		config:  st.config,
 		targets: nodes,
 		uploader: &ChunkUploader{
@@ -46,9 +50,13 @@ func (st *Transport) NewUploadSession(nodes []t.NodeRef, opts ...SessionOption) 
 	}
 }
 
-func (st *Transport) NewDownloadSession(nodes []t.NodeRef, opts ...SessionOption) *DownloadSession {
+type DownloadSession interface {
+	Download(context.Context, t.ChunkID) (t.Chunk, error)
+}
+
+func (st *Transport) NewDownloadSession(nodes []t.NodeRef, opts ...SessionOption) DownloadSession {
 	features := applySessionOptions(opts)
-	return &DownloadSession{
+	return &downloadSession{
 		config:  st.config,
 		targets: nodes,
 		downloader: &ChunkDownloader{

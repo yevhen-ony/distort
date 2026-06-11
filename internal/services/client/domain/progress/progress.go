@@ -49,6 +49,7 @@ func (op *ObjectProgress) UpdateChunk(key t.ChunkKey, chunk chunkrpc.Progress) {
 
 func (op *ObjectProgress) Fail(reason string) {
 	op.Status = ObjectFailed
+	op.Reason = reason
 }
 
 func (op *ObjectProgress) Done() {

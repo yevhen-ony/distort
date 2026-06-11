@@ -7,6 +7,7 @@ import (
 
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
+	"dos/internal/services/client/io"
 )
 
 type ObjectAssembler struct {
@@ -24,7 +25,8 @@ func NewObjectAssembler(destPath string) (*ObjectAssembler, error) {
 	return asm, nil
 }
 
-func (a *ObjectAssembler) NewSink(chunks []t.ChunkPlacement) (*ObjectSink, error) {
+
+func (a *ObjectAssembler) NewSink(chunks []t.ChunkPlacement) (io.ObjectSink, error) {
 	layoutSpec := ObjectLayoutSpecFromChunkPlacments(chunks) 
 	layout, err := NewObjectLayout(layoutSpec)	
 	if err != nil {
@@ -35,28 +37,11 @@ func (a *ObjectAssembler) NewSink(chunks []t.ChunkPlacement) (*ObjectSink, error
 	if err != nil {
 		return nil, fmt.Errorf("create writer: %w", err)
 	}
-	sink := &ObjectSink{
+	sink := &objectSink{
 		writer: writer,
 		layout: layout,
 	}
 	return sink, nil
-}
-
-type ObjectSink struct {
-	writer *ObjectWriter
-	layout *ObjectLayout
-}
-
-func (os *ObjectSink) WriteChunk(key t.ChunkKey, data []byte) error {
-	region, err := os.layout.Region(key)
-	if err != nil {
-		return err 
-	}
-	return os.writer.WriteRegion(region, data)
-}
-
-func (os *ObjectSink) Close() error {
-	return os.writer.Close()
 }
 
 func ObjectLayoutSpecFromChunkPlacments(chunks []t.ChunkPlacement) *LayoutSpec {
@@ -67,6 +52,23 @@ func ObjectLayoutSpecFromChunkPlacments(chunks []t.ChunkPlacement) *LayoutSpec {
 		}		
 	})
 	return &LayoutSpec{ chunks: lcs }
+}
+
+type objectSink struct {
+	writer *ObjectWriter
+	layout *ObjectLayout
+}
+
+func (os *objectSink) WriteChunk(key t.ChunkKey, data []byte) error {
+	region, err := os.layout.Region(key)
+	if err != nil {
+		return err 
+	}
+	return os.writer.WriteRegion(region, data)
+}
+
+func (os *objectSink) Close() error {
+	return os.writer.Close()
 }
 
 
