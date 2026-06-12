@@ -26,17 +26,17 @@ type LeadershipTransferer interface {
 type AdminServer struct {
 	mpb.UnimplementedAdminServiceServer
 
-	facade EntityLister 
+	view EntityLister 
 	state LeadershipTransferer	
 }
 
 type AdminDeps struct {
-	Facade EntityLister 
+	ResourceView EntityLister 
 	State LeadershipTransferer 
 }
 
 func NewAdminServer(deps AdminDeps) (*AdminServer, error) {
-	if deps.Facade == nil {
+	if deps.ResourceView == nil {
 		return nil, errors.New("missing facade service")
 	}
 	if deps.State == nil {
@@ -44,7 +44,7 @@ func NewAdminServer(deps AdminDeps) (*AdminServer, error) {
 	}
 
 	s := &AdminServer{
-		facade: deps.Facade,
+		view: deps.ResourceView,
 		state: deps.State,
 	}
 	return s, nil
@@ -57,7 +57,7 @@ func (s *AdminServer) ListObjects(
 
 	slog.DebugContext(ctx, "list objects requested")
 
-	objects := s.facade.ListObjects(ctx)
+	objects := s.view.ListObjects(ctx)
 	rsp := &mpb.ListObjectsResponse{
 		Objects: utils.Map(objects, convert.ObjectInfoToPB),
 	}
@@ -71,7 +71,7 @@ func (s *AdminServer) ListChunks(
 
 	slog.DebugContext(ctx, "list chunks requested")
 
-	chunks := s.facade.ListChunks(ctx)
+	chunks := s.view.ListChunks(ctx)
 	rsp := &mpb.ListChunksResponse{
 		Chunks: utils.Map(chunks, convert.ChunkInfoToPB),
 	}
@@ -85,7 +85,7 @@ func (s *AdminServer) ListNodes(
 
 	slog.DebugContext(ctx, "list nodes requested")
 
-	nodes := s.facade.ListNodes(ctx)
+	nodes := s.view.ListNodes(ctx)
 
 	rsp := &mpb.ListNodesResponse{
 		Nodes: utils.Map(nodes, convert.NodeInfoToPB),

@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	t "dos/internal/common/types"
-	"dos/internal/common/utils"
 	m "dos/internal/services/master"
 )
 
@@ -124,29 +123,4 @@ func (s *CatalogService) GetObjectChunks(ctx context.Context, objectID t.ObjectI
 		result = append(result, chunkID)
 	}
 	return result, nil
-}
-
-func (s *CatalogService) ListObjects(ctx context.Context) []t.ObjectInfo {
-	return utils.Map(s.objects.List(ctx), func(o m.Object) t.ObjectInfo {
-		return t.ObjectInfo{
-			ID:          o.ID,
-			ChunkCount:  len(o.Chunks),
-			Replication: o.Replication,
-		}
-	})
-}
-
-func (s *CatalogService) ListChunks(ctx context.Context) []t.ChunkInfo {
-	return utils.Map(s.chunks.List(ctx), func(c m.Chunk) t.ChunkInfo {
-		size := int64(0)
-		if c.ReplicaCount > 0 {
-			size = c.Meta.Digest.Size
-		}
-		return t.ChunkInfo{
-			ID:           c.Meta.ID,
-			Size:         size,
-			ReplicaCount: c.ReplicaCount,
-			ObjectID:     c.Slot.ObjectID,
-		}
-	})
 }

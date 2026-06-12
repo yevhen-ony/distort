@@ -2,8 +2,9 @@ package domain
 
 import (
 	"context"
-	t "dos/internal/common/types"
 	"errors"
+
+	t "dos/internal/common/types"
 )
 
 type LocalMasterStateService struct {

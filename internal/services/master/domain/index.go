@@ -1,20 +1,21 @@
-package domain 
+package domain
 
 import (
 	"context"
-	t "dos/internal/common/types"
 	"maps"
 	"slices"
 	"sync"
+
+	t "dos/internal/common/types"
 )
 
 type NodeSet map[t.NodeID]struct{}
 type ChunkSet map[t.ChunkID]struct{}
 
 type InMemChunkNodeIndex struct {
-	nodeChunks map[t.NodeID]ChunkSet 
-	chunkNodes map[t.ChunkID]NodeSet 
-	mu sync.RWMutex
+	nodeChunks map[t.NodeID]ChunkSet
+	chunkNodes map[t.ChunkID]NodeSet
+	mu         sync.RWMutex
 }
 
 func NewInMemChunkNodeIndex() *InMemChunkNodeIndex {
@@ -24,16 +25,16 @@ func NewInMemChunkNodeIndex() *InMemChunkNodeIndex {
 	}
 }
 
-func (i *InMemChunkNodeIndex) GetNodeChunks(_ context.Context, nodeID t.NodeID) []t.ChunkID  {
+func (i *InMemChunkNodeIndex) GetNodeChunks(_ context.Context, nodeID t.NodeID) []t.ChunkID {
 	i.mu.RLock()
 	defer i.mu.RUnlock()
-	
+
 	chunks := i.nodeChunks[nodeID]
 	if chunks == nil {
-		return []t.ChunkID{} 
+		return []t.ChunkID{}
 	}
-	
-	result :=  slices.Collect(maps.Keys(chunks))
+
+	result := slices.Collect(maps.Keys(chunks))
 	return result
 }
 
@@ -45,16 +46,16 @@ func (i *InMemChunkNodeIndex) GetChunkNodes(_ context.Context, chunkID t.ChunkID
 	if nodes == nil {
 		return []t.NodeID{}
 	}
-	
+
 	result := slices.Collect(maps.Keys(nodes))
 	return result
 }
 
 func (i *InMemChunkNodeIndex) AttachChunk(_ context.Context, nodeID t.NodeID, chunkID t.ChunkID) bool {
-	i.mu.Lock()	
+	i.mu.Lock()
 	defer i.mu.Unlock()
 
-	nodes := i.chunkNodes[chunkID] 
+	nodes := i.chunkNodes[chunkID]
 	if nodes == nil {
 		nodes = NodeSet{}
 		i.chunkNodes[chunkID] = nodes
@@ -71,12 +72,12 @@ func (i *InMemChunkNodeIndex) AttachChunk(_ context.Context, nodeID t.NodeID, ch
 		i.nodeChunks[nodeID] = chunks
 	}
 	chunks[chunkID] = struct{}{}
-	
+
 	return true
 }
 
 func (i *InMemChunkNodeIndex) DetachNode(_ context.Context, nodeID t.NodeID) {
-	i.mu.Lock()	
+	i.mu.Lock()
 	defer i.mu.Unlock()
 
 	chunks := slices.Collect(maps.Keys(i.nodeChunks[nodeID]))
@@ -88,7 +89,7 @@ func (i *InMemChunkNodeIndex) DetachNode(_ context.Context, nodeID t.NodeID) {
 func (i *InMemChunkNodeIndex) DetachChunk(_ context.Context, nodeID t.NodeID, chunkID t.ChunkID) bool {
 	i.mu.Lock()
 	defer i.mu.Unlock()
-	
+
 	if _, ok := i.chunkNodes[chunkID][nodeID]; !ok {
 		return false
 	}
@@ -104,6 +105,6 @@ func (i *InMemChunkNodeIndex) detachChunk(nodeID t.NodeID, chunkID t.ChunkID) {
 	}
 	delete(i.nodeChunks[nodeID], chunkID)
 	if len(i.nodeChunks[nodeID]) == 0 {
-		delete(i.nodeChunks, nodeID) 
+		delete(i.nodeChunks, nodeID)
 	}
 }

@@ -2,12 +2,12 @@ package storagenode
 
 import (
 	"context"
-	"dos/internal/common/loop"
-	t "dos/internal/common/types"
-	m "dos/internal/services/master"
 	"errors"
 	"log/slog"
 	"time"
+
+	"dos/internal/common/loop"
+	t "dos/internal/common/types"
 )
 
 type CleanupConfig interface {
@@ -15,15 +15,24 @@ type CleanupConfig interface {
 	NodeCleanupInterval() time.Duration
 }
 
+type ReplicaScheduler interface {
+	Schedule(context.Context, t.ChunkID)
+}
+
+type NodeLifecycle interface {
+	GetInactive(context.Context, time.Time) []t.NodeID
+	Remove(context.Context, t.NodeID) ([]t.ChunkID, error)
+}
+
 type CleanupDeps struct {
-	Lifecycle   *LifecycleService
-	Replication m.ReplicaScheduler
+	Lifecycle   NodeLifecycle
+	Replication ReplicaScheduler
 	Config      CleanupConfig
 }
 
 type CleanupWorker struct {
-	lifecycle *LifecycleService
-	replicate m.ReplicaScheduler
+	lifecycle NodeLifecycle
+	replicate ReplicaScheduler
 
 	config CleanupConfig
 	looper *loop.Looper

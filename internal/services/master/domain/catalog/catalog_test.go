@@ -53,7 +53,7 @@ func newTestCatalogService(tt *testing.T) *CatalogService {
 	submitter, err := object.NewLocalCommandSubmitter(applier)
 	require.NoError(tt, err)
 
-	writer, err := object.NewObjectWriterImpl(submitter)
+	writer, err := object.NewCommandBackedObjectWriter(submitter)
 	require.NoError(tt, err)
 
 	authority, err := object.NewAuthority(object.AuthorityDeps{

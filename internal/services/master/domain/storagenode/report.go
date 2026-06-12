@@ -2,12 +2,13 @@ package storagenode
 
 import (
 	"context"
-	"dos/internal/common/dosctx"
-	t "dos/internal/common/types"
-	m "dos/internal/services/master"
 	"errors"
 	"fmt"
 	"log/slog"
+
+	"dos/internal/common/dosctx"
+	t "dos/internal/common/types"
+	m "dos/internal/services/master"
 )
 
 type ReportDeps struct {
@@ -73,7 +74,7 @@ func (s *ReportService) Report(
 			if err := s.reportStagedReplica(ctx, nodeID, r); err != nil {
 				result.Rejected = append(result.Rejected, r.Chunk.ID)
 			} else {
-				result.Accepted = append(result.Accepted, r.Chunk.ID) 
+				result.Accepted = append(result.Accepted, r.Chunk.ID)
 			}
 			continue
 		}

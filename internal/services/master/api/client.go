@@ -21,6 +21,9 @@ type ClientFacade interface {
 	CreateObject(context.Context, t.ObjectID) error
 	AllocateChunk(context.Context, m.AllocateChunkCommand) (*t.ChunkAllocation, error)
 	SetReplication(context.Context, t.ObjectID, int) error
+}
+
+type ResourceView interface {
 	DescribeChunk(context.Context, t.ChunkID) (*t.ChunkDesc, error)
 	DescribeObject(context.Context, t.ObjectID) (*t.ObjectDesc, error)
 }
@@ -28,14 +31,20 @@ type ClientFacade interface {
 type ClientServer struct {
 	pb.UnimplementedMasterClientServiceServer
 	facade ClientFacade
+	view ResourceView 
 }
 
-func NewClientServer(facade ClientFacade) (*ClientServer, error) {
+
+func NewClientServer(facade ClientFacade, view ResourceView) (*ClientServer, error) {
 	if facade == nil {
-		return nil, errors.New("missing facade service")
+		return nil, errors.New("missing facade")
 	}
 
-	s := &ClientServer{facade: facade}
+	if view == nil {
+		return nil, errors.New("missing view")
+	}
+
+	s := &ClientServer{facade: facade, view: view}
 	return s, nil
 }
 
@@ -143,7 +152,7 @@ func (s *ClientServer) DescribeChunk(
 	slog.DebugContext(ctx, "describe chunk requested", "chunk_id", req.GetChunkId())
 
 	chunkID := t.ChunkID(req.GetChunkId())
-	chunkDesc, err := s.facade.DescribeChunk(ctx, chunkID)
+	chunkDesc, err := s.view.DescribeChunk(ctx, chunkID)
 	if err != nil {
 		return nil, err
 	}
@@ -170,7 +179,7 @@ func (s *ClientServer) DescribeObject(
 	slog.DebugContext(ctx, "describe object requested", "object_id", req.GetObjectId())
 
 	objectID := t.ObjectID(req.GetObjectId())
-	objectDesc, err := s.facade.DescribeObject(ctx, objectID)
+	objectDesc, err := s.view.DescribeObject(ctx, objectID)
 	if err != nil {
 		return nil, err
 	}

@@ -48,6 +48,7 @@ type App struct {
 	catalogCleanup *catalog.CleanupService
 
 	clientFacade *domain.ClientFacadeService
+	resourceView *domain.ResourceViewService
 
 	clientAPI    *api.ClientServer
 	adminAPI     *api.AdminServer
@@ -98,6 +99,13 @@ func NewApp(config *Config) (app *App, err error) {
 		return nil, err
 	}
 
+	app.resourceView, err = domain.NewResourceViewSerivce(domain.ResourceViewDeps{
+		ChunkRepo: app.chunkRepository,
+		ObjectReader: app.masterMode.ObjectAuthority(),
+		NodeRegistry: app.nodeRegistry,
+		NodePlacement: app.placement,
+	})
+
 	app.clientFacade, err = domain.NewClientFacadeService(domain.ClientFacadeDeps{
 		Catalog:     app.catalogService,
 		Placement:   app.placement,
@@ -109,7 +117,7 @@ func NewApp(config *Config) (app *App, err error) {
 		return nil, fmt.Errorf("client facade service init: %w", err)
 	}
 
-	if err := app.initAPI(config); err != nil {
+	if err := app.initAPI(); err != nil {
 		return nil, err
 	}
 
@@ -229,15 +237,17 @@ func (app *App) initReplication(config *Config) (err error) {
 	return nil
 }
 
-func (app *App) initAPI(config *Config) (err error) {
+func (app *App) initAPI() (err error) {
 	app.adminAPI, err = api.NewAdminServer(api.AdminDeps{
-		Facade: app.clientFacade,
+		ResourceView: app.resourceView,
 		State: app.masterMode.MasterState(),
 	})
 	if err != nil {
 		return fmt.Errorf("admin api init: %w", err)
 	}
-	app.clientAPI, err = api.NewClientServer(app.clientFacade)
+	app.clientAPI, err = api.NewClientServer(
+		app.clientFacade, app.resourceView,
+	)
 	if err != nil {
 		return fmt.Errorf("client api init: %w", err)
 	}

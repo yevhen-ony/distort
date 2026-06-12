@@ -2,13 +2,12 @@ package domain
 
 import (
 	"context"
-	t "dos/internal/common/types"
-	m "dos/internal/services/master"
-	"dos/internal/services/master/domain/catalog"
-	"dos/internal/services/master/domain/storagenode"
 	"errors"
 	"fmt"
 	"log/slog"
+
+	t "dos/internal/common/types"
+	m "dos/internal/services/master"
 )
 
 type ClientFacadeConfig interface {
@@ -19,18 +18,43 @@ type ReplicationScheduler interface {
 	Schedule(context.Context, t.ChunkID)
 }
 
+type Catalog interface {
+	CreateObject(context.Context, t.ObjectID, int) error
+	GetObject(context.Context, t.ObjectID) (m.Object, error)
+	SetReplication(context.Context, t.ObjectID, int) error
+
+	AddChunk(context.Context, t.ObjectSlot, int64) (t.ChunkID, error)
+	GetChunk(context.Context, t.ChunkID) (m.Chunk, error)
+	ExistsChunk(context.Context, t.ObjectSlot) (bool, error)
+	GetObjectChunks(context.Context, t.ObjectID) ([]t.ChunkID, error)
+	GetChunkID(context.Context, t.ObjectSlot) (t.ChunkID, error)
+	GetReplication(context.Context, t.ObjectID) (int, error)
+}
+
+type Placement interface {
+	GetChunkNodes(context.Context, t.ChunkID) ([]t.NodeRef, error)
+	GetCandidates(context.Context, m.CandidateNodesQuery) ([]t.NodeRef, error)
+}
+
+type Lifecycle interface {
+	Register(context.Context, string) (t.NodeRef, error)
+	ListNodes(context.Context) []t.NodeInfo
+	GetNodeCount(context.Context) int
+}
+
+
 type ClientFacadeDeps struct {
-	Catalog     *catalog.CatalogService
-	Placement   *storagenode.PlacementService
-	Lifecycle   *storagenode.LifecycleService
+	Catalog   	Catalog 
+	Placement  	Placement 
+	Lifecycle  	Lifecycle 
 	Replication ReplicationScheduler
 	Config      ClientFacadeConfig
 }
 
 type ClientFacadeService struct {
-	catalog   *catalog.CatalogService
-	placement *storagenode.PlacementService
-	lifecycle *storagenode.LifecycleService
+	catalog   Catalog  
+	placement Placement
+	lifecycle Lifecycle 
 	replicate ReplicationScheduler
 
 	config ClientFacadeConfig
@@ -66,60 +90,7 @@ func (s *ClientFacadeService) CreateObject(ctx context.Context, oid t.ObjectID) 
 
 	return s.catalog.CreateObject(ctx, oid, s.config.ReplicationCount())
 }
-
-func (s *ClientFacadeService) DescribeObject(
-	ctx context.Context,
-	objectID t.ObjectID,
-) (*t.ObjectDesc, error) {
-	
-	obj, err := s.catalog.GetObject(ctx, objectID)
-	if err != nil {
-		return nil, fmt.Errorf("get object: %w", err)
-	}
-	
-	placements := make([]t.ChunkPlacement, 0, len(obj.Chunks))
-	size := int64(0)
-	for _, chunkID := range obj.Chunks {
-		desc, err := s.DescribeChunk(ctx, chunkID)
-		if err != nil {
-			return nil, fmt.Errorf("describe chunk %s: %w", chunkID, err)
-		}
-		placements = append(placements, desc.Placement)
-		size += desc.Placement.Meta.Digest.Size
-	}
-
-	objDesc := t.ObjectDesc {
-		ID: obj.ID,
-		Size: size,
-		Replication: obj.Replication,
-		Chunks: placements,
-	}
-
-	return &objDesc, nil
-}
  
-func (s *ClientFacadeService) DescribeChunk(
-	ctx context.Context,
-	chunkID t.ChunkID,
-) (*t.ChunkDesc, error) {
-
-	chunk, err := s.catalog.GetChunk(ctx, chunkID)
-	if err != nil {
-		return nil, fmt.Errorf("get chunk: %w", err)
-	}
-	nodes, err := s.placement.GetChunkNodes(ctx, chunkID)
-	if err != nil {
-		return nil, fmt.Errorf("get chunk's nodes: %w", err)
-	}
-	placement := t.ChunkPlacement{
-		Meta:    chunk.Meta,
-		Slot:    chunk.Slot,
-		Sources: nodes,
-	}
-	desc := &t.ChunkDesc{Placement: placement}
-	return desc, nil
-}
-
 func (s *ClientFacadeService) AllocateChunk(
 	ctx context.Context,
 	cmd m.AllocateChunkCommand,
@@ -155,12 +126,11 @@ func (s *ClientFacadeService) AllocateChunk(
 			return nil, fmt.Errorf("get chunk: %w", err)
 		}
 
-		desc, err := s.DescribeChunk(ctx, chunkID)
+		sources, err := s.placement.GetChunkNodes(ctx, chunkID)
 		if err != nil {
-			return nil, fmt.Errorf("describe chunk: %w", err)
+			return nil, fmt.Errorf("get chunk sources: %w", err)
 		}
-
-		if len(desc.Placement.Sources) > 0 {
+		if len(sources) > 0 {
 			return nil, m.ErrChunkKeyOccupied
 		}
 	} else {
@@ -177,18 +147,6 @@ func (s *ClientFacadeService) AllocateChunk(
 		Targets: candidates,
 	}
 	return res, nil
-}
-
-func (s *ClientFacadeService) ListObjects(ctx context.Context) []t.ObjectInfo {
-	return s.catalog.ListObjects(ctx)
-}
-
-func (s *ClientFacadeService) ListChunks(ctx context.Context) []t.ChunkInfo {
-	return s.catalog.ListChunks(ctx)
-}
-
-func (s *ClientFacadeService) ListNodes(ctx context.Context) []t.NodeInfo {
-	return s.lifecycle.ListNodes(ctx)
 }
 
 func (s *ClientFacadeService) SetReplication(ctx context.Context, objectID t.ObjectID, count int) error {
