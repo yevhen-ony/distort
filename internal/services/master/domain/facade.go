@@ -10,6 +10,8 @@ import (
 	m "dos/internal/services/master"
 )
 
+//go:generate mockgen -source=$GOFILE -destination=facade_mocks_test.go -package=domain
+
 type ClientFacadeConfig interface {
 	ReplicationCount() int
 }

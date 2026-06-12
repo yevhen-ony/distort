@@ -6,7 +6,6 @@ import (
 
 	"dos/internal/common/metrics"
 	t "dos/internal/common/types"
-	"dos/internal/services/master/domain"
 	"dos/internal/services/master/repo"
 	m "dos/internal/services/master"
 
@@ -48,7 +47,7 @@ func TestLifecycleService_HappyPath(tt *testing.T) {
 type lifecycleFixture struct {
 	nodes  *repo.InMemNodeRegistry
 	chunks *repo.InMemChunkRepo
-	index  *domain.InMemChunkNodeIndex
+	index  *repo.InMemChunkNodeIndex
 }
 
 func newLifecycleFixture(tt *testing.T) *lifecycleFixture {
@@ -57,7 +56,7 @@ func newLifecycleFixture(tt *testing.T) *lifecycleFixture {
 	return &lifecycleFixture{
 		nodes:  repo.NewInMemNodeRegistry(),
 		chunks: repo.NewInMemChunkRepo(),
-		index:  domain.NewInMemChunkNodeIndex(),
+		index:  repo.NewInMemChunkNodeIndex(),
 	}
 }
 

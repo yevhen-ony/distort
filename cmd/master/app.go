@@ -27,7 +27,7 @@ type App struct {
 
 	chunkRepository *repo.InMemChunkRepo
 	nodeRegistry    *repo.InMemNodeRegistry
-	chunkNodeIndex  *domain.InMemChunkNodeIndex
+	chunkNodeIndex  *repo.InMemChunkNodeIndex
 
 	chunkTransport *chunkrpc.Transport
 
@@ -66,7 +66,7 @@ func NewApp(config *Config) (app *App, err error) {
 	app.conn = connect.NewConnCache()
 	app.chunkRepository = repo.NewInMemChunkRepo()
 	app.nodeRegistry = repo.NewInMemNodeRegistry()
-	app.chunkNodeIndex = domain.NewInMemChunkNodeIndex()
+	app.chunkNodeIndex = repo.NewInMemChunkNodeIndex()
 
 	app.masterMode, err = InitMasterMode(config)
 	if err != nil {

@@ -14,14 +14,14 @@ type PlacementConfig interface {
 
 type PlacementDeps struct {
 	ChunkNodeIndex m.ChunkNodeIndex
-	NodeRegistry        m.NodeRegistry
+	NodeRegistry   m.NodeRegistry
 	Config         PlacementConfig
 }
 
 type PlacementService struct {
 	chunkNodeIndex m.ChunkNodeIndex
 	nodeReg        m.NodeRegistry
-	config PlacementConfig
+	config         PlacementConfig
 }
 
 func NewPlacementService(deps PlacementDeps) (*PlacementService, error) {
@@ -68,7 +68,7 @@ func (s *PlacementService) GetCandidates(
 func (s *PlacementService) GetChunkNodes(ctx context.Context, chunkID t.ChunkID) ([]t.NodeRef, error) {
 	nodeIDs := s.chunkNodeIndex.GetChunkNodes(ctx, chunkID)
 	if len(nodeIDs) == 0 {
-		return nil, nil 
+		return nil, nil
 	}
 	nodes := s.nodeReg.GetMany(ctx, nodeIDs...)
 	nodeRefs := utils.Map(nodes, func(n m.Node) t.NodeRef { return n.NodeRef })

@@ -7,8 +7,6 @@ import (
 	"time"
 )
 
-//go:generate mockgen -source=$GOFILE -destination=mock/mocks.go -package=mock
-
 type StorageNodePlacement interface {
 	GetCandidates(context.Context, CandidateNodesQuery) ([]t.NodeRef, error)
 	GetChunkNodes(context.Context, t.ChunkID) ([]t.NodeRef, error)
