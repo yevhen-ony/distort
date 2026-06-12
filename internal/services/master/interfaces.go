@@ -7,32 +7,11 @@ import (
 	"time"
 )
 
-type StorageNodeLifecycle interface {
-	Register(context.Context, string) (t.NodeRef, error)
-	UpdateStats(context.Context, t.NodeID, t.NodeStats) error
-	Remove(context.Context, t.NodeID) ([]t.ChunkID, error)
-}
+//go:generate mockgen -source=$GOFILE -destination=mock/mocks.go -package=mock
 
 type StorageNodePlacement interface {
 	GetCandidates(context.Context, CandidateNodesQuery) ([]t.NodeRef, error)
 	GetChunkNodes(context.Context, t.ChunkID) ([]t.NodeRef, error)
-}
-
-type StorageNodeReport interface {
-	Report(context.Context, t.NodeID, []t.StorageNodeReport) (t.ReportResult, error)
-}
-
-type ClientFacade interface {
-	CreateObject(context.Context, t.ObjectID) error
-	AllocateChunk(context.Context, AllocateChunkCommand) (*t.ChunkAllocation, error)
-
-	ListObjects(context.Context) []t.ObjectInfo
-	ListChunks(context.Context) []t.ChunkInfo
-	ListNodes(context.Context) []t.NodeInfo
-	SetReplication(context.Context, t.ObjectID, int) error
-
-	DescribeChunk(context.Context, t.ChunkID) (*t.ChunkDesc, error)
-	DescribeObject(context.Context, t.ObjectID) (*t.ObjectDesc, error)
 }
 
 type ChunkRepo interface {
@@ -52,8 +31,6 @@ type ChunkRepo interface {
 
 	IncReplicaCount(context.Context, t.ChunkID) error
 	DecReplicaCount(context.Context, t.ChunkID) error
-
-	ForEach(context.Context, func(Chunk))
 }
 
 type NodeQuery struct {
@@ -111,3 +88,26 @@ type MasterState interface {
 	TransferLeadership(context.Context) error
 }
 
+type ObjectReader interface {
+	List(ctx context.Context) []Object
+	Get(ctx context.Context, objectID t.ObjectID) (Object, error)
+	Exists(ctx context.Context, objectID t.ObjectID) (bool, error)
+
+	GetReplication(ctx context.Context, objectID t.ObjectID) (int, error)
+	ExistsChunk(ctx context.Context, slot t.ObjectSlot) (bool, error)
+	GetChunk(ctx context.Context, slot t.ObjectSlot) (t.ChunkID, error)
+}
+
+type ObjectWriter interface {
+	Create(context.Context, t.ObjectID, int) error
+	Delete(context.Context, t.ObjectID) error
+	SetReplication(context.Context, t.ObjectID, int) error
+
+	AddChunk(context.Context, t.ObjectSlot, t.ChunkID) error
+	DeleteChunk(context.Context, t.ObjectSlot) error
+}
+
+type ObjectRW interface {
+	ObjectWriter
+	ObjectReader
+}

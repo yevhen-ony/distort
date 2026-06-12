@@ -25,10 +25,9 @@ func NewObjectAssembler(destPath string) (*ObjectAssembler, error) {
 	return asm, nil
 }
 
-
 func (a *ObjectAssembler) NewSink(chunks []t.ChunkPlacement) (io.ObjectSink, error) {
-	layoutSpec := ObjectLayoutSpecFromChunkPlacments(chunks) 
-	layout, err := NewObjectLayout(layoutSpec)	
+	layoutSpec := ObjectLayoutSpecFromChunkPlacments(chunks)
+	layout, err := NewObjectLayout(layoutSpec)
 	if err != nil {
 		return nil, fmt.Errorf("create layout: %w", err)
 	}
@@ -46,12 +45,12 @@ func (a *ObjectAssembler) NewSink(chunks []t.ChunkPlacement) (io.ObjectSink, err
 
 func ObjectLayoutSpecFromChunkPlacments(chunks []t.ChunkPlacement) *LayoutSpec {
 	lcs := utils.Map(chunks, func(p t.ChunkPlacement) LayoutChunk {
-		return LayoutChunk {
-			Key: p.Slot.ChunkKey, 
+		return LayoutChunk{
+			Key:  p.Slot.ChunkKey,
 			Size: p.Meta.Digest.Size,
-		}		
+		}
 	})
-	return &LayoutSpec{ chunks: lcs }
+	return &LayoutSpec{chunks: lcs}
 }
 
 type objectSink struct {
@@ -62,7 +61,7 @@ type objectSink struct {
 func (os *objectSink) WriteChunk(key t.ChunkKey, data []byte) error {
 	region, err := os.layout.Region(key)
 	if err != nil {
-		return err 
+		return err
 	}
 	return os.writer.WriteRegion(region, data)
 }
@@ -70,5 +69,3 @@ func (os *objectSink) WriteChunk(key t.ChunkKey, data []byte) error {
 func (os *objectSink) Close() error {
 	return os.writer.Close()
 }
-
-

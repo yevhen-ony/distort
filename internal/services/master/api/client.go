@@ -17,12 +17,20 @@ import (
 
 var _ mpb.MasterClientServiceServer = (*ClientServer)(nil)
 
-type ClientServer struct {
-	pb.UnimplementedMasterClientServiceServer
-	facade m.ClientFacade
+type ClientFacade interface {
+	CreateObject(context.Context, t.ObjectID) error
+	AllocateChunk(context.Context, m.AllocateChunkCommand) (*t.ChunkAllocation, error)
+	SetReplication(context.Context, t.ObjectID, int) error
+	DescribeChunk(context.Context, t.ChunkID) (*t.ChunkDesc, error)
+	DescribeObject(context.Context, t.ObjectID) (*t.ObjectDesc, error)
 }
 
-func NewClientServer(facade m.ClientFacade) (*ClientServer, error) {
+type ClientServer struct {
+	pb.UnimplementedMasterClientServiceServer
+	facade ClientFacade
+}
+
+func NewClientServer(facade ClientFacade) (*ClientServer, error) {
 	if facade == nil {
 		return nil, errors.New("missing facade service")
 	}

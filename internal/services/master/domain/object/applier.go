@@ -4,6 +4,7 @@ import (
 	"context"
 	t "dos/internal/common/types"
 	"errors"
+	m "dos/internal/services/master"
 )
 
 type CommandApplier interface {
@@ -16,10 +17,10 @@ var (
 
 
 type LocalCommandApplier struct {
-  	repo Repository 
+  	repo m.ObjectRW 
 }
 
-func NewLocalCommandApplier(repo Repository) (*LocalCommandApplier, error) {
+func NewLocalCommandApplier(repo m.ObjectRW) (*LocalCommandApplier, error) {
 	if repo == nil {
 		return nil, errors.New("missing object repository")
 	}

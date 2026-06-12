@@ -10,7 +10,6 @@ import (
 	"dos/internal/common/loop"
 	t "dos/internal/common/types"
 	m "dos/internal/services/master"
-	"dos/internal/services/master/domain/object"
 )
 
 type CleanupConfig interface {
@@ -18,14 +17,14 @@ type CleanupConfig interface {
 }
 
 type CleanupDeps struct {
-	ObjectAuthority *object.Authority
+	ObjectAuthority m.ObjectRW 
 	ChunkRepository m.ChunkRepo
 	Config          CleanupConfig
 	Metrics         *CatalogMetrics
 }
 
 type CleanupService struct {
-	objects *object.Authority
+	objects m.ObjectRW
 	chunks  m.ChunkRepo
 	metrics *CatalogMetrics
 

@@ -6,7 +6,6 @@ import (
 	"dos/internal/common/loop"
 	t "dos/internal/common/types"
 	m "dos/internal/services/master"
-	"dos/internal/services/master/domain/object"
 	"errors"
 	"log/slog"
 	"time"
@@ -22,7 +21,7 @@ type PlannerConfig interface {
 }
 
 type PlannerDeps struct {
-	ObjectReader    object.ObjectReader
+	ObjectReader    m.ObjectReader
 	ChunkRepository m.ChunkRepo
 	Replication     ReplicationScheduler
 	Config          PlannerConfig
@@ -30,7 +29,7 @@ type PlannerDeps struct {
 }
 
 type PlannerService struct {
-	objects   object.ObjectReader
+	objects   m.ObjectReader
 	chunks    m.ChunkRepo
 	replicate ReplicationScheduler
 
@@ -76,7 +75,7 @@ func (p *PlannerService) ScheduleStaleChunks(ctx context.Context) {
 	p.metrics.PlannerIterationsTotal.Inc()
 
 	now := time.Now()
-	p.chunks.ForEach(ctx, func(chunk m.Chunk) {
+	for _, chunk := range p.chunks.List(ctx) {
 		desired, err := p.objects.GetReplication(ctx, chunk.Slot.ObjectID)
 		if err != nil {
 			slog.ErrorContext(ctx,
@@ -85,16 +84,16 @@ func (p *PlannerService) ScheduleStaleChunks(ctx context.Context) {
 				"object_id", chunk.Slot.ObjectID,
 				"error", err,
 			)
-			return
+			continue
 		}
 		if chunk.ReplicaCount == desired {
-			return
+			continue
 		}
 		staleAt := chunk.LastTouchedAt.Add(p.config.ChunkStaleAfter())
 		if staleAt.Before(now) {
 			p.replicate.Schedule(ctx, chunk.Meta.ID)
 		}
-	})
+	}
 }
 
 func (p *PlannerService) RunLoop(ctx context.Context) {

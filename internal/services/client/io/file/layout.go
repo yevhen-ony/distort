@@ -9,32 +9,36 @@ import (
 
 var (
 	ErrTotalSizeMismatch = errors.New("layout total size mismatch sum of chunks")
-	ErrUnexpectedKey = errors.New("chunk key unexpected for layout")
+	ErrUnexpectedKey     = errors.New("chunk key unexpected for layout")
 )
 
 type ChunkRegion struct {
 	Offset int64
-	Size int64
+	Size   int64
 }
 
 type ObjectLayout struct {
-	Layout map[t.ChunkKey]ChunkRegion
+	Layout     map[t.ChunkKey]ChunkRegion
 	TotalBytes int64
 }
 
 type LayoutChunk struct {
-	Key t.ChunkKey
+	Key  t.ChunkKey
 	Size int64
 }
 
 func compareLayoutChunks(lhs, rhs LayoutChunk) int {
-	if lhs.Key < rhs.Key { return -1 }
-	if lhs.Key > rhs.Key { return 1 }
+	if lhs.Key < rhs.Key {
+		return -1
+	}
+	if lhs.Key > rhs.Key {
+		return 1
+	}
 	return 0
 }
 
 type LayoutSpec struct {
-	chunks []LayoutChunk	
+	chunks []LayoutChunk
 }
 
 func NewObjectLayout(spec *LayoutSpec) (*ObjectLayout, error) {
@@ -45,24 +49,23 @@ func NewObjectLayout(spec *LayoutSpec) (*ObjectLayout, error) {
 	for _, chunk := range spec.chunks {
 		layout[chunk.Key] = ChunkRegion{
 			Offset: offset,
-			Size: chunk.Size,
+			Size:   chunk.Size,
 		}
 		offset += chunk.Size
 	}
 
 	res := &ObjectLayout{
 		TotalBytes: offset,
-		Layout: layout,
+		Layout:     layout,
 	}
-	
-	return res, nil	
+
+	return res, nil
 }
 
 func (ol *ObjectLayout) Region(key t.ChunkKey) (ChunkRegion, error) {
-	r, ok := ol.Layout[key] 	
+	r, ok := ol.Layout[key]
 	if !ok {
 		return ChunkRegion{}, ErrUnexpectedKey
 	}
 	return r, nil
 }
-

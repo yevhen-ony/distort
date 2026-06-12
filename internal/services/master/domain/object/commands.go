@@ -2,7 +2,7 @@ package object
 
 import (
 	"errors"
-	
+
 	t "dos/internal/common/types"
 )
 

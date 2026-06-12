@@ -188,12 +188,3 @@ func (r *InMemChunkRepo) Touch(_ context.Context, chunkID t.ChunkID) error {
 	chunk.LastTouchedAt = time.Now()
 	return nil
 }
-
-func (r *InMemChunkRepo) ForEach(_ context.Context, fn func(m.Chunk)) {
-	r.mu.RLock()
-	defer r.mu.RUnlock()
-
-	for _, chunk := range r.chunks {
-		fn(*chunk.Clone())
-	}
-}

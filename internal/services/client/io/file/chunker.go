@@ -10,14 +10,14 @@ import (
 )
 
 type ObjectChunker struct {
-	file  *os.File
+	file *os.File
 	size int
-	err error
+	err  error
 }
 
 func NewObjectChunker(path string, chunkSize int64) (*ObjectChunker, error) {
 	if chunkSize <= 0 {
-		return nil, errors.New("invalid chunk size") 
+		return nil, errors.New("invalid chunk size")
 	}
 	fd, err := os.Open(path)
 	if err != nil {
@@ -30,7 +30,7 @@ func NewObjectChunker(path string, chunkSize int64) (*ObjectChunker, error) {
 func (oc *ObjectChunker) Chunks() iter.Seq2[t.ChunkKey, []byte] {
 
 	return func(yield func(t.ChunkKey, []byte) bool) {
-		key := 0	
+		key := 0
 		for {
 			buf := make([]byte, oc.size)
 			n, err := io.ReadFull(oc.file, buf)

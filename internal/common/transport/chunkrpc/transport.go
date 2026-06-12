@@ -13,6 +13,8 @@ import (
 	"dos/internal/common/utils"
 )
 
+//go:generate mockgen -source=$GOFILE -destination=mock/session_mock.go -package=mock
+
 type Config interface {
 	FrameSize() int64
 	RPCTimeout() time.Duration

@@ -8,16 +8,19 @@ import (
   	"google.golang.org/grpc/status"
 
   	mpb "dos/gen/proto/master/v1"
-  	m "dos/internal/services/master"
 )
 
-type MasterGuard struct {
-	state m.MasterState
+type ActiveGuard interface {
+	IsActiveMaster() bool
 }
 
-func NewMasterGuard(state m.MasterState) *MasterGuard {
+type MasterGuard struct {
+	masterState ActiveGuard 
+}
+
+func NewMasterGuard(state ActiveGuard) *MasterGuard {
 	return &MasterGuard{
-		state: state,
+		masterState: state,
 	}
 }
 
@@ -32,7 +35,7 @@ func (i *MasterGuard) Intercept(
 		return handler(ctx, req)
 	}
 
-	if !i.state.IsActiveMaster() {
+	if !i.masterState.IsActiveMaster() {
 		return nil, status.Error(codes.Unavailable, "not active master")
 	}
 

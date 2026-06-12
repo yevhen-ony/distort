@@ -17,7 +17,7 @@ type MasterLocalMode struct {
 	repository *repo.InMemObjectRepo
 	applier    *object.LocalCommandApplier
 	submitter  *object.LocalCommandSubmitter
-	writer     *object.ObjectWriterImpl
+	writer     *object.CommandBackedObjectWriter
 
 	resolver *resolve.Resolver
 }
@@ -60,7 +60,7 @@ func (mode *MasterLocalMode) initLocalObjectAuthority() (err error) {
 		return fmt.Errorf("local command submitter init: %w", err)
 	}
 
-	mode.writer, err = object.NewObjectWriterImpl(mode.submitter)
+	mode.writer, err = object.NewCommandBackedObjectWriter(mode.submitter)
 	if err != nil {
 		return fmt.Errorf("object writer init: %w", err)
 	}

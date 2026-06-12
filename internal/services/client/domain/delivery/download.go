@@ -10,8 +10,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-
-
 func (d *ObjectDelivery) Download(ctx context.Context, asm io.ObjectAssembler) error {
 
 	objDesc, err := d.masterT.DescribeObject(ctx, d.objectID)

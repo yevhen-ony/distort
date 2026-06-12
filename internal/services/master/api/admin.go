@@ -5,23 +5,34 @@ import (
 	mpb "dos/gen/proto/master/v1"
 	"dos/internal/common/convert"
 	"dos/internal/common/utils"
-	m "dos/internal/services/master"
 	"errors"
 	"log/slog"
+	t "dos/internal/common/types"
 )
 
 var _ mpb.AdminServiceServer = (*AdminServer)(nil)
 
+type EntityLister interface {
+	ListObjects(context.Context) []t.ObjectInfo
+	ListChunks(context.Context) []t.ChunkInfo
+	ListNodes(context.Context) []t.NodeInfo
+}
+
+
+type LeadershipTransferer interface {
+	TransferLeadership(context.Context) error
+}
+
 type AdminServer struct {
 	mpb.UnimplementedAdminServiceServer
 
-	facade m.ClientFacade
-	state m.MasterState	
+	facade EntityLister 
+	state LeadershipTransferer	
 }
 
 type AdminDeps struct {
-	Facade m.ClientFacade
-	State m.MasterState
+	Facade EntityLister 
+	State LeadershipTransferer 
 }
 
 func NewAdminServer(deps AdminDeps) (*AdminServer, error) {

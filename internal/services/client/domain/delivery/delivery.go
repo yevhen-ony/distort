@@ -11,6 +11,8 @@ import (
 	"dos/internal/services/client/transport"
 )
 
+//go:generate mockgen -source=$GOFILE -destination=mocks_test.go -package=delivery
+
 type ObjectDeliveryConfig interface {
 	TransferConcurrency() int
 }

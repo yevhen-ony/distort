@@ -6,7 +6,6 @@ import (
 	"dos/internal/common/convert"
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
-	m "dos/internal/services/master"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -14,16 +13,25 @@ import (
 
 var _ mpb.MasterStorageServiceServer = (*StorageServer)(nil)
 
+type StorageNodeLifecycle interface {
+	Register(context.Context, string) (t.NodeRef, error)
+	UpdateStats(context.Context, t.NodeID, t.NodeStats) error
+}
+
+type StorageNodeReport interface {
+	Report(context.Context, t.NodeID, []t.StorageNodeReport) (t.ReportResult, error)
+}
+
 type StorageServer struct {
 	mpb.UnimplementedMasterStorageServiceServer
 	
-	lifecycle m.StorageNodeLifecycle
-	report m.StorageNodeReport
+	lifecycle StorageNodeLifecycle
+	report StorageNodeReport
 }
 
 func NewStorageServer(
-	lifecycle m.StorageNodeLifecycle,
-	report m.StorageNodeReport,
+	lifecycle StorageNodeLifecycle,
+	report StorageNodeReport,
 ) (*StorageServer, error) {
 	if lifecycle == nil {
 		return nil, errors.New("missing lifecycle service")

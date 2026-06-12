@@ -4,6 +4,8 @@ import (
 	t "dos/internal/common/types"
 )
 
+//go:generate mockgen -source=$GOFILE -destination=mock/mocks.go -package=mock
+
 type ObjectAssembler interface {
 	NewSink([]t.ChunkPlacement) (ObjectSink, error)
 }

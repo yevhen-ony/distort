@@ -8,17 +8,16 @@ import (
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
 	m "dos/internal/services/master"
-	"dos/internal/services/master/domain/object"
 )
 
 type CatalogDeps struct {
-	ObjectAuthority *object.Authority
+	ObjectAuthority m.ObjectRW 
 	ChunkRepository m.ChunkRepo
 	Metrics         *CatalogMetrics
 }
 
 type CatalogService struct {
-	objects *object.Authority
+	objects m.ObjectRW
 	chunks  m.ChunkRepo
 
 	metrics *CatalogMetrics

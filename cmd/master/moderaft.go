@@ -18,7 +18,7 @@ type MasterRaftMode struct {
 	node       *raftnode.ObjectNode
 	repository *repo.InMemObjectRepo
 	applier    *object.LocalCommandApplier
-	writer     *object.ObjectWriterImpl
+	writer     *object.CommandBackedObjectWriter
 	codec      *object.JSONCommandCodec
 
 	resolver *resolve.Resolver
@@ -84,7 +84,7 @@ func (mode *MasterRaftMode) initObjectAuthority(
 		return fmt.Errorf("object node init: %w", err)
 	}
 
-	mode.writer, err = object.NewObjectWriterImpl(mode.node.Submitter)
+	mode.writer, err = object.NewCommandBackedObjectWriter(mode.node.Submitter)
 	if err != nil {
 		return fmt.Errorf("object writer init: %w", err)
 	}

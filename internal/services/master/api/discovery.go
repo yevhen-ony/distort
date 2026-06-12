@@ -44,7 +44,7 @@ func (s *MasterDiscoveryServer) GetActiveMaster(
 	
 	ref, err := s.discovery.GetActiveMaster(ctx)
 	if err != nil {
-		return nil, status.Errorf(codes.Unavailable, err.Error())
+		return nil, status.Error(codes.Unavailable, err.Error())
 	}
 
 	rsp := &mpb.GetActiveMasterResponse{
