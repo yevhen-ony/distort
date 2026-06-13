@@ -12,9 +12,10 @@ import (
 	"dos/internal/common/master/route"
 	"dos/internal/common/metrics/prom"
 	"dos/internal/common/transport/chunkrpc"
-	s "dos/internal/services/storage"
 	"dos/internal/services/storage/api"
+	"dos/internal/services/storage/core/heartbeat"
 	"dos/internal/services/storage/core/identity"
+	"dos/internal/services/storage/core/inventory"
 	"dos/internal/services/storage/core/report"
 	"dos/internal/services/storage/core/storage"
 	"dos/internal/services/storage/store"
@@ -29,11 +30,11 @@ type App struct {
 
 	chunkT    *chunkrpc.Transport
 	master    *MasterHolder
-	storageBE s.ChunkStorage
+	storageBE *store.ChunkStorageBackend 
 
 	metricsS   *prom.Service
-	inventoryS *storage.ChunkInventory
-	heartbeatS *storage.HeartbeatService
+	inventoryS *inventory.ChunkInventory
+	heartbeatS *heartbeat.HeartbeatService
 	identityS  *identity.IdentityService
 	reportS    *report.ReportService
 	storageS   *storage.StorageService
@@ -82,16 +83,15 @@ func NewApp(config *Config) (*App, error) {
 		return nil, fmt.Errorf("report service init: %w", err)
 	}
 
-	inventoryS, err := storage.NewChunkInventory(storage.ChunkInventoryDeps{
+	inventoryS, err := inventory.NewChunkInventory(inventory.ChunkInventoryDeps{
 		Config:  config,
-		Metrics: storage.NewChunkCatalogMetrics(metricsS.Provider()),
+		Metrics: inventory.NewChunkInventoryMetrics(metricsS.Provider()),
 	})
 
 	storageS, err := storage.NewStorageService(storage.StorageDeps{
 		Inventory: inventoryS,
 		Identity:  identityS,
 		StorageBE: storageBE,
-		MasterT:   master.transport,
 		ChunkT:    chunkT,
 		Config:    config,
 		Metrics:   storage.NewStorageMetrics(metricsS.Provider()),
@@ -100,13 +100,13 @@ func NewApp(config *Config) (*App, error) {
 		return nil, fmt.Errorf("storage service init: %w", err)
 	}
 
-	heartbeatS, err := storage.NewHeartbeatService(storage.HeartbeatDeps{
+	heartbeatS, err := heartbeat.NewHeartbeatService(heartbeat.HeartbeatDeps{
 		Inventory: inventoryS,
 		Identity:  identityS,
 		Storage:   storageS,
 		MasterT:   master.transport,
 		Config:    config,
-		Metrics:   storage.NewHeartbeatMetrics(metricsS.Provider()),
+		Metrics:   heartbeat.NewHeartbeatMetrics(metricsS.Provider()),
 	})
 	if err != nil {
 		return nil, fmt.Errorf("heartbeat service init: %w", err)

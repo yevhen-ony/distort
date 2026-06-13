@@ -6,11 +6,12 @@ import (
 	"dos/internal/common/loop"
 	"dos/internal/common/queue"
 	t "dos/internal/common/types"
-	"dos/internal/services/storage/transport"
 	"errors"
 	"log/slog"
 	"time"
 )
+
+//go:generate mockgen -source=$GOFILE -destination=report_mocks_test.go -package=report
 
 type ReportConfig interface {
 	ReportInterval() time.Duration
@@ -25,20 +26,24 @@ type ReportProcessor interface {
 	ProcessReport(context.Context, t.ReportResult)
 }
 
+type MasterTransport interface {
+	ReportChunks(context.Context, t.NodeID, []t.StorageNodeReport) (t.ReportResult, error)
+}
+
 type NOPReportProcessor struct{}
 
 func (*NOPReportProcessor) ProcessReport(context.Context, t.ReportResult) {}
 
 type ReportDeps struct {
 	Identity IdentityProvider
-	MasterT  *transport.Master
+	MasterT  MasterTransport
 	Config   ReportConfig
 	Metrics  *ReportMetrics
 }
 
 type ReportService struct {
 	identity IdentityProvider
-	masterT  *transport.Master
+	masterT  MasterTransport
 	metrics  *ReportMetrics
 
 	processor ReportProcessor
@@ -65,7 +70,7 @@ func NewReportService(deps ReportDeps) (*ReportService, error) {
 		return nil, errors.New("missing metrics")
 	}
 
-	config := deps.Config 
+	config := deps.Config
 	queue := queue.NewQueue[t.StorageNodeReport](config.QueueCapacity())
 	looper := loop.NewLooper(config.ReportInterval())
 	service := &ReportService{

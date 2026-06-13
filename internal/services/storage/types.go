@@ -6,6 +6,10 @@ import (
 
 type ChunkState uint8
 
+type HeartbeatResult struct {
+	NodeUnknown bool
+}
+
 const (
 	ChunkStateStaged ChunkState = iota
 	ChunkStateActive

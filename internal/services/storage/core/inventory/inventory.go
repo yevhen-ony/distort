@@ -1,4 +1,4 @@
-package storage
+package inventory
 
 import (
 	"context"
@@ -13,13 +13,13 @@ import (
 	s "dos/internal/services/storage"
 )
 
-type ChunkCatalogConfig interface {
+type ChunkInventoryConfig interface {
 	MaxStorageBytes() int64
 }
 
 type ChunkInventoryDeps struct {
-	Config  ChunkCatalogConfig
-	Metrics *ChunkCatalogMetrics
+	Config  ChunkInventoryConfig
+	Metrics *ChunkInventoryMetrics
 }
 
 type ChunkInventory struct {
@@ -27,8 +27,8 @@ type ChunkInventory struct {
 	mu         sync.RWMutex
 	totalBytes int64
 
-	config  ChunkCatalogConfig
-	metrics *ChunkCatalogMetrics
+	config  ChunkInventoryConfig
+	metrics *ChunkInventoryMetrics
 }
 
 func NewChunkInventory(deps ChunkInventoryDeps) (*ChunkInventory, error) {
@@ -164,14 +164,8 @@ func (ci *ChunkInventory) GetState(chunkID t.ChunkID) (s.ChunkState, error)  {
 	return rec.State, nil
 }
 
-
-type CatalogSource interface {
-	List() ([]t.ChunkID, error)
-	GetMeta(t.ChunkID) (t.ChunkMeta, error)
-}
-
 func (cs *ChunkInventory) BuildCatalog(
-	ctx context.Context, source CatalogSource,
+	ctx context.Context, source s.CatalogSource,
 ) error {
 
 	ids, err := source.List()
@@ -216,5 +210,8 @@ func (ci *ChunkInventory) ListRecords() []s.ChunkRecord {
 }
 
 func (ci *ChunkInventory) ListIDs() []t.ChunkID {
+  	ci.mu.RLock()
+  	defer ci.mu.RUnlock()
+
 	return slices.Collect(maps.Keys(ci.catalog))
 }

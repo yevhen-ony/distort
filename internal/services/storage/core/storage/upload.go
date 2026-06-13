@@ -2,59 +2,75 @@ package storage
 
 import (
 	"context"
+	"fmt"
+	"log/slog"
+	"time"
+
+	"dos/internal/common/dosctx"
 	t "dos/internal/common/types"
-	"io"
-	"sync"
+	s "dos/internal/services/storage"
 )
 
-type UploadSession struct {
-	id   t.ChunkID
-	data []byte
-	n    int
-
-	once sync.Once
-	onCommit func(context.Context, t.Chunk) error
-	onAbort func() error
-}
-
-func NewUploadSession(chunkID t.ChunkID, size int64) *UploadSession {
-	return &UploadSession{
-		id:   chunkID,
-		data: make([]byte, size),
-	}
-}
-
-func (s *UploadSession) Write(p []byte) (int, error) {
-	if s.n+len(p) > len(s.data) {
-		return 0, io.ErrShortBuffer
+func (cs *StorageService) StartUpload(
+	ctx context.Context,
+	meta *t.ChunkMeta,
+) (*UploadSession, error) {
+	if cs.inventory.Has(meta.ID) {
+		return nil, s.ErrChunkConflict
 	}
 
-	n := copy(s.data[s.n:], p)
-	if n != len(p) {
-		return 0, io.ErrShortWrite
+	release, err := cs.AcquireOpSlot(ctx)
+	if err != nil {
+		return nil, err
 	}
 
-	s.n += n
-	return n, nil
+	start := time.Now()
+
+	session := &UploadSession{
+		id:   meta.ID,
+		data: make([]byte, meta.Digest.Size),
+		onCommit: func(ctx context.Context, chunk t.Chunk) error {
+			defer release()
+			err := cs.commitUpload(ctx, chunk, meta)
+			if err != nil {
+				cs.metrics.UploadsFailedDuration.Observe(time.Since(start).Seconds())
+			} else {
+				cs.metrics.UploadsSuccessDuration.Observe(time.Since(start).Seconds())
+			}
+			return err
+		},
+		onAbort: func() error {
+			defer release()
+			cs.metrics.UploadsFailedDuration.Observe(time.Since(start).Seconds())
+			return nil
+		},
+	}
+	return session, nil
 }
 
-func (s *UploadSession) Close() (err error) {
-	s.once.Do(func() {
-		if s.onAbort == nil {
-			return
+func (cs *StorageService) commitUpload(
+	ctx context.Context,
+	chunk t.Chunk,
+	meta *t.ChunkMeta,
+) error {
+
+	ctx = dosctx.WithOperation(ctx, "commit_upload")
+
+	if err := meta.Digest.Match(&chunk.Meta.Digest); err != nil {
+		return err
+	}
+
+	if err := cs.storageBE.Store(chunk); err != nil {
+		return fmt.Errorf("store chunk: %w", err)
+	}
+
+	if err := cs.inventory.Add(meta); err != nil {
+		if err := cs.storageBE.Delete(meta.ID); err != nil {
+			slog.ErrorContext(ctx, "rollback failed", "error", err)
 		}
-		err = s.onAbort()
-	})
-	return err
-}
+		return err
+	}
 
-func (s *UploadSession) Commit(ctx context.Context) (err error) {
-	s.once.Do(func() {
-		if s.onCommit == nil {
-			return 
-		}
-		chunk := t.NewChunk(s.id, s.data[:s.n])
-		err = s.onCommit(ctx, chunk)
-	})
-	return err
+	cs.StageAndReportOne(ctx, meta.ID)
+	return nil
 }

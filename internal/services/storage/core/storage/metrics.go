@@ -19,42 +19,6 @@ type StorageMetrics struct {
 	ReplicateFailedDuration  metrics.Histogram
 }
 
-type ChunkCatalogMetrics struct {
-	ChunksCount      metrics.Gauge
-	ChunksTotalBytes metrics.Gauge
-}
-
-type HeartbeatMetrics struct {
-	HeartbeatFailedTotal metrics.Counter
-}
-
-func NewChunkCatalogMetrics(provider metrics.Provider) *ChunkCatalogMetrics {
-	chunksCount := provider.Gauge(metrics.GaugeOpts{
-		Name: "storage_catalog_chunks_count",
-		Help: "Current number of chunks in the storage catalog.",
-	})
-	chunksTotalBytes := provider.Gauge(metrics.GaugeOpts{
-		Name: "storage_catalog_chunks_total_bytes",
-		Help: "Current total size in bytes of chunks tracked in the storage catalog.",
-	})
-
-	return &ChunkCatalogMetrics{
-		ChunksCount:      chunksCount,
-		ChunksTotalBytes: chunksTotalBytes,
-	}
-}
-
-func NewHeartbeatMetrics(provider metrics.Provider) *HeartbeatMetrics {
-	heartbeatFailedTotal := provider.Counter(metrics.CounterOpts{
-		Name: "storage_heartbeat_failed_total",
-		Help: "Total number of failed heartbeat requests from storage to master.",
-	})
-
-	return &HeartbeatMetrics{
-		HeartbeatFailedTotal: heartbeatFailedTotal,
-	}
-}
-
 func NewStorageMetrics(provider metrics.Provider) *StorageMetrics {
 	durationBuckets := []float64{0.001, 0.01, 0.05, 0.1, 0.5, 1, 5, 10}
 

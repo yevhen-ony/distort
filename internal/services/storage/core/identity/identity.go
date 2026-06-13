@@ -5,7 +5,6 @@ import (
 	"dos/internal/common/dosctx"
 	"dos/internal/common/retry"
 	t "dos/internal/common/types"
-	"dos/internal/services/storage/transport"
 	"errors"
 	"fmt"
 	"log/slog"
@@ -18,13 +17,17 @@ type IdentityConfig interface {
 	RegistrationTimeout() time.Duration
 }
 
+type MasterTransport interface {
+	RegisterNode(context.Context, string) (t.NodeID, error)
+}
+
 type IdentityDeps struct {
-	MasterT *transport.Master
+	MasterT MasterTransport
 	Config  IdentityConfig
 }
 
 type IdentityService struct {
-	masterT *transport.Master
+	masterT MasterTransport 
 	config  IdentityConfig
 	mu      sync.RWMutex
 
