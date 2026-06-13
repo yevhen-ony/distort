@@ -133,6 +133,9 @@ func (r *InMemNodeRegistry) Find(ctx context.Context, query m.NodeQuery) []m.Nod
 }
 
 func (r *InMemNodeRegistry) Count(_ context.Context) int {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
 	return len(r.nodes)
 }
 

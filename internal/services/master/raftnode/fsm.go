@@ -28,7 +28,7 @@ func NewObjectFSM(codec object.CommandCodec, applier object.CommandApplier) (*Ob
 	return fsm, nil
 }
 
-func (f *ObjectFSM) Apply(log *raft.Log) interface{} {
+func (f *ObjectFSM) Apply(log *raft.Log) any {
   	cmd, err := f.codec.Decode(log.Data)
   	if err != nil {
   		return err

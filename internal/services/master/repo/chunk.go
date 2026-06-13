@@ -135,7 +135,7 @@ func (r *InMemChunkRepo) DecReplicaCount(ctx context.Context, chunkID t.ChunkID)
 	}
 	if chunk.ReplicaCount == 0 {
 		slog.WarnContext(ctx, "try decrement replication below zero", "chunk_id", chunkID)
-		return errors.New("decrement replicas below zero")
+		return m.ErrChunkReplicaUnderflow
 	}
 	chunk.ReplicaCount--
 	chunk.LastTouchedAt = time.Now()
