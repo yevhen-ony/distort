@@ -11,7 +11,7 @@ import (
 	"time"
 )
 
-//go:generate mockgen -source=$GOFILE -destination=report_mocks_test.go -package=report
+//go:generate mockgen -source=$GOFILE -destination=mocks_test.go -package=report
 
 type ReportConfig interface {
 	ReportInterval() time.Duration

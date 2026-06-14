@@ -5,7 +5,7 @@ import (
 	"time"
 
 	t "dos/internal/common/types"
-	"dos/internal/services/storage/core/storage"
+	s "dos/internal/services/storage"
 )
 
 //go:generate mockgen -source=$GOFILE -destination=mocks_test.go -package=chunk
@@ -15,7 +15,7 @@ type ChunkConfig interface {
 }
 
 type ChunkStorage interface {
-	StartUpload(context.Context, *t.ChunkMeta) (*storage.UploadSession, error)
+	StartUpload(context.Context, *t.ChunkMeta) (s.UploadSession, error)
 	AcquireOpSlot(context.Context, time.Duration) (func(), error)
 	LoadChunk(t.ChunkID) (t.Chunk, error)
 	ScheduleForwardChunk(context.Context, t.ChunkID, []t.NodeRef) error

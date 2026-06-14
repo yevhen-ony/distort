@@ -215,7 +215,7 @@ func (srv *ChunkServer) DeleteChunk(
 		return nil, err
 	}
 
-	return rsp, nil
+	return &spb.DeleteChunkResponse{}, nil
 }
 
 func (srv *ChunkServer) validatePutChunkHeader(header *spb.PutChunkHeader) error {

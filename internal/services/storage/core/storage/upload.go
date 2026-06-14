@@ -14,7 +14,7 @@ import (
 func (cs *StorageService) StartUpload(
 	ctx context.Context,
 	meta *t.ChunkMeta,
-) (*UploadSession, error) {
+) (s.UploadSession, error) {
 	if cs.inventory.Has(meta.ID) {
 		return nil, s.ErrChunkConflict
 	}

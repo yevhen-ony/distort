@@ -13,7 +13,7 @@ import (
 	"google.golang.org/grpc/status"
 )
 
-type DiscoveryService interface {
+type MasterDiscovery interface {
 	GetActiveMaster(_ context.Context) (t.MasterRef, error)
 }
 
@@ -21,10 +21,10 @@ type DiscoveryService interface {
 type MasterDiscoveryServer struct {
 	mpb.UnimplementedMasterDiscoveryServiceServer
 	
-	discovery DiscoveryService
+	discovery MasterDiscovery
 }
 
-func NewMasterDiscoveryServer(discovery DiscoveryService) (*MasterDiscoveryServer, error) {
+func NewMasterDiscoveryServer(discovery MasterDiscovery) (*MasterDiscoveryServer, error) {
 	if discovery == nil {
 		return nil, errors.New("missing discovery service")
 	}

@@ -1,4 +1,4 @@
-package api
+package admin
 
 import (
 	"context"
@@ -11,22 +11,6 @@ import (
 	"errors"
 	"log/slog"
 )
-
-type Inventory interface {
-	GetStats() t.NodeStats
-	ListRecords() []s.ChunkRecord
-}
-
-type Storage interface {
-	StageAndReportMany(context.Context, []t.ChunkID) *s.TriggerReportResult
-	StageAndReportAll(context.Context) *s.TriggerReportResult
-}
-
-type Heartbeat interface {
-	Pause() bool
-	Resume() bool
-	IsPaused() bool
-}
 
 type AdminDeps struct {
 	Inventory Inventory
