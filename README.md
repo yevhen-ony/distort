@@ -1,127 +1,113 @@
-# Minimal Distributed Object Store (Learning Project)
+# Distributed Object Store
 
-## Goal
+> Working name: `dos`
 
-Build a simplified distributed object store inspired by GFS.
+This project is an experimental distributed object delivery and storage system.
 
-Primary requirement:
+It takes an abstract Object, splits it into Chunks, stores those Chunks across remote
+Storage instances, and later reconstructs the Object by fetching its Chunks back.
 
-> A client uploads a large object. The object remains downloadable as long as at least one replica of each chunk is available.
+## Terminology
 
----
+- **Cluster**: the system boundary: Master control plane plus Storage data plane.
+- **Master**: the control plane role; coordinates metadata, placement, Storage state, and replication intent.
+- **Storage**: the data plane role; keeps Chunk bytes locally and serves uploads/downloads.
+- **Client**: an external program or CLI user. A Client can be both Producer and Consumer.
+- **Producer**: anything that creates Object data or individual Chunks.
+- **Consumer**: anything that fetches Object data or individual Chunks.
+- **Compute**: a future worker role that may produce or consume Chunks near Storage.
+- **Object**: a logical unit of data addressed by `object_id`.
+- **Chunk**: a piece of an Object, identified within the Object by a chunk key.
 
-## Architecture
+```text
+Cluster = Master + Storage
+```
 
-Components:
+## What Is This?
 
-- **Master**
-  - stores metadata only
-  - tracks objects, chunks, and replica locations
-  - tracks alive chunkservers (heartbeat)
+This is a Cluster for moving and storing chunked Objects.
 
-- **ChunkServer**
-  - stores raw chunk data on disk
-  - serves upload/download requests
+An Object can be a file, a dataset, compute output, or a task split into pieces.
+The Cluster does not need to know what the Object means. It only knows how to place,
+track, move, replicate, fetch, and reconstruct its Chunks.
 
-- **Client**
-  - splits objects into chunks
-  - uploads/downloads data
-  - interacts with master for metadata
+## Why It Exists
 
----
+Distributed systems often produce data in one place and consume it somewhere else.
 
-## Data Model
+A Client may upload a file today. Later, Compute may produce Chunks directly near Storage.
+A Consumer should still be able to fetch the whole Object by object_id, without knowing
+where each Chunk was created or stored.
 
-### File
+The project explores this idea: storage is not just a passive bucket, but a delivery
+fabric between Producers, Storage, Compute, and Consumers.
 
-- `object_id`
-- `object_size`
-- `chunks: map[index] -> chunk_id`
+A normal object-storage flow:
 
-### Chunk
+Client -> Cluster -> Client
 
-- `chunk_id`
-- `index` (position in object)
-- `replicas: []chunkserver`
+A decoupled compute flow:
 
----
+Producer / Compute -> Cluster -> Consumer
 
-## Key Design Decisions
+A task-distribution flow:
 
-- **Client-side chunking**
-  - client splits object into chunks (fixed size, e.g. 4MB)
-  - last chunk may be smaller
+Client splits task -> Cluster -> Compute
 
-- **Chunks are raw bytes**
-  - no semantics
-  - no object awareness in chunkservers
+## How It Works
+The system is composed of two internal Cluster roles and one external client-side layer:
 
-- **Explicit chunk index**
-  - client assigns `index`
-  - order defined by index, not upload order
+- **Master** coordinates metadata, placement, Storage state, and replication intent.
+Multiple Master instances form a Raft-backed control plane, with one active Master
+coordinating the Cluster.
 
-- **Replication**
-  - each chunk stored on multiple chunkservers (e.g. 3)
+- **Storage** persists Chunk bytes locally and serves direct uploads/downloads.
+Adding Storage instances expands capacity for new Chunks without affecting existing data.
 
-- **Master decides placement**
-  - assigns which chunkservers store each chunk
+- **Client-side code** runs outside the Cluster and handles Produce
 
----
 
-## Communication
+### Upload / Produce
 
-Use **gRPC** for all communication.
+1. A Producer creates an Object with the Master.
+2. The Producer splits the Object into Chunks.
+3. The Master allocates Chunk slots assigned to the Object.
+4. The Producer uploads Chunk bytes to Storage.
+5. Storage persists Chunk bytes locally and reports inventory back to the Master.
+6. The Master tracks which Storage instances actually hold each Chunk.
 
-### Master service (planned)
+### Download / Consume
 
-- `StartFile`
-- `AllocateChunk`
-- `GetFile`
-- `Heartbeat`
+1. A Consumer asks the Master where the Object’s Chunks are available.
+2. The Consumer downloads the Chunks directly from Storage.
+3. The Consumer reconstructs the Object from the downloaded Chunks.
 
-### Chunk service
+Splitting is intentionally delegated to the Producer, because chunking can be
+domain-specific. Client-side tooling handles the common mechanics: creating Objects,
+allocating Chunks, uploading Chunks to Storage, downloading Chunks, and reconstructing
+Objects.
 
-- `PutChunk`
-- `GetChunk`
+Replication is handled as a background concern. The Master tracks desired replication
+intent, Storage reports actual Chunk inventory, and the Cluster can schedule repairs
+when Chunks are under-replicated. This mechanism is experimental and not yet
+a production-grade durability guarantee.
 
----
+## Why Chunks?
 
-## Upload Flow (streaming)
+Chunks make large or abstract Objects operational.
 
-1. Client starts object upload
-2. For each chunk:
-   - split locally
-   - request placement from master
-   - upload to chunkservers
-3. (Completion semantics TBD: commit or implicit)
+A Chunk is small enough to move, retry, verify, place, replicate, and report independently.
+This gives the Cluster a bounded unit of work instead of forcing every operation to
+reason about the whole Object at once.
 
----
+Chunking also makes streaming natural: Producers upload data piece by piece,
+Storage persists and serves pieces independently, and Consumers download Chunks and
+reconstruct the Object without requiring one monolithic transfer.
 
-## Download Flow
+## Status
 
-1. Client requests object layout from master
-2. Master returns:
-   - ordered chunk indices
-   - replica locations
-3. Client downloads chunks in order
-4. If replica fails → try another
+The current implementation, under the working name dos, is written in Go and uses gRPC,
+Docker Compose, Helm manifests, and end-to-end tests.
 
----
-
-## Invariants
-
-- chunk indices are **unique per object**
-- chunkservers store **only (chunk_id → bytes)**
-- master stores **no object data**
-- object reconstruction = **sort by index + concatenate**
-
----
-
-## Open Questions (intentionally postponed)
-
-- explicit `CommitFile` vs implicit completion
-- failure recovery / re-replication
-- checksums / validation
-- partial reads
-- rebalancing
-
+It supports object upload/download, manual chunk workflows, Storage reporting,
+and experimental chunk replication.
