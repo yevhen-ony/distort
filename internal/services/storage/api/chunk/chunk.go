@@ -1,4 +1,4 @@
-package api
+package chunk
 
 import (
 	"context"
@@ -15,29 +15,25 @@ import (
 	t "dos/internal/common/types"
 	"dos/internal/common/utils"
 	s "dos/internal/services/storage"
-	"dos/internal/services/storage/core/identity"
-	"dos/internal/services/storage/core/storage"
+	"dos/internal/services/storage/api"
 )
 
-type Config interface {
-	FrameSize() int64
+
+type ChunkDeps struct {
+	Identity NodeIdentity 
+	Storage  ChunkStorage
+	Config   ChunkConfig
 }
 
-type ServerDeps struct {
-	Identity *identity.IdentityService
-	Storage *storage.StorageService
-	Config Config
-}
-
-type Server struct {
+type ChunkServer struct {
 	spb.UnimplementedChunkServiceServer
 
-	identity *identity.IdentityService
-	storage  *storage.StorageService
-	config   Config
+	identity NodeIdentity 
+	storage  ChunkStorage
+	config   ChunkConfig
 }
 
-func NewServer(deps ServerDeps) (*Server, error) {
+func NewChunkServer(deps ChunkDeps) (*ChunkServer, error) {
 	if deps.Identity == nil {
 		return nil, errors.New("missing identity")
 	}
@@ -48,7 +44,7 @@ func NewServer(deps ServerDeps) (*Server, error) {
 		return nil, errors.New("missing config")
 	}
 
-	server := &Server{
+	server := &ChunkServer{
 		identity: deps.Identity,
 		storage:  deps.Storage,
 		config:   deps.Config,
@@ -56,12 +52,12 @@ func NewServer(deps ServerDeps) (*Server, error) {
 	return server, nil
 }
 
-func (srv *Server) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) {
+func (srv *ChunkServer) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) {
 
 	defer func() {
 		if err != nil {
 			slog.ErrorContext(stream.Context(), "put chunk failed", "error", err)
-			err = toStatus(err)
+			err = api.ToStatus(err)
 		}
 	}()
 
@@ -111,14 +107,17 @@ func (srv *Server) PutChunk(stream spb.ChunkService_PutChunkServer) (err error) 
 	return nil
 }
 
-func (srv *Server) GetChunk(req *spb.GetChunkRequest, stream spb.ChunkService_GetChunkServer) (err error) {
+func (srv *ChunkServer) GetChunk(
+	req *spb.GetChunkRequest,
+	stream spb.ChunkService_GetChunkServer,
+) (err error) {
 
 	ctx := dosctx.WithChunkID(stream.Context(), t.ChunkID(req.GetChunkId()))
 
 	defer func() {
 		if err != nil {
 			slog.ErrorContext(ctx, "get chunk failed", "error", err)
-			err = toStatus(err)
+			err = api.ToStatus(err)
 		}
 	}()
 	slog.DebugContext(ctx, "get chunk request")
@@ -161,15 +160,16 @@ func (srv *Server) GetChunk(req *spb.GetChunkRequest, stream spb.ChunkService_Ge
 	return nil
 }
 
-func (srv *Server) ReplicateChunk(
-	ctx context.Context, req *spb.ReplicateChunkRequest,
+func (srv *ChunkServer) ReplicateChunk(
+	ctx context.Context,
+	req *spb.ReplicateChunkRequest,
 ) (rsp *spb.ReplicateChunkResponse, err error) {
 
 	ctx = dosctx.WithChunkID(ctx, t.ChunkID(req.GetChunkId()))
 	defer func() {
 		if err != nil {
 			slog.ErrorContext(ctx, "replicate chunk failed", "error", err)
-			err = toStatus(err)
+			err = api.ToStatus(err)
 		}
 	}()
 	slog.DebugContext(ctx, "replicate chunk requested")
@@ -190,7 +190,7 @@ func (srv *Server) ReplicateChunk(
 	return rsp, nil
 }
 
-func (srv *Server) DeleteChunk(
+func (srv *ChunkServer) DeleteChunk(
 	ctx context.Context, req *spb.DeleteChunkRequest,
 ) (rsp *spb.DeleteChunkResponse, err error) {
 
@@ -199,7 +199,7 @@ func (srv *Server) DeleteChunk(
 	defer func() {
 		if err != nil {
 			slog.ErrorContext(ctx, "delete chunk failed", "error", err)
-			err = toStatus(err)
+			err = api.ToStatus(err)
 		}
 	}()
 	slog.WarnContext(ctx, "delete chunk requested")
@@ -218,7 +218,7 @@ func (srv *Server) DeleteChunk(
 	return rsp, nil
 }
 
-func (srv *Server) validatePutChunkHeader(header *spb.PutChunkHeader) error {
+func (srv *ChunkServer) validatePutChunkHeader(header *spb.PutChunkHeader) error {
 	if header == nil {
 		return fmt.Errorf("missing header: %w", s.ErrInvalidHeader)
 	}

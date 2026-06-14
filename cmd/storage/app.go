@@ -12,7 +12,9 @@ import (
 	"dos/internal/common/master/route"
 	"dos/internal/common/metrics/prom"
 	"dos/internal/common/transport/chunkrpc"
-	"dos/internal/services/storage/api"
+	adminapi "dos/internal/services/storage/api/admin"
+	chunkapi "dos/internal/services/storage/api/chunk"
+	healthapi "dos/internal/services/storage/api/health"
 	"dos/internal/services/storage/core/heartbeat"
 	"dos/internal/services/storage/core/identity"
 	"dos/internal/services/storage/core/inventory"
@@ -30,7 +32,7 @@ type App struct {
 
 	chunkT    *chunkrpc.Transport
 	master    *MasterHolder
-	storageBE *store.ChunkStorageBackend 
+	storageBE *store.ChunkStorageBackend
 
 	metricsS   *prom.Service
 	inventoryS *inventory.ChunkInventory
@@ -39,9 +41,9 @@ type App struct {
 	reportS    *report.ReportService
 	storageS   *storage.StorageService
 
-	apiServer *api.Server
-	apiHealth *api.HealthServer
-	apiAdmin  *api.AdminServer
+	apiServer *chunkapi.ChunkServer
+	apiHealth *healthapi.HealthServer
+	apiAdmin  *adminapi.AdminServer
 }
 
 func NewApp(config *Config) (*App, error) {
@@ -112,7 +114,7 @@ func NewApp(config *Config) (*App, error) {
 		return nil, fmt.Errorf("heartbeat service init: %w", err)
 	}
 
-	apiServer, err := api.NewServer(api.ServerDeps{
+	apiServer, err := chunkapi.NewChunkServer(chunkapi.ChunkDeps{
 		Identity: identityS,
 		Storage:  storageS,
 		Config:   config,
@@ -121,14 +123,14 @@ func NewApp(config *Config) (*App, error) {
 		return nil, fmt.Errorf("api server init: %w", err)
 	}
 
-	apiHealth, err := api.NewHealthServer(api.HealthDeps{
+	apiHealth, err := healthapi.NewHealthServer(healthapi.HealthDeps{
 		Identity: identityS,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("api health init: %w", err)
 	}
 
-	apiAdmin, err := api.NewAdminServer(api.AdminDeps{
+	apiAdmin, err := adminapi.NewAdminServer(adminapi.AdminDeps{
 		Inventory: inventoryS,
 		Storage:   storageS,
 		Heartbeat: heartbeatS,
@@ -217,7 +219,7 @@ func initMasterTransport(config *Config) (*MasterHolder, error) {
 	}
 
 	mtransport, err := transport.NewMaster(transport.MasterTransportDeps{
-		Router: mrouter,	
+		Router: mrouter,
 		Config: config,
 	})
 	if err != nil {

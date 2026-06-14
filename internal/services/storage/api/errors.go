@@ -10,7 +10,7 @@ import (
 	s "dos/internal/services/storage"
 )
 
-func toStatus(err error) error {
+func ToStatus(err error) error {
 	if err == nil {
 		return nil
 	}
