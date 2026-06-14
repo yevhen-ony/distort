@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"log/slog"
+	"time"
 
 	cpb "dos/gen/proto/common/v1"
 	spb "dos/gen/proto/storage/v1"
@@ -122,7 +123,7 @@ func (srv *Server) GetChunk(req *spb.GetChunkRequest, stream spb.ChunkService_Ge
 	}()
 	slog.DebugContext(ctx, "get chunk request")
 
-	release, err := srv.storage.AcquireOpSlot(ctx)
+	release, err := srv.storage.AcquireOpSlot(ctx, time.Second)
 	if err != nil {
 		return err
 	}

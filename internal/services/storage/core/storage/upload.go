@@ -19,7 +19,7 @@ func (cs *StorageService) StartUpload(
 		return nil, s.ErrChunkConflict
 	}
 
-	release, err := cs.AcquireOpSlot(ctx)
+	release, err := cs.AcquireOpSlot(ctx, defaultOpSlotAcquireTimeout)
 	if err != nil {
 		return nil, err
 	}

@@ -71,7 +71,7 @@ func (cs *StorageService) ScheduleForwardChunk(
 		return s.ErrChunkNotFound
 	}
 
-	release, err := cs.AcquireOpSlot(ctx)
+	release, err := cs.AcquireOpSlot(ctx, defaultOpSlotAcquireTimeout)
 	if err != nil {
 		return err
 	}

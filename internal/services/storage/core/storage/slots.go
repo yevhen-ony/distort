@@ -7,8 +7,10 @@ import (
 	s "dos/internal/services/storage"
 )
 
-func (cs *StorageService) AcquireOpSlot(ctx context.Context) (func(), error) {
-	acqCtx, cancel := context.WithTimeout(ctx, time.Second)
+const defaultOpSlotAcquireTimeout = time.Second
+
+func (cs *StorageService) AcquireOpSlot(ctx context.Context, timeout time.Duration) (func(), error) {
+	acqCtx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
 	start := time.Now()
