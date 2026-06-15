@@ -42,17 +42,11 @@ where each Chunk was created or stored.
 The project explores this idea: storage is not just a passive bucket, but a delivery
 fabric between Producers, Storage, Compute, and Consumers.
 
-A normal object-storage flow:
+A normal object-storage flow:   `Client -> Cluster -> Client`
 
-Client -> Cluster -> Client
+A decoupled compute flow:       `Producer / Compute -> Cluster -> Consumer`
 
-A decoupled compute flow:
-
-Producer / Compute -> Cluster -> Consumer
-
-A task-distribution flow:
-
-Client splits task -> Cluster -> Compute
+A task-distribution flow:       `Client splits task -> Cluster -> Compute`
 
 ## How It Works
 The system is composed of two internal Cluster roles and one external client-side layer:
