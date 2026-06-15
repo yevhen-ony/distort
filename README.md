@@ -83,8 +83,7 @@ Objects.
 
 Replication is handled as a background concern. The Master tracks desired replication
 intent, Storage reports actual Chunk inventory, and the Cluster can schedule repairs
-when Chunks are under-replicated. This mechanism is experimental and not yet
-a production-grade durability guarantee.
+when Chunks are under-replicated.
 
 ## Why Chunks?
 
