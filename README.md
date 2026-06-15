@@ -58,7 +58,7 @@ coordinating the Cluster.
 - **Storage** persists Chunk bytes locally and serves direct uploads/downloads.
 Adding Storage instances expands capacity for new Chunks without affecting existing data.
 
-- **Client-side code** runs outside the Cluster and handles Produce
+- **Client-side code** runs outside the Cluster and handles Produce/Consume
 
 
 ### Upload / Produce
