@@ -189,16 +189,14 @@ so leadership can move to another Master without losing accepted catalog state.
 ### Storage Inventory
 
 Each Storage instance maintains local knowledge of the Chunks it stores and reports that information to the Master.
+This local knowledge is called Storage Inventory.
 
-Storage Inventory is observed state: it describes the current physical presence of Chunk replicas on Storage instances.
-It does not define Object structure or replication targets; those come from the Object Catalog.
+Storage Inventory is observed state. It describes the current physical presence of Chunk replicas on Storage instances.
 
-Committed Chunk bytes are the payload itself. Storage Inventory only reports where those bytes currently exist.
+Storage Inventory does not define Object structure or replication targets; those come from the Object Catalog.
+It only describes where committed Chunk bytes currently exist.
 
-On startup, a Storage instance scans its local disk, rebuilds its local inventory, and reports discovered Chunks to the Master.
-During normal operation, the inventory is kept as an in-memory cache and updated as Chunks are uploaded, deleted, or replicated.
-
-For a Storage instance, the local disk is the source of truth across restart or failure events.
+The Master uses Storage Inventory to build Chunk Placement, select Storage targets, and reconcile replication.
 
 ### Chunk Placement
 
@@ -224,6 +222,43 @@ without changing Object metadata or Chunk content.
 | Object Catalog | Authoritative | Master | Persisted and synchronized by the control plane |
 | Storage Inventory | Observed | Storage, reported to Master | Rebuilt from local Storage disk and reports |
 | Chunk Placement | Derived | Master | Rebuilt from Object Catalog and Storage Inventory |
+
+
+## Storage Lifecycle
+
+Storage instances are elastic Cluster participants. They can join, disappear, restart, and rejoin
+without changing the Object model.
+
+### Registration
+
+When a Storage instance starts, it registers with the Master and advertises where it can be reached.
+It also scans its local disk, rebuilds local inventory, and reports discovered Chunks.
+
+After registration and reporting, the Master can use that Storage instance for Chunk placement, lookup, replication,
+and repair.
+
+### Heartbeat And Timeout
+
+Storage instances periodically signal liveness to the Master.
+
+If a Storage instance stops sending heartbeats, the Master eventually treats it as unavailable. Unavailable Storage
+should not be used for new Chunk allocation or as a preferred source for reads.
+
+### Eviction And Repair
+
+When Storage is considered unavailable, the Master updates its Cluster view and can reconcile affected Chunk replicas
+against their replication targets.
+
+Eviction does not imply that local Chunk bytes are deleted. It only means the Master no longer treats that Storage
+instance as currently available.
+
+### Rejoin
+
+A Storage instance can rejoin by registering again and reporting its current local inventory.
+
+Because local disk is the Storage source of truth, a restarted Storage instance can rebuild inventory from disk and
+report the Chunks it still has. The Master can then update Chunk Placement from thosereports.
+
 
 ## Failure Model
 
