@@ -161,3 +161,168 @@ but should be able to refresh or rebuild it from later reports.
 - **Derived state** is an optimization built from authoritative and observed state. It does not add independent
 facts and can be dropped and rebuilt without affecting consistency.
 
+### Object Catalog
+
+The Master maintains a view of all Objects created through the Client Layer and stores that view as the Object Catalog.
+The Object Catalog is authoritative state.
+
+The Object Catalog is required to reconstruct payloads from independently stored Chunks. It defines Chunk membership,
+Chunk labels, and the replication target for each Object.
+
+This information is composed by the Client Layer, recorded by the Master, and acts as the primary source of truth for the Cluster.
+
+In the multi-Master profile, Object Catalog changes are synchronized through Raft before they are accepted,
+so leadership can move to another Master without losing accepted catalog state.
+
+### Storage Inventory
+
+Each Storage instance maintains local knowledge of the Chunks it stores and reports that information to the Master.
+
+Storage Inventory is observed state: it describes the current physical presence of Chunk replicas on Storage instances.
+It does not define Object structure or replication targets; those come from the Object Catalog.
+
+Committed Chunk bytes are the payload itself. Storage Inventory only reports where those bytes currently exist.
+
+On startup, a Storage instance scans its local disk, rebuilds its local inventory, and reports discovered Chunks to the Master.
+During normal operation, the inventory is kept as an in-memory cache and updated as Chunks are uploaded, deleted, or replicated.
+
+For a Storage instance, the local disk is the source of truth across restart or failure events.
+
+### Chunk Placement
+
+Chunk Placement is derived state.
+
+It is built from Object Catalog entries and Storage Inventory reports. For each Chunk known to the Object Catalog,
+the Master maintains a view of which Storage instances currently report holding it.
+
+When serving an Object description, the Master returns the full Chunk Placement for each Chunk. This lets the Client Layer
+choose which Storage instance to read from and gives it alternative sources if one Storage instance is unavailable.
+
+Accumulated Chunk Placement also gives the Master a storage map: a view of where data is stored and which Storage instances
+have available capacity. The Master can use this view to choose targets for new Chunks, avoid overloaded Storage instances,
+and coordinate replication or deletion.
+
+This creates a path toward rebalancing: as Storage capacity changes, the Master can use placement information to move replicas
+without changing Object metadata or Chunk content.
+
+### State Summary
+
+```markdown
+| State | Kind | Maintained by | Recovery expectation |
+| --- | --- | --- | --- |
+| Object Catalog | Authoritative | Master | Persisted and synchronized by the control plane |
+| Storage Inventory | Observed | Storage, reported to Master | Rebuilt from local Storage disk and reports |
+| Chunk Placement | Derived | Master | Rebuilt from Object Catalog and Storage Inventory |
+```
+
+## Failure Model
+
+Durability and replication claims are meaningful only together with a failure model. This section describes the assumptions
+used by the current architecture.
+
+### Assumptions
+
+* The system assumes non-malicious participants. Master identity and Storage identity are trusted by configuration today;
+stronger authentication such as mTLS is future work.
+
+* Clients may be incorrect or interrupted. They may allocate Chunks without uploading bytes, retry operations,
+upload invalid data, or attempt to upload bytes for unknown Chunk IDs. The Cluster validates what it can and treats
+incomplete or inconsistent data as non-committed.
+
+* Storage instances are volatile from the Cluster point of view: they may join, leave, restart, timeout, or become
+temporarily unreachable. Storage reports are observations and may become stale.
+
+* Chunk bytes may be corrupted in transit or at rest. Chunks are identified with digests, and inconsistent bytes
+are rejected when validated.
+
+* Multi-Master mode assumes a healthy Raft quorum and a single legitimate leader. Without quorum, the control plane
+cannot safely accept authoritative state changes.
+
+### Covered Behavior
+
+- A Chunk with at least one reachable valid replica can be downloaded and verified by digest.
+- If one Storage replica is unavailable during download, the Client Layer can try another Storage instance from Chunk Placement.
+- After replication converges, a Chunk with replication target `R` can survive the loss of up to `R - 1` Storage replicas,
+assuming at least one valid replica remains reachable.
+- If Storage restarts with its local disk intact, it can rebuild inventory from disk and report stored Chunks back to the Master.
+- If a Client allocates a Chunk but does not upload valid bytes, the Chunk remains part of the Object with zero valid replicas.
+- If Storage reports bytes that conflict with the expected digest, the report is rejected or the bytes are rejected by
+the Client Layer during download.
+- If the active Master fails while Raft quorum remains healthy, another Master can become leader and continue from accepted catalog state.
+
+### Outside This Model
+
+- Malicious participants intentionally violating the protocol.
+- Loss of all valid replicas of a Chunk.
+- Loss of Master quorum.
+- Restart durability for deployments that do not persist the required Master or Storage state.
+- Strong guarantees about repair time under arbitrary capacity pressure or network instability.
+
+
+## Design Tradeoffs
+
+### Client-Owned Chunk Semantics
+
+The Cluster does not interpret `chunk_key` values or Chunk content. This keeps the Object model generic:
+the same Cluster can store files, datasets, compute outputs, or task partitions.
+
+The tradeoff is that Producers and Consumers must agree on Chunk semantics. The Cluster can enforce uniqueness of
+`chunk_key` values within an Object, but it cannot know whether the chosen keys are meaningful for a particular application.
+
+### Direct Data Path
+
+Chunk bytes move directly between the Client Layer and Storage, or between Storage instances during replication.
+The Master coordinates metadata and placement, but it does not proxy payload bytes.
+
+This reduces load on the Master and keeps the control plane focused on coordination. The tradeoff is that the Client Layer
+must handle transfer retries, source selection, and reconstruction behavior.
+
+### Report-Driven Placement
+
+The Master learns Chunk Placement from Storage reports. This keeps Storage autonomous and allows instances to restart,
+rebuild local inventory, and report what they actually have.
+
+The tradeoff is that Placement can be temporarily stale. The system must tolerate stale observations and reconcile them
+through later reports and repair.
+
+### Chain Replication
+
+Replication is executed as a chain of Storage-to-Storage transfers. The Master chooses the target chain,
+while Storage instances copy bytes and forward the request.
+
+This decentralizes replication load and keeps the Master out of the data path. The tradeoff is less direct control over
+each copy step; failures are reported back and reconciled by later repair attempts.
+
+
+## Current Implementation
+
+The current implementation is written in Go and uses gRPC for service communication.
+
+It provides three binaries: Master, Storage, and Client CLI. Docker Compose and Helm manifests are available for local
+and Kubernetes-style deployments, and end-to-end tests cover Object flow, Chunk flow, replication, and node-loss scenarios.
+
+The current preview profile favors fast iteration over production persistence defaults. Production deployment profiles should
+explicitly configure durable Master state and durable Storage volumes according to the intended failure model.
+
+### Observability And Load Testing
+
+The system exposes metrics for Master and Storage behavior, including transfer, placement, replication, and health signals.
+
+Load tests complement these metrics by exercising the Cluster under controlled pressure and producing useful data about
+throughput, latency, and replication behavior.
+
+
+## Future Direction
+
+The architecture is designed to support Compute as another Producer or Consumer role.
+
+A Compute worker could produce Chunks directly near Storage, allowing Consumers to fetch the resulting Object by `object_id`.
+In the reverse direction, a Client could split a task into Chunks, store them as an Object, and let Compute workers consume
+those Chunks as work items.
+
+Future work includes locality-aware placement, production persistence profiles, rebalancing, richer placement policies,
+and a stable Client Layer API.
+
+Locality-aware placement would allow Storage targets to be selected using parameters such as rack, subnet, region,
+or proximity to Compute workers. This would make it possible to keep data close to where it is produced or consumed.
+
