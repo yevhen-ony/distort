@@ -219,13 +219,11 @@ without changing Object metadata or Chunk content.
 
 ### State Summary
 
-```markdown
 | State | Kind | Maintained by | Recovery expectation |
 | --- | --- | --- | --- |
 | Object Catalog | Authoritative | Master | Persisted and synchronized by the control plane |
 | Storage Inventory | Observed | Storage, reported to Master | Rebuilt from local Storage disk and reports |
 | Chunk Placement | Derived | Master | Rebuilt from Object Catalog and Storage Inventory |
-```
 
 ## Failure Model
 
