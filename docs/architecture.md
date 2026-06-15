@@ -1,11 +1,23 @@
+# Architecture
+
+This document describes the architecture of the project at the conceptual level.
+
+The goal is to explain the main entities, responsibilities, flows, and assumptions needed to understand
+the idea behind the system. The terms used here are architectural concepts, not necessarily one-to-one
+mappings to code objects or single running processes.
+
+Some concepts may be implemented by several cooperating components, and some implementation details may
+combine multiple concepts. The purpose of this document is to provide an overall model of the project,
+not an exhaustive implementation reference.
+
+
+## System Model
 
 An **Object** is a collection of Chunks plus metadata that describes how those Chunks form the Object.
 
 The system provides Object construction, storage, and delivery by storing Chunk bytes in a distributed
 way while keeping Object metadata separately. Chunk bytes carry the data; Object metadata makes it
 possible to locate the Chunks and reconstruct the Object.
-
-### System Model
 
 The system is organized into two architectural parts: the **Cluster** and the **Client Layer**.
 
