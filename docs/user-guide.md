@@ -1,8 +1,11 @@
 # User Guide
 
-This guide walks through a local DOS preview: starting a cluster, uploading and downloading an object,
-inspecting placement, trying replication, observing metrics, and cleaning up. It assumes Docker Compose,
-`make`, and basic command-line familiarity.
+This guide uses the local DOS preview environment: a Docker Compose setup for demos,
+experimentation, and hands-on exploration. It walks through starting a cluster,
+uploading and downloading an object, inspecting placement, trying replication,
+observing metrics, and cleaning up.
+
+It assumes Docker Compose, `make`, and basic command-line familiarity.
 
 
 ## Start The Cluster
