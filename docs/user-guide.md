@@ -329,3 +329,121 @@ cmp sandbox/sample.bin sandbox/sample.after-failure.out
 ```
 
 If cmp exits without output, the files are identical.
+
+
+## Observability
+---
+
+The CLI covers most day-to-day operational needs: uploading, downloading, listing, describing,
+and inspecting Cluster resources.
+
+There are cases, however, where point-in-time CLI output is not enough.
+To evaluate a configuration or reason about long-running performance and stability,
+we need quantitative signals over time.
+
+For that purpose, the project provides metrics and load tests.
+Metrics expose statistical properties of the running Cluster, while load tests generate
+controlled activity that makes those properties easier to observe.
+
+### Metrics
+
+The Cluster exposes metrics for Master and Storage behavior.
+
+These metrics shed light on internal Cluster behavior.
+They count low-level operations and measure their duration, which makes it possible to reason about
+Cluster health and tune configuration for a particular use case.
+
+The local preview starts Prometheus together with the Cluster. Open it in the browser:
+
+```text
+http://localhost:9090
+```
+
+This guide does not document individual metrics.
+The important point is that metrics are available while you run the flows above, so you can observe how
+the Cluster reacts to uploads, replication changes, and Storage unavailability.
+
+### Load Testing
+
+Metrics are most useful when the Cluster is under controlled load.
+The project includes a load-test tool available as dos-load inside the test container.
+
+Each load-test job executes the same end-to-end workflow:
+
+1. create an Object;
+2. upload a payload;
+3. scale Object replication;
+4. wait until replication converges;
+5. download the payload back;
+6. verify byte equality;
+7. clean up the Object.
+
+To try it out, build the test image that includes the additional Python-based tooling:
+
+```sh
+make build-test
+```
+
+Start the load-test shell:
+
+```sh
+make load
+```
+
+From inside the load-test container, run:
+
+```sh
+dos-load --workers 4 --duration 60 --size-mb 10
+```
+
+The main parameters are:
+
+- `--workers`: number of concurrent workers.
+- `--duration`: test duration in seconds.
+- `--size-mb`: payload size per Object.
+
+The load test prints per-job progress and a final report with succeeded/failed jobs, transferred data,
+throughput, and average latency.
+
+Here, latency means the duration of the whole workflow for one Object, not a single RPC or transfer operation.
+
+Similarly, throughput means the amount of payload data that successfully completes the whole workflow per unit of time.
+It is not the maximum raw write bandwidth the Cluster can accept.
+
+Use the load test together with Prometheus to understand how the Cluster behaves under sustained activity.
+
+
+## Cleanup
+---
+
+### Delete Object
+
+There is no separate delete command in the current CLI. To remove an Object, set its replication target to `0`:
+
+```sh
+dos object scale sample --replicas 0
+```
+
+The Cluster reconciles this in the background by deleting Chunk replicas and eventually removing the Object metadata.
+
+You can check cleanup progress with:
+
+```sh
+dos object list
+dos chunk list
+```
+
+### Stop The Cluster
+
+Exit the Client or load-test shell if one is still open:
+```sh
+exit
+```
+
+Stop and remove the local Cluster:
+```sh
+make down
+```
+`make down` stops the Docker Compose services and removes containers, networks, and Compose-managed volumes for the dos project.
+
+This is clear and useful for experimentation.
