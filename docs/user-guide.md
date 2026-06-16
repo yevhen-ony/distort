@@ -223,7 +223,7 @@ Use one of the chunk_id values from `dos object describe sample` or `dos chunk l
 
 The output provides Chunk metadata and shows where this Chunk is currently available in the Cluster.
 From here, you can see which Storage instances hold replicas of the Chunk and naturally derive the
-replica count exposed as a single number by dos chunk list.
+replica count exposed as a single number by `dos chunk list`.
 
 ### Inspect Storage
 
@@ -281,7 +281,7 @@ dos object describe sample
 
 For the sake of experiment, freeze one Storage instance that holds one of the Chunks.
 
-Use a chunk_id from the earlier dos chunk list output. If you did not save one, list Chunks again,
+Use a chunk_id from the earlier `dos chunk list` output. If you did not save one, list Chunks again,
 pick one that belongs to the `sample` object and describe it:
 
 ```sh

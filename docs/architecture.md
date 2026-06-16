@@ -10,9 +10,9 @@ Some concepts may be implemented by several cooperating components, and some imp
 combine multiple concepts. The purpose of this document is to provide an overall model of the project,
 not an exhaustive implementation reference.
 
----
 
 ## System Model
+---
 
 An **Object** is a collection of Chunks plus metadata that describes how those Chunks form the Object.
 
@@ -73,9 +73,8 @@ Master <-> Master  # raft coordination and leadership
 **The key design property** is that metadata and decisions flow through the Master, while Chunk bytes move
 directly between the parties that produce, store, copy, or consume them.
 
----
- 
 ## System Entities 
+---
 
 ### Object
 
@@ -108,9 +107,9 @@ Chunk Placement contains the set of Storage instances holding a Chunk.
 
 The system uses Chunk Placement to locate Chunk bytes, reason about replication state, and coordinate access, repair, or deletion.
 
----
 
 ## Core Flows
+---
 
 The main flows are Produce and Consume. In both cases, the Master coordinates Object and Chunk metadata, while Chunk bytes move directly through Storage.
 
@@ -160,9 +159,9 @@ one source or on the Master.
 The **tradeoff** is reduced central control: the Master observes the result through reports rather than driving every
 copy step directly. If a chain fails, Storage reports the failure and the Master can schedule reconciliation again.
 
----
 
 ## State Model
+---
 
 The system separates authoritative, observed, and derived states.
 
@@ -227,9 +226,9 @@ without changing Object metadata or Chunk content.
 | Storage Inventory | Observed | Storage, reported to Master | Rebuilt from local Storage disk and reports |
 | Chunk Placement | Derived | Master | Rebuilt from Object Catalog and Storage Inventory |
 
----
 
 ## Storage Lifecycle
+---
 
 Storage instances are elastic Cluster participants. They can join, disappear, restart, and rejoin
 without changing the Object model.
@@ -264,9 +263,9 @@ A Storage instance can rejoin by registering again and reporting its current loc
 Because local disk is the Storage source of truth, a restarted Storage instance can rebuild inventory from disk and
 report the Chunks it still has. The Master can then update Chunk Placement from thosereports.
 
----
 
 ## Failure Model
+---
 
 Durability and replication claims are meaningful only together with a failure model. This section describes the assumptions
 used by the current architecture.
@@ -309,9 +308,9 @@ the Client Layer during download.
 - Restart durability for deployments that do not persist the required Master or Storage state.
 - Strong guarantees about repair time under arbitrary capacity pressure or network instability.
 
----
 
 ## Design Tradeoffs
+---
 
 ### Client-Owned Chunk Semantics
 
@@ -345,9 +344,9 @@ while Storage instances copy bytes and forward the request.
 This decentralizes replication load and keeps the Master out of the data path. The tradeoff is less direct control over
 each copy step; failures are reported back and reconciled by later repair attempts.
 
----
 
 ## Current Implementation
+---
 
 The current implementation is written in Go and uses gRPC for service communication.
 
@@ -364,9 +363,9 @@ The system exposes metrics for Master and Storage behavior, including transfer, 
 Load tests complement these metrics by exercising the Cluster under controlled pressure and producing useful data about
 throughput, latency, and replication behavior.
 
----
 
 ## Future Direction
+---
 
 The architecture is designed to support Compute as another Producer or Consumer role.
 
@@ -380,4 +379,3 @@ and a stable Client Layer API.
 Locality-aware placement would allow Storage targets to be selected using parameters such as rack, subnet, region,
 or proximity to Compute workers. This would make it possible to keep data close to where it is produced or consumed.
 
----
