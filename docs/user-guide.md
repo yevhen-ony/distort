@@ -1,13 +1,17 @@
 # User Guide
 
+This guide walks through a local DOS preview: starting a cluster, uploading and downloading an object,
+inspecting placement, trying replication, observing metrics, and cleaning up. It assumes Docker Compose,
+`make`, and basic command-line familiarity.
 
-## Start The Cluster 
+
+## Start The Cluster
 ---
 
 The local preview environment uses Docker Compose. The `Makefile` wraps the common Docker commands,
 so the guide uses `make` targets as the primary interface.
 
-### Step 1. Build the service images:
+### Build The Service Images
 
 ```sh
 make build
@@ -20,7 +24,7 @@ This builds:
 - `dos-client:latest`: CLI environment used by the Client Layer.
 
 
-### Step 2. Start the Cluster:
+### Start the Cluster
 
 ```sh
 make up
@@ -40,23 +44,23 @@ After a leader is elected, Storage instances register and start sending regular 
 messages to the active Master. These messages may appear as recurring debug logs.
 
 
-### Step 3. Open A Client
+### Open A Client
 
-In another terminal window:
+In another terminal window, start the Client container:
 
 ```sh
 make client
 ```
 
 This starts an interactive shell in the Client container.
-The container includes the dos CLI and uses the same Docker network as the Cluster.
+The container includes the `dos` CLI and uses the same Docker network as the Cluster.
 
 The local `sandbox/` directory is mounted into the Client container at `/work/in`.
 Use it to pass files between the host and the Client container.
 
 ### Sanity Check
 
-Inside the Client container, verify that the Cluster is reachable:
+In the Client container, verify that the Cluster is reachable:
 
 ```sh
 dos system leader show
@@ -68,62 +72,55 @@ The second lists Storage instances currently known by the Master.
 A healthy local preview should show one active Master and three registered Storage instances.
 
 
-## Basic Upload/Downlad 
+## Basic Upload/Download
 ---
 
 The simplest way to use `dos` is to upload and download a file.
 
-By default, the Client takes a given file, splits it into fixed-size parts called
-Chunks, and uploads those Chunks to the Cluster. The uploaded file is represented
-in the Cluster as an Object and addressed by `object_id`.
 
-Downloading performs the reverse operation: the Client fetches the Object description,
+The Client splits a file into fixed-size Chunks and uploads them to the Cluster.
+The Cluster represents the uploaded file as an Object addressed by `object_id`.
+
+Downloading reverses the flow: the Client fetches the Object description,
 downloads the required Chunks, and reconstructs the original file.
 
 
-### Step 0. Generate A File
+### Generate A File
 
-You can use any local file for this flow and skip this step. For the first try,
-follow the instructions below so the guide stays reproducible.
-
-The Client container is minimal and contains the `dos` CLI, but not the usual shell toolbox.
-To generate the sample file, open a third terminal window on the host machine and run:
+You can use any local file and skip this step. For a reproducible first run,
+create a sample file on the host because the Client container is intentionally minimal:
 
 ```sh
 mkdir -p sandbox
 dd if=/dev/urandom of=sandbox/sample.bin bs=1M count=100
 ```
 
-This creates a file called sample.bin with size 100MB in the sandbox/ directory.
+This creates `sandbox/sample.bin` with size 100MB.
 
-Go back to the Client terminal and check that the file is visible:
+In the Client container, check that the file is visible:
 
 ```sh
 ls ./in/
 ```
 
-With the default preview configuration, the Client uses a `20MB` Chunk size,
-so a `100MB` file is large enough to demonstrate a general multi-Chunk flow.
+The default preview uses a `20MB` Chunk size, so a `100MB` file demonstrates a multi-Chunk upload.
 
+### Upload An Object
 
-### Step 1. Upload An Object 
-
-From the Client terminal, run:
+In the Client container, run:
 
 ```sh
 dos upload ./in/sample.bin --id sample
 ```
 
-This uploads the file at `./in/sample.bin` to the Cluster as an Object and assigns it the object id `sample`.
+This uploads `./in/sample.bin` as an Object with object id `sample`.
 
-The command prints upload progress.
-It lists the Chunks being uploaded and the number of bytes transferred to the Cluster.
-When the upload completes successfully, the final status should be `Done`.
+The command prints uploaded Chunks, transferred bytes, and a final `Done` status.
 
 
-### Step 3. List Objects
+### List Objects
 
-List **Objects** currently known to the Cluster:
+In the Client container, list **Objects** currently known to the Cluster:
 
 ```sh
 dos object list
@@ -132,26 +129,25 @@ dos object list
 The output should include the sample Object.
 For each Object, it shows the number of attached Chunks and the replication target.
 
-### Step 3. Download An Object 
 
-Download the Object back from the Cluster:
+### Download An Object
+
+In the Client container, download the Object back from the Cluster:
 
 ```sh
 dos download sample --dest ./in/sample.out
 ```
 
 The required argument is `object_id`; here it is `sample`.
-
-The optional `--dest` flag specifies where to write the downloaded payload.
-It can point either to an existing directory or to a file path that does not exist yet.
-If `--dest` points to a directory, the object_id will be used as the file name.
-
-During download, the CLI shows transfer progress. A successful download finishes with status Done.
+The optional `--dest` flag writes the payload to a directory or file path.
+If `--dest` points to a directory, `object_id` is used as the file name.
 
 
-### Step 4. Verify The Result
+During download, the CLI shows transfer progress and finishes with status `Done`.
 
-To ensure that the downloaded payload is identical to the original, run from the host terminal:
+### Verify The Result
+
+On the host, verify that the downloaded payload is identical to the original:
 
 ```sh
 cmp sandbox/sample.bin sandbox/sample.out
@@ -162,12 +158,8 @@ cmp sandbox/sample.bin sandbox/sample.out
 
 ## Inspect The Cluster
 ---
-
-The Cluster stores an Object as multiple distributed Chunks placed on Storage instances.
-The CLI exposes this internal state through several administrative commands.
-
-We already used `dos object list` to see Objects known to the Cluster.
-In this section, we look at the other inspection commands and connect them to the uploaded `sample` Object.
+The Cluster stores an Object as distributed Chunks placed on Storage instances.
+The commands below show how the uploaded `sample` Object is represented internally.
 
 ### Chunk List
 
@@ -177,23 +169,22 @@ List all **Chunks** currently known to the Cluster:
 dos chunk list
 ```
 
-The output shows Chunks created for uploaded Objects, including their Chunk IDs,
-size, actual replica count, and parent object_id.
+The output shows each Chunk ID, size, actual replica count, and parent `object_id`.
 
-In contrast to the Object list, where replication is the desired state set by the user,
-the Chunk list reveals the actual replica count reported by Storage.
+Unlike `dos object list`, which shows the desired replication target,
+`dos chunk list` shows actual replicas reported by Storage.
 These values may differ temporarily while replication converges.
 
 
 ### List Storage
 
-It is often useful to list all active Storage instances registered in the Cluster:
+List active Storage instances registered in the Cluster:
 
 ```sh
 dos node list
 ```
 
-Note that the CLI uses node to denote a Storage instance.
+The CLI uses `node` to denote a Storage instance.
 
 The output shows registered Storage instances, their addresses, the number of Chunks they currently store,
 and used capacity.
@@ -201,15 +192,14 @@ and used capacity.
 
 ### Describe Object
 
-During the lifetime of an Object, it is often useful to summarize its current state:
+Describe the uploaded Object:
 
 ```sh
 dos object describe sample
 ```
 
-The output provides metadata about the Object itself, as well as the list of Chunks attached to the Object.
-
-This is the most useful command for understanding how an Object is currently represented inside the Cluster.
+The output shows Object metadata and the Chunks attached to it.
+This is the quickest way to understand how an Object is represented inside the Cluster.
 
 ### Describe Chunk
 
@@ -219,48 +209,43 @@ Similarly, you can describe a single Chunk by its `chunk_id`:
 dos chunk describe <chunk_id>
 ```
 
-Use one of the chunk_id values from `dos object describe sample` or `dos chunk list`.
+Use one of the `chunk_id` values from `dos object describe sample` or `dos chunk list`.
 
-The output provides Chunk metadata and shows where this Chunk is currently available in the Cluster.
-From here, you can see which Storage instances hold replicas of the Chunk and naturally derive the
-replica count exposed as a single number by `dos chunk list`.
+The output shows Chunk metadata and the Storage instances that currently hold replicas.
+This explains the replica count seen earlier from `dos chunk list`.
 
 ### Inspect Storage
 
-For a full diagnostic of the Cluster, inspecting a single Storage instance is indispensable.
-
-Use an address from `dos node list`:
+Inspect a single Storage instance for a node-level view:
 
 ```sh
 dos node inspect <storage-address>
 ```
 
-The output shows the used and total capacity of the Storage instance,
-its status within the Cluster, and the list of Chunk replicas it holds.
-
+The output shows used and total capacity, Cluster status, and held Chunk replicas.
 
 ## Replication
+---
 
 By default, the preview Cluster may use replication factor `1`.
-You can change the replication target for an Object with:
+Scale the sample Object to two replicas:
 
 ```sh
 dos object scale sample --replicas 2
 ```
 
-The current implementation does not allow the replication target to exceed the number of
-active Storage instances. This limitation may be lifted in the future.
-
 This updates the desired replication factor for the sample Object.
+The target cannot exceed the number of active Storage instances.
+
 
 Check the Object replication target:
+
 ```sh
 dos object list
 ```
 
-The Object list should show the updated replication target right away.
-
-The Cluster reconciles Chunk replicas in the background, so actual replica counts may not catch up to the target immediately.
+The Object list should show the updated target right away.
+The Cluster reconciles Chunk replicas in the background, so actual replica counts may lag behind briefly.
 
 Check the actual replica counts:
 
@@ -268,8 +253,7 @@ Check the actual replica counts:
 dos chunk list
 ```
 
-After some time, it should show the updated replica counts.
-The exact convergence time depends on configuration, but with the default preview settings it is usually around 3-5s.
+With the default preview settings, replica counts usually converge in 3–5s.
 
 To inspect placement after replication, describe the Object again:
 
@@ -279,10 +263,10 @@ dos object describe sample
 
 ### Simulate A Missing Storage Instance
 
-For the sake of experiment, freeze one Storage instance that holds one of the Chunks.
+Now simulate a Storage outage by pausing heartbeats for one Storage instance.
 
-Use a chunk_id from the earlier `dos chunk list` output. If you did not save one, list Chunks again,
-pick one that belongs to the `sample` object and describe it:
+Use a `chunk_id` from the earlier `dos chunk list` output. If needed, list Chunks again,
+pick one that belongs to the `sample` Object, and describe it:
 
 ```sh
 dos chunk list
@@ -296,12 +280,13 @@ Pick one Storage address from that output and pause its heartbeat:
 dos node heartbeat <storage-address> --pause
 ```
 
-This does not kill the container. It makes the Storage instance stop reporting liveness,
-so the Master eventually treats it as unavailable.
+This does not kill the container. It stops Storage liveness reports,
+so the Master eventually treats the instance as unavailable.
 
-Wait for the Cluster to react. With the default preview configuration, this can take around 20s.
+Wait for the Cluster to react. With the default preview settings, this can take around 20s.
 
 List active Storage instances again:
+
 ```sh
 dos node list
 ```
@@ -317,41 +302,39 @@ dos chunk list
 Depending on timing, you may briefly see affected Chunks with a lower actual replica count.
 After repair converges, the actual replica count should return to the replication target.
 
-The Object should remain downloadable:
+In the Client container, download the Object again:
 
 ```sh
 dos download sample --dest ./in/sample.after-failure.out
 ```
 
-Verify the downloaded payload from the host terminal:
+On the host, verify the downloaded payload:
+
 ```sh
 cmp sandbox/sample.bin sandbox/sample.after-failure.out
 ```
 
-If cmp exits without output, the files are identical.
+If `cmp` exits without output, the files are identical.
 
 
 ## Observability
 ---
 
-The CLI covers most day-to-day operational needs: uploading, downloading, listing, describing,
+The CLI is useful for direct checks: uploading, downloading, listing, describing,
 and inspecting Cluster resources.
 
-There are cases, however, where point-in-time CLI output is not enough.
-To evaluate a configuration or reason about long-running performance and stability,
-we need quantitative signals over time.
+Some behavior is easier to understand over time. Replication, repair, request latency,
+and throughput are all easier to evaluate with continuous signals instead of one command output.
 
-For that purpose, the project provides metrics and load tests.
-Metrics expose statistical properties of the running Cluster, while load tests generate
-controlled activity that makes those properties easier to observe.
+For that, the project provides metrics and load tests.
+Metrics show how the Cluster behaves while it is running. Load tests generate controlled activity,
+so there is something meaningful to observe.
 
 ### Metrics
 
 The Cluster exposes metrics for Master and Storage behavior.
-
-These metrics shed light on internal Cluster behavior.
-They count low-level operations and measure their duration, which makes it possible to reason about
-Cluster health and tune configuration for a particular use case.
+They count low-level operations and measure durations, which helps evaluate Cluster health
+and tune configuration for a particular use case.
 
 The local preview starts Prometheus together with the Cluster. Open it in the browser:
 
@@ -359,24 +342,23 @@ The local preview starts Prometheus together with the Cluster. Open it in the br
 http://localhost:9090
 ```
 
-This guide does not document individual metrics.
-The important point is that metrics are available while you run the flows above, so you can observe how
-the Cluster reacts to uploads, replication changes, and Storage unavailability.
+This guide does not document individual metrics. The important point is that metrics are available
+while you run the flows above, so you can observe uploads, replication changes, and Storage unavailability.
 
 ### Load Testing
 
 Metrics are most useful when the Cluster is under controlled load.
-The project includes a load-test tool available as dos-load inside the test container.
+The project includes a load-test tool available as `dos-load` inside the test container.
 
 Each load-test job executes the same end-to-end workflow:
 
-1. create an Object;
-2. upload a payload;
-3. scale Object replication;
-4. wait until replication converges;
-5. download the payload back;
-6. verify byte equality;
-7. clean up the Object.
+1. create an Object
+2. upload a payload
+3. scale Object replication
+4. wait until replication converges
+5. download the payload back
+6. verify byte equality
+7. clean up the Object
 
 To try it out, build the test image that includes the additional Python-based tooling:
 
@@ -390,7 +372,7 @@ Start the load-test shell:
 make load
 ```
 
-From inside the load-test container, run:
+In the load-test container, run:
 
 ```sh
 dos-load --workers 4 --duration 60 --size-mb 10
@@ -418,13 +400,13 @@ Use the load test together with Prometheus to understand how the Cluster behaves
 
 ### Delete Object
 
-There is no separate delete command in the current CLI. To remove an Object, set its replication target to `0`:
+The current CLI does not have a separate delete command. To remove an Object, set its replication target to `0`:
 
 ```sh
 dos object scale sample --replicas 0
 ```
 
-The Cluster reconciles this in the background by deleting Chunk replicas and eventually removing the Object metadata.
+The Cluster reconciles this in the background by deleting Chunk replicas and then removing Object metadata.
 
 You can check cleanup progress with:
 
@@ -436,14 +418,15 @@ dos chunk list
 ### Stop The Cluster
 
 Exit the Client or load-test shell if one is still open:
+
 ```sh
 exit
 ```
 
 Stop and remove the local Cluster:
+
 ```sh
 make down
 ```
 `make down` stops the Docker Compose services and removes containers, networks, and Compose-managed volumes for the dos project.
 
-This is clear and useful for experimentation.
