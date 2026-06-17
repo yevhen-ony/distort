@@ -8,7 +8,7 @@ services:
       - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       
   master-0:
-    profiles: [main]
+    profiles: [main, master]
     image: dos-master:latest
     environment:
       - MASTER__SELF=master-0
@@ -18,7 +18,7 @@ services:
       - SERVICE__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
   
   master-1:
-    profiles: [main]
+    profiles: [main, master]
     image: dos-master:latest
     environment:
       - MASTER__SELF=master-1
@@ -28,7 +28,7 @@ services:
       - SERVICE__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
   
   master-2:
-    profiles: [main]
+    profiles: [main, master]
     image: dos-master:latest
     environment:
       - MASTER__SELF=master-2
@@ -38,7 +38,7 @@ services:
       - SERVICE__RPC_TIMEOUT=${RPC_TIMEOUT:-10s}
 
   storage-0:
-    profiles: [main]
+    profiles: [main, storage]
     image: dos-storage:latest
     environment:
       - TRANSPORT__ADVERTISE_ADDR=storage-0:10001
@@ -49,7 +49,7 @@ services:
       - SERVICE__MAX_PARALLEL_HEAVY_OPS=${MAX_PARALLEL_HEAVY_OPS:-2}
 
   storage-1:
-    profiles: [main]
+    profiles: [main, storage]
     image: dos-storage:latest
     ports:
       - "9101:9100"
@@ -62,7 +62,7 @@ services:
       - SERVICE__MAX_PARALLEL_HEAVY_OPS=${MAX_PARALLEL_HEAVY_OPS:-2}
   
   storage-2:
-    profiles: [main]
+    profiles: [main, storage]
     image: dos-storage:latest
     environment:
       - TRANSPORT__ADVERTISE_ADDR=storage-2:10001

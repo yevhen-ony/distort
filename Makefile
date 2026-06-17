@@ -6,7 +6,8 @@ PROJECT := dos
 PROTO_FILES := $(shell find $(PROTO_DIR) -name "*.proto")
 COMPOSE = docker compose -f docker-compose.yml -p $(PROJECT)
 
-.PHONY: gen build up down client build-e2e e2e stress
+.PHONY: gen build up down client build-e2e e2e load wait 
+.PONNY: master-logs storage-logs test-logs
 
 gen:
 	protoc -I $(PROTO_DIR) \
@@ -38,3 +39,15 @@ e2e:
 
 load:
 	$(COMPOSE) --profile test run --rm load-test /bin/bash
+
+wait:
+	$(COMPOSE) --profile test run --rm e2e-test python tests/support/wait_cluster.py
+
+master-logs: 
+	$(COMPOSE) --profile master logs --no-color --tail=300
+
+storage-logs:
+	$(COMPOSE) --profile storage logs --no-color --tail=300
+
+test-logs:
+	$(COMPOSE) --profile test logs --no-color --tail=300
