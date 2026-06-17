@@ -1,7 +1,9 @@
 # Distributed Object Storage And Data Delivery Engine
 
-> Working name: `dos`
+> Working name: `dos`, renaming to `DistOrt`
+>
 > Status: **preview**. This repo is intended for local demos, experimentation, and hands-on exploration.
+
 
 This project is a data delivery layer for distributed Producers and Consumers.
 
