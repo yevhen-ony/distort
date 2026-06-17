@@ -1,13 +1,16 @@
-# Distributed Object Store
+# Distributed Object Storage And Data Delivery Engine
 
 > Working name: `dos`
->
 > Status: **preview**. This repo is intended for local demos, experimentation, and hands-on exploration.
 
-This project is an experimental distributed object delivery and storage system.
+This project is a data delivery layer for distributed Producers and Consumers.
 
-It takes an abstract Object, splits it into Chunks, stores those Chunks across remote
-Storage instances, and later reconstructs the Object by fetching its Chunks back.
+Producers publish Chunks without knowing where they will be consumed, and Consumers retrieve
+complete Objects without coordinating transport themselves. The system handles data movement across
+the Cluster so application code can focus on producing and consuming data.
+
+Unlike object stores that primarily centralize durable data, this project focuses on delivering
+chunked Object data between Producers and Consumers.
 
 
 ## Documentation
