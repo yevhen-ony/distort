@@ -60,10 +60,10 @@ func (as *AdminServer) Inspect(ctx context.Context, _ *spb.InspectRequest) (*spb
 			State: r.State.String(),
 		}
 	})
-	
+
 	rsp := &spb.InspectResponse{
-		Stats:  convert.NodeStatsToPB(stats),
-		Chunks: utils.Map(views, convert.ChunkStorageViewToPB),
+		Stats:     convert.NodeStatsToPB(stats),
+		Chunks:    utils.Map(views, convert.ChunkStorageViewToPB),
 		Heartbeat: convert.HeartbeatViewToPB(as.getHeartbeatView()),
 	}
 	return rsp, nil

@@ -15,7 +15,7 @@ import (
 
 func MakeSystemCmd(cfg *app.Config) *cobra.Command {
 	systemCmd := &cobra.Command{
-		Use: "system",
+		Use:   "system",
 		Short: "show system-level cluster information",
 	}
 	systemCmd.AddCommand(
@@ -28,7 +28,7 @@ func MakeSystemCmd(cfg *app.Config) *cobra.Command {
 
 func MakeLeaderCmd(cfg *app.Config) *cobra.Command {
 	leaderCmd := &cobra.Command{
-		Use: "leader",
+		Use:   "leader",
 		Short: "master node leader information",
 	}
 	leaderCmd.AddCommand(
@@ -41,7 +41,7 @@ func MakeLeaderCmd(cfg *app.Config) *cobra.Command {
 
 func MakeShowLeaderCmd(cfg *app.Config) *cobra.Command {
 	listObjectsCmd := &cobra.Command{
-		Use: "show",
+		Use:   "show",
 		Short: "show current master leader",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
@@ -54,15 +54,15 @@ func MakeShowLeaderCmd(cfg *app.Config) *cobra.Command {
 
 			app, err := RunApp(ctx, cfg)
 			if err != nil {
-				return err 
+				return err
 			}
 			defer app.Close()
 
 			res, err := app.App.DiscoverMaster(ctx)
 			if err != nil {
 				app.Presenter.Update(render.NewErrorResult("discover_master", err))
-				return err 
-			} 
+				return err
+			}
 			app.Presenter.Update(res)
 			return nil
 		},
@@ -72,7 +72,7 @@ func MakeShowLeaderCmd(cfg *app.Config) *cobra.Command {
 
 func MakeTransferLeaderCmd(cfg *app.Config) *cobra.Command {
 	transferLeaderCmd := &cobra.Command{
-		Use: "transfer",
+		Use:   "transfer",
 		Short: "transfer master leadership",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
@@ -85,14 +85,14 @@ func MakeTransferLeaderCmd(cfg *app.Config) *cobra.Command {
 
 			app, err := RunApp(ctx, cfg)
 			if err != nil {
-				return err 
+				return err
 			}
 			defer app.Close()
 
 			if err = app.App.TransferLeadership(ctx); err != nil {
 				app.Presenter.Update(render.NewErrorResult("transfer_leadership", err))
 				return err
-			} 
+			}
 			return nil
 		},
 	}
@@ -101,7 +101,7 @@ func MakeTransferLeaderCmd(cfg *app.Config) *cobra.Command {
 
 func MakePingCmd(cfg *app.Config) *cobra.Command {
 	pingCmd := &cobra.Command{
-		Use: "ping [addr]",
+		Use:   "ping [addr]",
 		Short: "ping resource",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
@@ -111,7 +111,7 @@ func MakePingCmd(cfg *app.Config) *cobra.Command {
 			if err := ApplyFlags(cfg, cmd); err != nil {
 				return fmt.Errorf("apply config flags: %w", err)
 			}
-			
+
 			if len(args) == 0 || args[0] == "" {
 				return errors.New("missing addr")
 			}
@@ -119,10 +119,9 @@ func MakePingCmd(cfg *app.Config) *cobra.Command {
 
 			app, err := RunApp(ctx, cfg)
 			if err != nil {
-				return err 
+				return err
 			}
 			defer app.Close()
-
 
 			res, err := app.App.Ping(ctx, addr)
 			if err != nil {
@@ -133,5 +132,5 @@ func MakePingCmd(cfg *app.Config) *cobra.Command {
 			return nil
 		},
 	}
-	return pingCmd 
+	return pingCmd
 }

@@ -44,19 +44,18 @@ type Lifecycle interface {
 	GetNodeCount(context.Context) int
 }
 
-
 type ClientFacadeDeps struct {
-	Catalog   	Catalog 
-	Placement  	Placement 
-	Lifecycle  	Lifecycle 
+	Catalog     Catalog
+	Placement   Placement
+	Lifecycle   Lifecycle
 	Replication ReplicationScheduler
 	Config      ClientFacadeConfig
 }
 
 type ClientFacadeService struct {
-	catalog   Catalog  
+	catalog   Catalog
 	placement Placement
-	lifecycle Lifecycle 
+	lifecycle Lifecycle
 	replicate ReplicationScheduler
 
 	config ClientFacadeConfig
@@ -92,7 +91,7 @@ func (s *ClientFacadeService) CreateObject(ctx context.Context, oid t.ObjectID) 
 
 	return s.catalog.CreateObject(ctx, oid, s.config.ReplicationCount())
 }
- 
+
 func (s *ClientFacadeService) AllocateChunk(
 	ctx context.Context,
 	cmd m.AllocateChunkCommand,
@@ -102,7 +101,7 @@ func (s *ClientFacadeService) AllocateChunk(
 	if err != nil {
 		return nil, fmt.Errorf("exists chunk: %w", err)
 	}
-	
+
 	replicaCount, err := s.catalog.GetReplication(ctx, cmd.Slot.ObjectID)
 	if err != nil {
 		return nil, err

@@ -81,55 +81,55 @@ func (r *JSONRender) DescribeObject(res *app.DescribeObjectResult) ([]byte, erro
 func (r *JSONRender) DownloadChunk(res *app.DownloadChunkResult) ([]byte, error) {
 	return json.MarshalIndent(&Envelope{
 		Operation: "download_chunk",
-		Result: res,
+		Result:    res,
 	}, "", "  ")
 }
 
 func (r *JSONRender) AllocateChunk(res *app.AllocateChunkResult) ([]byte, error) {
-  	return json.MarshalIndent(&Envelope{
-  		Operation: "allocate_chunk",
-  		Result:    res,
-  	}, "", "  ")
+	return json.MarshalIndent(&Envelope{
+		Operation: "allocate_chunk",
+		Result:    res,
+	}, "", "  ")
 }
 
 func (r *JSONRender) PushChunk(res *app.PushChunkResult) ([]byte, error) {
-  	return json.MarshalIndent(&Envelope{
-  		Operation: "push_chunk",
-  		Result:    res,
-  	}, "", "  ")
+	return json.MarshalIndent(&Envelope{
+		Operation: "push_chunk",
+		Result:    res,
+	}, "", "  ")
 }
 
 func (r *JSONRender) CreateObject(res *app.CreateObjectResult) ([]byte, error) {
-  	return json.MarshalIndent(&Envelope{
-  		Operation: "create_object",
-  		Result:    res,
-  	}, "", "  ")
+	return json.MarshalIndent(&Envelope{
+		Operation: "create_object",
+		Result:    res,
+	}, "", "  ")
 }
 
 func (r *JSONRender) InspectNode(res *app.InspectNodeResult) ([]byte, error) {
-  	return json.MarshalIndent(&Envelope{
-  		Operation: "inspect_node",
-  		Result:    res.Report,
-  	}, "", "  ")
+	return json.MarshalIndent(&Envelope{
+		Operation: "inspect_node",
+		Result:    res.Report,
+	}, "", "  ")
 }
 
 func (r *JSONRender) TriggerReport(res *app.TriggerReportResult) ([]byte, error) {
-  	return json.MarshalIndent(&Envelope{
-  		Operation: "trigger_report",
-  		Result:    res.Report,
-  	}, "", "  ")
+	return json.MarshalIndent(&Envelope{
+		Operation: "trigger_report",
+		Result:    res.Report,
+	}, "", "  ")
 }
 
 func (r *JSONRender) HeartbeatControl(res *app.HeartbeatControlResult) ([]byte, error) {
 	return json.MarshalIndent(&Envelope{
 		Operation: "heartbeat_control",
-		Result: res.Report,
+		Result:    res.Report,
 	}, "", "  ")
 }
 
 func (r *JSONRender) Progress(p *progress.ObjectProgress) ([]byte, error) {
 	return json.MarshalIndent(&Envelope{
 		Operation: "object_transfer_progress",
-		Result: p, 
+		Result:    p,
 	}, "", "  ")
 }

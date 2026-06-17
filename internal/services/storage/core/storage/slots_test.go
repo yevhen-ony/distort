@@ -29,19 +29,18 @@ func TestStorageService_AcquireOpSlot_AcquireAndRelease(tt *testing.T) {
 	require.Len(tt, service.sem, 0)
 }
 
-
 func TestStorageService_AcquireOpSlot_OnFull(tt *testing.T) {
-  	ctx := context.Background()
+	ctx := context.Background()
 
-  	service := &StorageService{
-  		metrics: NewStorageMetrics(metrics.NopProvider{}),
-  		sem:     make(chan struct{}, 1),
-  	}
-	
-  	release, err := service.AcquireOpSlot(ctx, time.Millisecond)
-  	require.NoError(tt, err)
-  	defer release()
-	
-  	_, err = service.AcquireOpSlot(ctx, time.Millisecond)
-  	require.ErrorIs(tt, err, s.ErrServiceBusy)
-  }
+	service := &StorageService{
+		metrics: NewStorageMetrics(metrics.NopProvider{}),
+		sem:     make(chan struct{}, 1),
+	}
+
+	release, err := service.AcquireOpSlot(ctx, time.Millisecond)
+	require.NoError(tt, err)
+	defer release()
+
+	_, err = service.AcquireOpSlot(ctx, time.Millisecond)
+	require.ErrorIs(tt, err, s.ErrServiceBusy)
+}

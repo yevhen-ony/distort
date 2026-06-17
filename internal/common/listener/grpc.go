@@ -9,7 +9,7 @@ import (
 	"google.golang.org/grpc"
 )
 
-type ListenerConfig interface{
+type ListenerConfig interface {
 	ListeningAddr() string
 }
 
@@ -20,30 +20,30 @@ func RunGRPCServer(
 	options ...grpc.ServerOption,
 ) error {
 
-    lis, err := net.Listen("tcp", config.ListeningAddr())
-    if err != nil {
-        return fmt.Errorf("listen: %w", err)
-    }
-    defer lis.Close()
+	lis, err := net.Listen("tcp", config.ListeningAddr())
+	if err != nil {
+		return fmt.Errorf("listen: %w", err)
+	}
+	defer lis.Close()
 
-    gs := grpc.NewServer(options...)
-    register(gs)
+	gs := grpc.NewServer(options...)
+	register(gs)
 
-    errCh := make(chan error, 1)
+	errCh := make(chan error, 1)
 
-    slog.Info("grpc server listening", "addr", config.ListeningAddr())
+	slog.Info("grpc server listening", "addr", config.ListeningAddr())
 
-    go func() { errCh <- gs.Serve(lis) }()
+	go func() { errCh <- gs.Serve(lis) }()
 
-    select {
-    case err := <-errCh:
-        if err != nil {
-            return fmt.Errorf("grpc serve: %w", err)
-        }
-        return nil
-    case <-ctx.Done():
-        slog.Info("grpc server shutting down", "addr", config.ListeningAddr())
-        gs.GracefulStop()
-        return nil
-    }
+	select {
+	case err := <-errCh:
+		if err != nil {
+			return fmt.Errorf("grpc serve: %w", err)
+		}
+		return nil
+	case <-ctx.Done():
+		slog.Info("grpc server shutting down", "addr", config.ListeningAddr())
+		gs.GracefulStop()
+		return nil
+	}
 }

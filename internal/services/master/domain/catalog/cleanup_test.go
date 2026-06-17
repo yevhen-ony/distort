@@ -87,4 +87,3 @@ func newCleanupFixture(tt *testing.T) cleanupFixture {
 		cleanup: cleanup,
 	}
 }
-

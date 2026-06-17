@@ -6,8 +6,6 @@ import (
 	m "dos/internal/services/master"
 )
 
-
-
 type Authority struct {
 	m.ObjectReader
 	m.ObjectWriter

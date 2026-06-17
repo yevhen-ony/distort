@@ -4,10 +4,10 @@ import (
 	"context"
 	mpb "dos/gen/proto/master/v1"
 	"dos/internal/common/convert"
+	t "dos/internal/common/types"
 	"dos/internal/common/utils"
 	"errors"
 	"log/slog"
-	t "dos/internal/common/types"
 )
 
 var _ mpb.AdminServiceServer = (*AdminServer)(nil)
@@ -18,7 +18,6 @@ type EntityLister interface {
 	ListNodes(context.Context) []t.NodeInfo
 }
 
-
 type LeadershipTransferer interface {
 	TransferLeadership(context.Context) error
 }
@@ -26,13 +25,13 @@ type LeadershipTransferer interface {
 type AdminServer struct {
 	mpb.UnimplementedAdminServiceServer
 
-	view EntityLister 
-	state LeadershipTransferer	
+	view  EntityLister
+	state LeadershipTransferer
 }
 
 type AdminDeps struct {
-	ResourceView EntityLister 
-	State LeadershipTransferer 
+	ResourceView EntityLister
+	State        LeadershipTransferer
 }
 
 func NewAdminServer(deps AdminDeps) (*AdminServer, error) {
@@ -44,7 +43,7 @@ func NewAdminServer(deps AdminDeps) (*AdminServer, error) {
 	}
 
 	s := &AdminServer{
-		view: deps.ResourceView,
+		view:  deps.ResourceView,
 		state: deps.State,
 	}
 	return s, nil
@@ -101,7 +100,7 @@ func (s *AdminServer) TransferLeadership(
 	slog.DebugContext(ctx, "transfer leadership requested")
 
 	if err := s.state.TransferLeadership(ctx); err != nil {
-		return nil, err 
+		return nil, err
 	}
 	return &mpb.TransferLeadershipResponse{}, nil
 }

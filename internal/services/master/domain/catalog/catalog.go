@@ -10,7 +10,7 @@ import (
 )
 
 type CatalogDeps struct {
-	ObjectAuthority m.ObjectRW 
+	ObjectAuthority m.ObjectRW
 	ChunkRepository m.ChunkRepo
 	Metrics         *CatalogMetrics
 }

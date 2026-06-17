@@ -34,7 +34,7 @@ func TestObjectWriter_WriteRegion_SizeMismatch(tt *testing.T) {
 	writer, err := NewObjectWriter(path, 10)
 	require.NoError(tt, err)
 	defer writer.Close()
-	
+
 	r := ChunkRegion{Offset: 0, Size: 5}
 	err = writer.WriteRegion(r, []byte("hi"))
 

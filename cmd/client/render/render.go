@@ -6,20 +6,19 @@ import (
 	"errors"
 )
 
-type ErrorResult struct{
+type ErrorResult struct {
 	Operation string
-	Error error
+	Error     error
 }
 
 func NewErrorResult(op string, err error) *ErrorResult {
 	return &ErrorResult{
 		Operation: op,
-		Error: err,
+		Error:     err,
 	}
 }
 
 type Render interface {
-
 	Error(*ErrorResult) ([]byte, error)
 
 	Ping(*app.PingResult) ([]byte, error)
@@ -50,6 +49,6 @@ func NewRender(format string) (Render, error) {
 	case "text":
 		return NewTextRender(), nil
 	default:
-		return nil, errors.New("unknown output format") 
+		return nil, errors.New("unknown output format")
 	}
 }

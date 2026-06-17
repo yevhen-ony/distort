@@ -19,7 +19,7 @@ func (m ChunkMeta) Match(other ChunkMeta) error {
 	}
 
 	if err := m.Digest.Match(&other.Digest); err != nil {
-		return errors.Join(err, ErrChunkMetaMismatch) 
+		return errors.Join(err, ErrChunkMetaMismatch)
 	}
 
 	return nil
@@ -29,7 +29,7 @@ func NewChunk(id ChunkID, data []byte) Chunk {
 	dg := digest.New()
 	dg.Write(data)
 
-	return Chunk {
+	return Chunk{
 		Meta: ChunkMeta{ID: id, Digest: dg.Digest()},
 		Data: data,
 	}
@@ -66,16 +66,16 @@ func NewReplicaDeleted(chunkID ChunkID) *ReplicaDeletedReport {
 func (rd *ReplicaDeletedReport) ToRecord() StorageNodeReport {
 	return StorageNodeReport{ReplicaDeleted: rd}
 }
- 
+
 func (r *MasterRef) Validate() error {
 	if r == nil {
 		return fmt.Errorf("nil: %w", ErrInvalidMasterRef)
 	}
-  	if r.ID == "" {
-		return fmt.Errorf("missing id: %w", ErrInvalidMasterRef) 
-  	}
-  	if r.Addr == "" {
+	if r.ID == "" {
+		return fmt.Errorf("missing id: %w", ErrInvalidMasterRef)
+	}
+	if r.Addr == "" {
 		return fmt.Errorf("missing addr: %w", ErrInvalidMasterRef)
-  	}
-  	return nil
+	}
+	return nil
 }

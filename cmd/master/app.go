@@ -100,9 +100,9 @@ func NewApp(config *Config) (app *App, err error) {
 	}
 
 	app.resourceView, err = domain.NewResourceViewSerivce(domain.ResourceViewDeps{
-		ChunkRepo: app.chunkRepository,
-		ObjectReader: app.masterMode.ObjectAuthority(),
-		NodeRegistry: app.nodeRegistry,
+		ChunkRepo:     app.chunkRepository,
+		ObjectReader:  app.masterMode.ObjectAuthority(),
+		NodeRegistry:  app.nodeRegistry,
 		NodePlacement: app.placement,
 	})
 
@@ -240,7 +240,7 @@ func (app *App) initReplication(config *Config) (err error) {
 func (app *App) initAPI() (err error) {
 	app.adminAPI, err = api.NewAdminServer(api.AdminDeps{
 		ResourceView: app.resourceView,
-		State: app.masterMode.MasterState(),
+		State:        app.masterMode.MasterState(),
 	})
 	if err != nil {
 		return fmt.Errorf("admin api init: %w", err)

@@ -91,11 +91,11 @@ func (stg *ChunkStorageBackend) List() ([]t.ChunkID, error) {
 }
 
 func (stg *ChunkStorageBackend) Store(chunk t.Chunk) (err error) {
-	
+
 	chunkPath := filepath.Join(stg.commitDir, string(chunk.Meta.ID))
 	defer func() {
 		if err != nil {
-			_ = os.Remove(chunkPath)	
+			_ = os.Remove(chunkPath)
 		}
 	}()
 
@@ -105,19 +105,19 @@ func (stg *ChunkStorageBackend) Store(chunk t.Chunk) (err error) {
 	}
 	defer func() {
 		syncErr := f.Sync()
-		closeErr := f.Close() 
-  		if err == nil {
-  			if syncErr != nil {
-  				err = fmt.Errorf("sync chunk file: %w", syncErr)
-  			} else if closeErr != nil {
-  				err = fmt.Errorf("close chunk file: %w", closeErr)
-  			}
-  		}
-  	}()
+		closeErr := f.Close()
+		if err == nil {
+			if syncErr != nil {
+				err = fmt.Errorf("sync chunk file: %w", syncErr)
+			} else if closeErr != nil {
+				err = fmt.Errorf("close chunk file: %w", closeErr)
+			}
+		}
+	}()
 
 	n, err := f.Write(chunk.Data)
 	if err != nil {
-		return fmt.Errorf("write chunk file: %w", err) 
+		return fmt.Errorf("write chunk file: %w", err)
 	}
 	if n != len(chunk.Data) {
 		return fmt.Errorf("write chunk file: %w", io.ErrShortWrite)

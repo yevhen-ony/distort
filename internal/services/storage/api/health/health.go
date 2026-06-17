@@ -17,14 +17,14 @@ type IdentityValidator interface {
 	GetID() (t.NodeID, error)
 }
 
-type HealthDeps struct{
-	Identity IdentityValidator 
+type HealthDeps struct {
+	Identity IdentityValidator
 }
 
-type HealthServer struct{
-	cpb.UnimplementedHealthServiceServer	
+type HealthServer struct {
+	cpb.UnimplementedHealthServiceServer
 
-	identity IdentityValidator 
+	identity IdentityValidator
 }
 
 func NewHealthServer(deps HealthDeps) (*HealthServer, error) {
@@ -70,5 +70,3 @@ func (h *HealthServer) VerifyIdentity(
 	rsp := &cpb.HealthResponse{Component: cpb.Component_COMPONENT_STORAGE}
 	return rsp, nil
 }
-
-

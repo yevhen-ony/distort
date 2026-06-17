@@ -12,7 +12,6 @@ import (
 	"google.golang.org/grpc"
 )
 
-
 func TestMasterRouter_Rediscover_Success(tt *testing.T) {
 	active := t.MasterRef{ID: "master-1", Addr: "master-1:10000"}
 	changed := make(chan struct{}, 1)
@@ -58,7 +57,7 @@ func TestMasterRouter_Conn_OnActive(tt *testing.T) {
 	active := t.MasterRef{ID: "master-1", Addr: "master-1:10000"}
 
 	router := &MasterRouter{
-		active: active,
+		active:  active,
 		apiConn: apiConn,
 	}
 
@@ -77,7 +76,7 @@ func TestMasterRouter_Conn_Discovered(tt *testing.T) {
 			refs: []t.MasterRef{{ID: "seed-1", Addr: "seed-1:10000"}},
 		},
 		discovery: &testDiscovery{active: active},
-		apiConn: apiConn,
+		apiConn:   apiConn,
 	}
 
 	_, err := router.Conn(context.Background())

@@ -156,7 +156,7 @@ func (r *InMemChunkRepo) List(_ context.Context) []m.Chunk {
 func (r *InMemChunkRepo) Drop(_ context.Context, chunkID t.ChunkID) {
 	r.mu.Lock()
 	defer r.mu.Unlock()
-	
+
 	delete(r.chunks, chunkID)
 }
 

@@ -21,9 +21,9 @@ const (
 
 func MakeChunkCmd(cfg *app.Config) *cobra.Command {
 	chunkCmd := &cobra.Command{
-		Use:   "chunk",
+		Use:     "chunk",
 		Aliases: []string{"c"},
-		Short: "chunk-related operations",
+		Short:   "chunk-related operations",
 	}
 	chunkCmd.AddCommand(
 		MakeGetChunkCmd(cfg),
@@ -127,7 +127,7 @@ func MakeAllocChunkCmd(cfg *app.Config) *cobra.Command {
 			})
 			if err != nil {
 				a.Presenter.Update(render.NewErrorResult("allocate_chunk", err))
-				return err 
+				return err
 			}
 			return a.Presenter.Update(res)
 		},
@@ -201,10 +201,10 @@ func MakePushChunkCmd(cfg *app.Config) *cobra.Command {
 
 func MakeDescribeChunkCmd(cfg *app.Config) *cobra.Command {
 	descChunkCmd := &cobra.Command{
-		Use: "describe [chunk-id]",
+		Use:     "describe [chunk-id]",
 		Aliases: []string{"desc"},
-		Short: "describe chunk",
-		Args:  cobra.ExactArgs(1),
+		Short:   "describe chunk",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -213,12 +213,12 @@ func MakeDescribeChunkCmd(cfg *app.Config) *cobra.Command {
 			if err := ApplyFlags(cfg, cmd); err != nil {
 				return fmt.Errorf("apply config flags: %w", err)
 			}
-			
+
 			chunkID := args[0]
-			
+
 			app, err := RunApp(ctx, cfg)
 			if err != nil {
-				return err 
+				return err
 			}
 			defer app.Close()
 
@@ -235,9 +235,9 @@ func MakeDescribeChunkCmd(cfg *app.Config) *cobra.Command {
 
 func MakeListChunksCmd(cfg *app.Config) *cobra.Command {
 	listChunksCmd := &cobra.Command{
-		Use: "list",
+		Use:     "list",
 		Aliases: []string{"ls"},
-		Short: "list chunks",
+		Short:   "list chunks",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -252,7 +252,7 @@ func MakeListChunksCmd(cfg *app.Config) *cobra.Command {
 				return err
 			}
 			defer app.Close()
-			
+
 			res, err := app.App.ListChunks(ctx)
 			if err != nil {
 				app.Presenter.Update(render.NewErrorResult("list_chunks", err))

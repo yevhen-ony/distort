@@ -8,7 +8,7 @@ func SplitFrames(data []byte, size int64) [][]byte {
 	if size <= 0 {
 		panic("frame size must be positive")
 	}
-	l := int64(len(data)) 
+	l := int64(len(data))
 
 	total := (l + size - 1) / size
 	frames := make([][]byte, 0, total)
@@ -21,22 +21,22 @@ func SplitFrames(data []byte, size int64) [][]byte {
 	return frames
 }
 
-func Map[X any, Y any](xs []X, fn func(X)Y) []Y {
+func Map[X any, Y any](xs []X, fn func(X) Y) []Y {
 	ys := make([]Y, len(xs))
 	for i, x := range xs {
-		ys[i] = fn(x) 
+		ys[i] = fn(x)
 	}
 	return ys
 }
 
 func Select[X any](xs []X, keep func(X) bool) []X {
-  	out := make([]X, 0, len(xs))
-  	for _, x := range xs {
-  		if keep(x) {
-  			out = append(out, x)
-  		}
-  	}
-  	return out
+	out := make([]X, 0, len(xs))
+	for _, x := range xs {
+		if keep(x) {
+			out = append(out, x)
+		}
+	}
+	return out
 }
 
 func RandomSelect[T any](ts []T, n int) []T {
@@ -53,5 +53,3 @@ func RandomSelect[T any](ts []T, n int) []T {
 func RandomSelectOne[T any](ts []T) T {
 	return ts[rand.IntN(len(ts))]
 }
-
-

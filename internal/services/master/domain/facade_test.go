@@ -41,54 +41,54 @@ func TestClientFacadeService_AllocateChunk(tt *testing.T) {
 }
 
 func TestClientFacadeService_AllocateChunk_NoCandidates(tt *testing.T) {
-  	ctx := context.Background()
-  	f := newFacadeFixture(tt)
+	ctx := context.Background()
+	f := newFacadeFixture(tt)
 
-  	slot := t.ObjectSlot{ObjectID: "object-1", ChunkKey: "chunk-key-1"}
+	slot := t.ObjectSlot{ObjectID: "object-1", ChunkKey: "chunk-key-1"}
 
-  	f.catalog.EXPECT().ExistsChunk(ctx, slot).Return(false, nil)
-  	f.catalog.EXPECT().GetReplication(ctx, slot.ObjectID).Return(1, nil)
-  	f.placement.EXPECT().GetCandidates(ctx, m.CandidateNodesQuery{
-  		MinFreeBytes: 123,
-  		MaxCount:     1,
-  	}).Return(nil, nil)
+	f.catalog.EXPECT().ExistsChunk(ctx, slot).Return(false, nil)
+	f.catalog.EXPECT().GetReplication(ctx, slot.ObjectID).Return(1, nil)
+	f.placement.EXPECT().GetCandidates(ctx, m.CandidateNodesQuery{
+		MinFreeBytes: 123,
+		MaxCount:     1,
+	}).Return(nil, nil)
 
 	s, err := NewClientFacadeService(f.deps())
 	require.NoError(tt, err)
 
-  	_, err = s.AllocateChunk(ctx, m.AllocateChunkCommand{
-  		Slot: slot,
-  		Size: 123,
-  	})
+	_, err = s.AllocateChunk(ctx, m.AllocateChunkCommand{
+		Slot: slot,
+		Size: 123,
+	})
 
-  	require.ErrorIs(tt, err, m.ErrNoCandidateNodes)
-  }
+	require.ErrorIs(tt, err, m.ErrNoCandidateNodes)
+}
 
 func TestClientFacadeService_AllocateChunk_Occupied(tt *testing.T) {
-  	ctx := context.Background()
-  	f := newFacadeFixture(tt)
+	ctx := context.Background()
+	f := newFacadeFixture(tt)
 
-  	slot := t.ObjectSlot{ObjectID: "object-1", ChunkKey: "chunk-key-1"}
-  	chunkID := t.ChunkID("chunk-1")
+	slot := t.ObjectSlot{ObjectID: "object-1", ChunkKey: "chunk-key-1"}
+	chunkID := t.ChunkID("chunk-1")
 
-  	f.catalog.EXPECT().ExistsChunk(ctx, slot).Return(true, nil)
-  	f.catalog.EXPECT().GetReplication(ctx, slot.ObjectID).Return(1, nil)
-  	f.placement.EXPECT().GetCandidates(ctx, m.CandidateNodesQuery{
-  		MinFreeBytes: 123,
-  		MaxCount:     1,
-  	}).Return([]t.NodeRef{{ID: "node-2"}}, nil)
-  	f.catalog.EXPECT().GetChunkID(ctx, slot).Return(chunkID, nil)
-  	f.placement.EXPECT().GetChunkNodes(ctx, chunkID).
-  		Return([]t.NodeRef{{ID: "node-1"}}, nil)
+	f.catalog.EXPECT().ExistsChunk(ctx, slot).Return(true, nil)
+	f.catalog.EXPECT().GetReplication(ctx, slot.ObjectID).Return(1, nil)
+	f.placement.EXPECT().GetCandidates(ctx, m.CandidateNodesQuery{
+		MinFreeBytes: 123,
+		MaxCount:     1,
+	}).Return([]t.NodeRef{{ID: "node-2"}}, nil)
+	f.catalog.EXPECT().GetChunkID(ctx, slot).Return(chunkID, nil)
+	f.placement.EXPECT().GetChunkNodes(ctx, chunkID).
+		Return([]t.NodeRef{{ID: "node-1"}}, nil)
 
 	s, err := NewClientFacadeService(f.deps())
 	require.NoError(tt, err)
 
-  	_, err = s.AllocateChunk(ctx, m.AllocateChunkCommand{
-  		Slot: slot,
-  		Size: 123,
-  	})
-  	require.ErrorIs(tt, err, m.ErrChunkKeyOccupied)
+	_, err = s.AllocateChunk(ctx, m.AllocateChunkCommand{
+		Slot: slot,
+		Size: 123,
+	})
+	require.ErrorIs(tt, err, m.ErrChunkKeyOccupied)
 }
 
 func TestClientFacadeService_SetReplication(tt *testing.T) {
@@ -102,7 +102,7 @@ func TestClientFacadeService_SetReplication(tt *testing.T) {
 		Return([]t.ChunkID{"chunk-1", "chunk-2"}, nil)
 	f.replication.EXPECT().Schedule(ctx, t.ChunkID("chunk-1"))
 	f.replication.EXPECT().Schedule(ctx, t.ChunkID("chunk-2"))
-	
+
 	s, err := NewClientFacadeService(f.deps())
 	require.NoError(tt, err)
 

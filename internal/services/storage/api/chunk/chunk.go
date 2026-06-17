@@ -18,9 +18,8 @@ import (
 	"dos/internal/services/storage/api"
 )
 
-
 type ChunkDeps struct {
-	Identity NodeIdentity 
+	Identity NodeIdentity
 	Storage  ChunkStorage
 	Config   ChunkConfig
 }
@@ -28,7 +27,7 @@ type ChunkDeps struct {
 type ChunkServer struct {
 	spb.UnimplementedChunkServiceServer
 
-	identity NodeIdentity 
+	identity NodeIdentity
 	storage  ChunkStorage
 	config   ChunkConfig
 }

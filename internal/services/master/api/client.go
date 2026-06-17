@@ -14,7 +14,6 @@ import (
 	m "dos/internal/services/master"
 )
 
-
 var _ mpb.MasterClientServiceServer = (*ClientServer)(nil)
 
 type ClientFacade interface {
@@ -31,9 +30,8 @@ type ResourceView interface {
 type ClientServer struct {
 	pb.UnimplementedMasterClientServiceServer
 	facade ClientFacade
-	view ResourceView 
+	view   ResourceView
 }
-
 
 func NewClientServer(facade ClientFacade, view ResourceView) (*ClientServer, error) {
 	if facade == nil {
@@ -76,7 +74,7 @@ func (s *ClientServer) CreateObject(
 func (s *ClientServer) AllocateChunk(
 	ctx context.Context, req *pb.AllocateChunkRequest,
 ) (rsp *pb.AllocateChunkResponse, err error) {
-	
+
 	slot := req.GetObjectSlot()
 	defer func() {
 		if err != nil {
@@ -143,7 +141,7 @@ func (s *ClientServer) DescribeChunk(
 
 	defer func() {
 		if err != nil {
-			slog.ErrorContext(ctx, "describe chunk failed", 
+			slog.ErrorContext(ctx, "describe chunk failed",
 				"chunk_id", req.GetChunkId(), "error", err,
 			)
 			err = toStatus(err)
@@ -170,7 +168,7 @@ func (s *ClientServer) DescribeObject(
 
 	defer func() {
 		if err != nil {
-			slog.ErrorContext(ctx, "describe objcet failed", 
+			slog.ErrorContext(ctx, "describe objcet failed",
 				"object_id", req.GetObjectId(), "error", err,
 			)
 			err = toStatus(err)
@@ -183,10 +181,9 @@ func (s *ClientServer) DescribeObject(
 	if err != nil {
 		return nil, err
 	}
-	
+
 	rsp = &mpb.DescribeObjectResponse{
 		Description: convert.ObjectDesc1ToPB(*objectDesc),
 	}
 	return rsp, nil
 }
-

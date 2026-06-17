@@ -54,4 +54,3 @@ func validateReportStorageRequest(req *pb.ReportStorageRequest) error {
 	}
 	return nil
 }
-

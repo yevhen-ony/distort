@@ -65,7 +65,7 @@ func NewPlannerService(deps PlannerDeps) (*PlannerService, error) {
 		config:    deps.Config,
 		metrics:   deps.Metrics,
 
-		looper:    looper,
+		looper: looper,
 	}
 	return planner, nil
 }

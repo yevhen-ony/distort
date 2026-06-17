@@ -7,14 +7,14 @@ import (
 )
 
 type Config struct {
-	Level   string `yaml:"level"`
+	Level     string `yaml:"level"`
 	Component string `yaml:"component"`
 }
 
 func (lc *Config) GetLevel() slog.Level {
 	switch strings.ToLower(lc.Level) {
 	case "debug":
-		return slog.LevelDebug 
+		return slog.LevelDebug
 	case "warn":
 		return slog.LevelWarn
 	default:
@@ -40,5 +40,3 @@ func Init(cfg *Config) *slog.Logger {
 	slog.SetDefault(l)
 	return l
 }
-
-

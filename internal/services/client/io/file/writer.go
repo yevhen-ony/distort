@@ -16,13 +16,13 @@ type ObjectWriter struct {
 
 func NewObjectWriter(path string, totalBytes int64) (*ObjectWriter, error) {
 	file, err := os.OpenFile(path, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0o644)
-  	if err != nil {
-  		return nil, err
-  	}
-  	if err := file.Truncate(totalBytes); err != nil {
+	if err != nil {
+		return nil, err
+	}
+	if err := file.Truncate(totalBytes); err != nil {
 		_ = file.Close()
-  		return nil, err
-  	}
+		return nil, err
+	}
 	writer := &ObjectWriter{
 		file: file,
 	}
@@ -42,7 +42,7 @@ func (w *ObjectWriter) WriteRegion(region ChunkRegion, data []byte) error {
 	if n != len(data) {
 		return io.ErrShortWrite
 	}
-	return nil 
+	return nil
 }
 
 func (w *ObjectWriter) Close() error {

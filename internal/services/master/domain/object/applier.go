@@ -3,21 +3,20 @@ package object
 import (
 	"context"
 	t "dos/internal/common/types"
-	"errors"
 	m "dos/internal/services/master"
+	"errors"
 )
 
 type CommandApplier interface {
-  	Apply(context.Context, ObjectCommand) error
+	Apply(context.Context, ObjectCommand) error
 }
 
 var (
 	ErrUnknownObjectCommand = errors.New("unknown object command")
 )
 
-
 type LocalCommandApplier struct {
-  	repo m.ObjectRW 
+	repo m.ObjectRW
 }
 
 func NewLocalCommandApplier(repo m.ObjectRW) (*LocalCommandApplier, error) {
@@ -31,39 +30,39 @@ func NewLocalCommandApplier(repo m.ObjectRW) (*LocalCommandApplier, error) {
 }
 
 func (a *LocalCommandApplier) Apply(
-  	ctx context.Context,
-  	cmd ObjectCommand,
+	ctx context.Context,
+	cmd ObjectCommand,
 ) error {
 
-  	switch {
-  	case cmd.CreateObject != nil:
-  		c := cmd.CreateObject
-  		return a.repo.Create(ctx, c.ObjectID, c.Replication)
+	switch {
+	case cmd.CreateObject != nil:
+		c := cmd.CreateObject
+		return a.repo.Create(ctx, c.ObjectID, c.Replication)
 
 	case cmd.DeleteObject != nil:
 		c := cmd.DeleteObject
 		return a.repo.Delete(ctx, c.ObjectID)
 
-  	case cmd.SetReplication != nil:
-  		c := cmd.SetReplication
-  		return a.repo.SetReplication(ctx, c.ObjectID, c.Replication)
+	case cmd.SetReplication != nil:
+		c := cmd.SetReplication
+		return a.repo.SetReplication(ctx, c.ObjectID, c.Replication)
 
-  	case cmd.AddChunk != nil:
-  		c := cmd.AddChunk
+	case cmd.AddChunk != nil:
+		c := cmd.AddChunk
 		slot := t.ObjectSlot{
 			ObjectID: c.ObjectID,
 			ChunkKey: c.ChunkKey,
 		}
-  		return a.repo.AddChunk(ctx, slot, c.ChunkID)
+		return a.repo.AddChunk(ctx, slot, c.ChunkID)
 
-  	case cmd.DeleteChunk != nil:
+	case cmd.DeleteChunk != nil:
 		c := cmd.DeleteChunk
-  		return a.repo.DeleteChunk(ctx, t.ObjectSlot{
+		return a.repo.DeleteChunk(ctx, t.ObjectSlot{
 			ObjectID: c.ObjectID,
 			ChunkKey: c.ChunkKey,
 		})
 
-  	default:
+	default:
 		return ErrUnknownObjectCommand
-  	}
+	}
 }

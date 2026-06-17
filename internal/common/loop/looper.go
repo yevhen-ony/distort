@@ -7,26 +7,26 @@ import (
 )
 
 type Looper struct {
-	nextWait time.Duration
+	nextWait  time.Duration
 	firstWait time.Duration
 
 	flush chan struct{}
 }
 
 func NewLooper(interval time.Duration) *Looper {
-	return &Looper {
-		nextWait: interval,
+	return &Looper{
+		nextWait:  interval,
 		firstWait: interval,
-		flush: make(chan struct{}, 1),
+		flush:     make(chan struct{}, 1),
 	}
 }
 
 func (l *Looper) SkipFirstWait() *Looper {
-	l.firstWait	= 0
+	l.firstWait = 0
 	return l
 }
 
-func (l *Looper) Run(ctx context.Context, fn func(context.Context) ) {
+func (l *Looper) Run(ctx context.Context, fn func(context.Context)) {
 	timer := time.NewTimer(l.firstWait)
 	defer timer.Stop()
 
@@ -38,7 +38,7 @@ func (l *Looper) Run(ctx context.Context, fn func(context.Context) ) {
 		case <-l.flush:
 		}
 
-		fn(ctx)	
+		fn(ctx)
 
 		interval := jitter(l.nextWait, 0.2)
 		timer.Reset(interval)
@@ -46,7 +46,7 @@ func (l *Looper) Run(ctx context.Context, fn func(context.Context) ) {
 }
 
 func (l *Looper) Flush() {
-	select{
+	select {
 	case l.flush <- struct{}{}:
 	default:
 	}

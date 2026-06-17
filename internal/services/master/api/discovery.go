@@ -17,10 +17,9 @@ type MasterDiscovery interface {
 	GetActiveMaster(_ context.Context) (t.MasterRef, error)
 }
 
-
 type MasterDiscoveryServer struct {
 	mpb.UnimplementedMasterDiscoveryServiceServer
-	
+
 	discovery MasterDiscovery
 }
 
@@ -34,14 +33,13 @@ func NewMasterDiscoveryServer(discovery MasterDiscovery) (*MasterDiscoveryServer
 	return s, nil
 }
 
-
 func (s *MasterDiscoveryServer) GetActiveMaster(
 	ctx context.Context,
 	req *mpb.GetActiveMasterRequest,
 ) (*mpb.GetActiveMasterResponse, error) {
 
 	slog.DebugContext(ctx, "get active master requested")
-	
+
 	ref, err := s.discovery.GetActiveMaster(ctx)
 	if err != nil {
 		return nil, status.Error(codes.Unavailable, err.Error())
@@ -52,7 +50,3 @@ func (s *MasterDiscoveryServer) GetActiveMaster(
 	}
 	return rsp, nil
 }
-
-
-
-

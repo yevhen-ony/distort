@@ -71,7 +71,7 @@ func TestRetry_OnCancel(tt *testing.T) {
 func TestRetry_OnTimeout(tt *testing.T) {
 	var attemptErr error
 
-	r :=  Retry{
+	r := Retry{
 		Delay:       time.Millisecond,
 		Timeout:     time.Millisecond,
 		MaxAttempts: 1,

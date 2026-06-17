@@ -4,7 +4,7 @@ import "dos/internal/common/metrics"
 
 type CatalogMetrics struct {
 	ObjectCount metrics.Gauge
-	ChunkCount metrics.Gauge
+	ChunkCount  metrics.Gauge
 }
 
 func NewCatalogMetrics(provider metrics.Provider) *CatalogMetrics {
@@ -19,6 +19,6 @@ func NewCatalogMetrics(provider metrics.Provider) *CatalogMetrics {
 
 	return &CatalogMetrics{
 		ObjectCount: objectCount,
-		ChunkCount: chunkCount,
+		ChunkCount:  chunkCount,
 	}
 }

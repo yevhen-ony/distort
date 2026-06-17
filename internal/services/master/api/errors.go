@@ -26,7 +26,5 @@ func toStatus(err error) error {
 	default:
 		return status.Error(codes.Internal, err.Error())
 	}
-	
 
 }
-

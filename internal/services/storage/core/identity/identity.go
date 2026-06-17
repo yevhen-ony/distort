@@ -27,7 +27,7 @@ type IdentityDeps struct {
 }
 
 type IdentityService struct {
-	masterT MasterTransport 
+	masterT MasterTransport
 	config  IdentityConfig
 	mu      sync.RWMutex
 
@@ -59,7 +59,7 @@ func (is *IdentityService) getNewID(ctx context.Context) (t.NodeID, error) {
 	var nodeID t.NodeID
 
 	retry := retry.Retry{
-		Delay: time.Second,
+		Delay:   time.Second,
 		Timeout: 2 * time.Second,
 	}
 	err := retry.Run(ctx, func(ctx context.Context) error {

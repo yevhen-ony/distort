@@ -25,7 +25,7 @@ func (c *Config) ListeningAddr() string {
 type Service struct {
 	registry *prometheus.Registry
 	provider *Provider
-	config Config
+	config   Config
 }
 
 func NewService(config Config) *Service {
@@ -35,7 +35,7 @@ func NewService(config Config) *Service {
 	s := &Service{
 		registry: registry,
 		provider: provider,
-		config: config,	
+		config:   config,
 	}
 	return s
 }
@@ -45,14 +45,14 @@ func (s *Service) Provider() metrics.Provider {
 }
 
 func (s *Service) Serve(ctx context.Context) (err error) {
-	opts :=promhttp.HandlerOpts{Registry: s.registry}
+	opts := promhttp.HandlerOpts{Registry: s.registry}
 	handler := promhttp.HandlerFor(s.registry, opts)
 
 	mux := http.NewServeMux()
 	mux.Handle(s.config.ScrapePath, handler)
 
 	srv := http.Server{
-		Addr: s.config.ListeningAddr(),
+		Addr:    s.config.ListeningAddr(),
 		Handler: mux,
 	}
 
@@ -60,18 +60,16 @@ func (s *Service) Serve(ctx context.Context) (err error) {
 	go func() { errCh <- srv.ListenAndServe() }()
 
 	select {
-	case err = <- errCh: 
+	case err = <-errCh:
 		if errors.Is(err, http.ErrServerClosed) {
 			return nil
 		}
 		return err
 	case <-ctx.Done():
-		stopCtx, cancel := context.WithTimeout(context.Background(), 5 * time.Second)
+		stopCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 		defer cancel()
 		_ = srv.Shutdown(stopCtx)
 		<-errCh
 		return nil
 	}
 }
-
-

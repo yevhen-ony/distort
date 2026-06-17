@@ -22,7 +22,7 @@ func NewConnCache(opts ...grpc.DialOption) *ConnCache {
 
 	return &ConnCache{
 		conns: map[string]*grpc.ClientConn{},
-		opts: append(base, opts...),
+		opts:  append(base, opts...),
 	}
 }
 

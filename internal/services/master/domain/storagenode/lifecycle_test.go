@@ -6,8 +6,8 @@ import (
 
 	"dos/internal/common/metrics"
 	t "dos/internal/common/types"
-	"dos/internal/services/master/repo"
 	m "dos/internal/services/master"
+	"dos/internal/services/master/repo"
 
 	"github.com/stretchr/testify/require"
 )
@@ -43,7 +43,7 @@ func TestLifecycleService_HappyPath(tt *testing.T) {
 	require.Equal(tt, 0, chunk.ReplicaCount)
 }
 
-// fixture 
+// fixture
 type lifecycleFixture struct {
 	nodes  *repo.InMemNodeRegistry
 	chunks *repo.InMemChunkRepo

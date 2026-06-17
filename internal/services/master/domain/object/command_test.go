@@ -13,7 +13,6 @@ func TestObjectCommand_Validate(tt *testing.T) {
 		deleteCmd := (&DeleteObjectCommand{ObjectID: "object-1"}).ToCommand()
 		require.NoError(tt, deleteCmd.Validate())
 	})
-	
 
 	tt.Run("empty_command_invalid", func(tt *testing.T) {
 		emptyCmd := ObjectCommand{}
@@ -25,11 +24,11 @@ func TestObjectCommand_Validate(tt *testing.T) {
 		addCmd := &AddChunkCommand{
 			ObjectID: t.ObjectID("object-1"),
 			ChunkKey: "000001",
-			ChunkID: "chunk-1",
+			ChunkID:  "chunk-1",
 		}
 		cmd := ObjectCommand{
 			DeleteObject: delCmd,
-			AddChunk: addCmd,
+			AddChunk:     addCmd,
 		}
 		require.ErrorIs(tt, cmd.Validate(), ErrInvalidObjectCommand)
 	})

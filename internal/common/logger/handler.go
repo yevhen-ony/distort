@@ -40,9 +40,9 @@ func (h *ContextHandler) Handle(ctx context.Context, r slog.Record) error {
 }
 
 func (h *ContextHandler) WithAttrs(attrs []slog.Attr) slog.Handler {
-  	return &ContextHandler{next: h.next.WithAttrs(attrs)}
+	return &ContextHandler{next: h.next.WithAttrs(attrs)}
 }
 
 func (h *ContextHandler) WithGroup(name string) slog.Handler {
-  	return &ContextHandler{next: h.next.WithGroup(name)}
+	return &ContextHandler{next: h.next.WithGroup(name)}
 }

@@ -100,11 +100,11 @@ func (s *RaftMasterStateService) WatchState(
 			return
 
 		case isLeader := <-s.raft.LeaderCh():
-				if isLeader {
-					start()
-				} else {
-					stop()
-				}
+			if isLeader {
+				start()
+			} else {
+				stop()
+			}
 
 		}
 	}
@@ -116,5 +116,5 @@ func (s *RaftMasterStateService) TransferLeadership(_ context.Context) error {
 	}
 
 	f := s.raft.LeadershipTransfer()
-	return f.Error()	
+	return f.Error()
 }

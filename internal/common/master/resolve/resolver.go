@@ -15,9 +15,9 @@ var (
 )
 
 type Resolver struct {
-	self t.MasterID 
+	self  t.MasterID
 	peers []t.MasterID
-	c *Config
+	c     *Config
 }
 
 func newResolver(config *Config) *Resolver {
@@ -26,9 +26,9 @@ func newResolver(config *Config) *Resolver {
 		return t.MasterID(p)
 	})
 	return &Resolver{
-		self: self,
+		self:  self,
 		peers: peers,
-		c: config,
+		c:     config,
 	}
 }
 
@@ -48,8 +48,8 @@ func (r *Resolver) makeAPIAddr(peer t.MasterID) string {
 }
 
 func (r *Resolver) makeRef(peer t.MasterID) t.MasterRef {
-	return t.MasterRef {
-		ID: peer,
+	return t.MasterRef{
+		ID:   peer,
 		Addr: r.makeAPIAddr(peer),
 	}
 }
@@ -69,7 +69,7 @@ func (r *Resolver) Self() (t.MasterID, error) {
 }
 
 func (r *Resolver) SelfRef() (t.MasterRef, error) {
-	id, err := r.Self()	
+	id, err := r.Self()
 	if err != nil {
 		return t.MasterRef{}, err
 	}
@@ -94,7 +94,7 @@ func (r *Resolver) makeRaftAddr(id t.MasterID) string {
 
 func (r *Resolver) makeRaftRef(id t.MasterID) RaftRef {
 	return RaftRef{
-		ID: id,
+		ID:   id,
 		Addr: r.makeRaftAddr(id),
 	}
 }
@@ -113,8 +113,7 @@ func (r *Resolver) RaftRefs() []RaftRef {
 func (r *Resolver) RaftSelfRef() (RaftRef, error) {
 	id, err := r.Self()
 	if err != nil {
-		return RaftRef{}, err 
+		return RaftRef{}, err
 	}
 	return r.makeRaftRef(id), nil
 }
-

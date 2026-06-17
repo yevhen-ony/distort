@@ -15,12 +15,12 @@ import (
 
 func MakeDownloadCmd(cfg *app.Config) *cobra.Command {
 	downloadCmd := &cobra.Command{
-		Use: "download [object-id]",
+		Use:     "download [object-id]",
 		Aliases: []string{"dl"},
-		Short: "download object from the object store",
-		Args: cobra.ExactArgs(1),
+		Short:   "download object from the object store",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
-			
+
 			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
 			defer stop()
 
@@ -29,7 +29,7 @@ func MakeDownloadCmd(cfg *app.Config) *cobra.Command {
 			if err != nil {
 				return fmt.Errorf("dest flag: %w", err)
 			}
-			
+
 			if err := ApplyFlags(cfg, cmd); err != nil {
 				return fmt.Errorf("apply config flags: %w", err)
 			}
@@ -40,14 +40,14 @@ func MakeDownloadCmd(cfg *app.Config) *cobra.Command {
 			}
 			defer app.Close()
 
- 			if cfg.OutputFormat() == "text" {
+			if cfg.OutputFormat() == "text" {
 				cancel := app.Presenter.RunLoop(ctx)
 				defer cancel()
-  			}
+			}
 
-			app.App.SetOnProgress(func(p *progress.ObjectProgress){
+			app.App.SetOnProgress(func(p *progress.ObjectProgress) {
 				app.Presenter.Update(p)
-			})	
+			})
 			if err = app.App.Download(ctx, objectID, destPath); err != nil {
 				app.Presenter.Update(render.NewErrorResult("download", err))
 				return err

@@ -83,4 +83,3 @@ func (c *Config) RPCTimeout() time.Duration {
 func (c *Config) ListeningAddr() string {
 	return fmt.Sprintf("0.0.0.0:%d", c.Master.APIPort)
 }
-

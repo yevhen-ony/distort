@@ -27,11 +27,11 @@ func run() error {
 	if err != nil {
 		return fmt.Errorf("load config: %w", err)
 	}
-	
+
 	logger.Init(&cfg.Logger)
-	
+
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-    defer stop()
+	defer stop()
 
 	app, err := NewApp(&cfg)
 	if err != nil {
@@ -45,6 +45,5 @@ func run() error {
 
 	<-ctx.Done()
 
-	return nil 
+	return nil
 }
-

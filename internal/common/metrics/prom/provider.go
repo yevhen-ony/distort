@@ -6,7 +6,6 @@ import (
 	"github.com/prometheus/client_golang/prometheus"
 )
 
-
 type Provider struct {
 	registry  *prometheus.Registry
 	namespace string

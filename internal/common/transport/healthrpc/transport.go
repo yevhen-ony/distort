@@ -28,7 +28,7 @@ func NewTransport(conn *connect.ConnCache) (*Transport, error) {
 
 type HealthResult struct {
 	Component string
-	Ready     bool 
+	Ready     bool
 }
 
 func (ht *Transport) Ready(ctx context.Context, addr string) (*HealthResult, error) {
@@ -44,18 +44,18 @@ func (ht *Transport) Ready(ctx context.Context, addr string) (*HealthResult, err
 		if status.Code(err) == codes.Unavailable {
 			res := &HealthResult{
 				Component: "unknown",
-				Ready: false,
+				Ready:     false,
 			}
-		  	return res, nil
+			return res, nil
 		}
 		return nil, fmt.Errorf("transport: %w", err)
-	  }
+	}
 
-	  res := &HealthResult{
+	res := &HealthResult{
 		Component: ComponentFromPB(rsp.GetComponent()),
 		Ready:     true,
-	  }
-	  return res, nil
+	}
+	return res, nil
 }
 
 func ComponentFromPB(c cpb.Component) string {

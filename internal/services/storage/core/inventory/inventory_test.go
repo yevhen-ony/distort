@@ -16,7 +16,7 @@ func TestChunkInventory_Add(tt *testing.T) {
 	require.NoError(tt, err)
 
 	meta := testChunkMeta("chunk-1", 123)
-	
+
 	// add chunk
 	err = inventory.Add(&meta)
 	require.NoError(tt, err)
@@ -56,7 +56,7 @@ func TestChunkInventory_StageActivate(tt *testing.T) {
 	require.Equal(tt, s.ChunkStateActive, state)
 
 	require.ElementsMatch(tt, []t.ChunkMeta{snd}, inventory.ListStaged())
-	
+
 	// demote fst back to 'staged'
 	meta, err = inventory.Stage("chunk-1")
 	require.NoError(tt, err)

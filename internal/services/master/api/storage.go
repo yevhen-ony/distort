@@ -24,9 +24,9 @@ type StorageNodeReport interface {
 
 type StorageServer struct {
 	mpb.UnimplementedMasterStorageServiceServer
-	
+
 	lifecycle StorageNodeLifecycle
-	report StorageNodeReport
+	report    StorageNodeReport
 }
 
 func NewStorageServer(
@@ -37,12 +37,12 @@ func NewStorageServer(
 		return nil, errors.New("missing lifecycle service")
 	}
 	if report == nil {
-		return nil, errors.New("missing report service") 
+		return nil, errors.New("missing report service")
 	}
 
 	s := &StorageServer{
 		lifecycle: lifecycle,
-		report: report,
+		report:    report,
 	}
 	return s, nil
 }

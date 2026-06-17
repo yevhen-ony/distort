@@ -120,9 +120,9 @@ func (app *App) PushChunk(ctx context.Context, q PushChunkQuery) (*PushChunkResu
 	}
 
 	res := &PushChunkResult{
-		Meta: chunk.Meta,
+		Meta:   chunk.Meta,
 		Target: target,
-		File: q.Path,
+		File:   q.Path,
 	}
 	return res, nil
 }
@@ -136,12 +136,12 @@ func (app *App) ListChunks(ctx context.Context) (*ListChunksResult, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	res := &ListChunksResult{
 		Chunks: infos,
 	}
 
-	return res, nil 
+	return res, nil
 }
 
 type DescribeChunkResult struct {
@@ -153,9 +153,9 @@ func (app *App) DescribeChunk(ctx context.Context, chunkID string) (*DescribeChu
 	if err != nil {
 		return nil, err
 	}
-	
+
 	res := &DescribeChunkResult{
-		Description : desc,
+		Description: desc,
 	}
 
 	return res, nil

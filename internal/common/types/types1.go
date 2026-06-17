@@ -31,8 +31,8 @@ type ChunkDesc struct {
 }
 
 type ObjectDesc struct {
-	ID          ObjectID          `json:"object_id"`
-	Size        int64             `json:"total_size"`
-	Replication int               `json:"replication"`
+	ID          ObjectID         `json:"object_id"`
+	Size        int64            `json:"total_size"`
+	Replication int              `json:"replication"`
 	Chunks      []ChunkPlacement `json:"chunks"`
 }

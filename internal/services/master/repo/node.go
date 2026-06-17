@@ -12,7 +12,6 @@ import (
 	m "dos/internal/services/master"
 )
 
-
 type InMemNodeRegistry struct {
 	nodes map[t.NodeID]*m.Node
 	addrs map[string]t.NodeID
@@ -32,20 +31,20 @@ func (r *InMemNodeRegistry) Register(_ context.Context, addr string) (t.NodeRef,
 	defer r.mu.Unlock()
 
 	if _, ok := r.addrs[addr]; ok {
-		return t.NodeRef{}, m.ErrNodeAddrInUse 
+		return t.NodeRef{}, m.ErrNodeAddrInUse
 	}
-	
+
 	nodeRef := t.NodeRef{
-		ID: r.newNodeID(),
+		ID:   r.newNodeID(),
 		Addr: addr,
 	}
 	r.addrs[nodeRef.Addr] = nodeRef.ID
 	r.nodes[nodeRef.ID] = &m.Node{
-		NodeRef: nodeRef,
-		Stats: t.NodeStats{},
+		NodeRef:    nodeRef,
+		Stats:      t.NodeStats{},
 		LastSeenAt: time.Now().UTC(),
 	}
-	return nodeRef, nil 
+	return nodeRef, nil
 }
 
 func (r *InMemNodeRegistry) Unregister(_ context.Context, nid t.NodeID) {
@@ -54,7 +53,7 @@ func (r *InMemNodeRegistry) Unregister(_ context.Context, nid t.NodeID) {
 
 	node := r.nodes[nid]
 	if node == nil {
-		return 
+		return
 	}
 
 	delete(r.nodes, nid)
@@ -67,13 +66,13 @@ func (r *InMemNodeRegistry) UpdateStats(_ context.Context, nid t.NodeID, stats t
 
 	node, ok := r.nodes[nid]
 	if !ok {
-		return m.ErrNodeNotFound	
+		return m.ErrNodeNotFound
 	}
 
 	node.Stats = stats
 	node.LastSeenAt = time.Now()
 
-	return nil 
+	return nil
 }
 
 func (r *InMemNodeRegistry) Get(ctx context.Context, nid t.NodeID) (m.Node, error) {
@@ -82,7 +81,7 @@ func (r *InMemNodeRegistry) Get(ctx context.Context, nid t.NodeID) (m.Node, erro
 
 	node := r.nodes[nid]
 	if node == nil {
-		return m.Node{}, m.ErrNodeNotFound	
+		return m.Node{}, m.ErrNodeNotFound
 	}
 	return *node, nil
 }
@@ -143,7 +142,7 @@ func (r *InMemNodeRegistry) newNodeID() t.NodeID {
 	for {
 		id := genNodeID()
 		if _, ok := r.nodes[id]; !ok {
-			return id	
+			return id
 		}
 	}
 }
@@ -153,4 +152,3 @@ func genNodeID() t.NodeID {
 	rand.Read(b[:])
 	return t.NodeID(hex.EncodeToString(b[:]))
 }
-

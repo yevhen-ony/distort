@@ -2,7 +2,6 @@ package heartbeat
 
 import "dos/internal/common/metrics"
 
-
 type HeartbeatMetrics struct {
 	HeartbeatFailedTotal metrics.Counter
 }
@@ -17,4 +16,3 @@ func NewHeartbeatMetrics(provider metrics.Provider) *HeartbeatMetrics {
 		HeartbeatFailedTotal: heartbeatFailedTotal,
 	}
 }
-

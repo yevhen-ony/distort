@@ -10,26 +10,26 @@ import (
 )
 
 func TestHealthServer_Ready(tt *testing.T) {
-  	ctx := context.Background()
+	ctx := context.Background()
 
-  	identity := &fakeIdentity{nodeID: "node-1"}
-  	server, err := NewHealthServer(HealthDeps{
-  		Identity: identity,
-  	})
-  	require.NoError(tt, err)
+	identity := &fakeIdentity{nodeID: "node-1"}
+	server, err := NewHealthServer(HealthDeps{
+		Identity: identity,
+	})
+	require.NoError(tt, err)
 
-  	rsp, err := server.Ready(ctx, &cpb.ReadyRequest{})
+	rsp, err := server.Ready(ctx, &cpb.ReadyRequest{})
 
-  	require.NoError(tt, err)
-  	require.Equal(tt, cpb.Component_COMPONENT_STORAGE, rsp.GetComponent())
+	require.NoError(tt, err)
+	require.Equal(tt, cpb.Component_COMPONENT_STORAGE, rsp.GetComponent())
 }
 
 // fake identity
 
 type fakeIdentity struct {
-  	nodeID t.NodeID
-  	err    error
+	nodeID t.NodeID
+	err    error
 }
 
 func (i fakeIdentity) GetID() (t.NodeID, error) { return i.nodeID, i.err }
-func (i fakeIdentity) Validate(t.NodeID) error { return i.err }
+func (i fakeIdentity) Validate(t.NodeID) error  { return i.err }

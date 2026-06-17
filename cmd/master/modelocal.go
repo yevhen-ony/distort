@@ -79,7 +79,7 @@ func (mode *MasterLocalMode) initLocalObjectAuthority() (err error) {
 func (mode *MasterLocalMode) initLocalMasterDiscovery(config *Config) (err error) {
 	mode.resolver, err = resolve.New(&config.Master)
 	if err != nil {
-		return fmt.Errorf("resolver init: %w", err) 
+		return fmt.Errorf("resolver init: %w", err)
 	}
 
 	mode.discovery, err = domain.NewLocalMasterStateService(mode.resolver)
@@ -87,5 +87,5 @@ func (mode *MasterLocalMode) initLocalMasterDiscovery(config *Config) (err error
 		return fmt.Errorf("discovery init: %w", err)
 	}
 
-	return nil	
+	return nil
 }

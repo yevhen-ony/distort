@@ -10,7 +10,7 @@ import (
 
 type InMemObjectRepo struct {
 	objects map[t.ObjectID]*m.Object
-	mu sync.RWMutex
+	mu      sync.RWMutex
 }
 
 func NewInMemObjectRepo() *InMemObjectRepo {
@@ -24,12 +24,12 @@ func (o *InMemObjectRepo) Create(_ context.Context, oid t.ObjectID, replicas int
 	defer o.mu.Unlock()
 
 	if _, ok := o.objects[oid]; ok {
-		return m.ErrObjectExists 
+		return m.ErrObjectExists
 	}
 
 	o.objects[oid] = &m.Object{
-		ID: oid,
-		Chunks: map[t.ChunkKey]t.ChunkID{},
+		ID:          oid,
+		Chunks:      map[t.ChunkKey]t.ChunkID{},
 		Replication: replicas,
 	}
 	return nil
@@ -42,7 +42,7 @@ func (o *InMemObjectRepo) Exists(_ context.Context, oid t.ObjectID) (bool, error
 	_, ok := o.objects[oid]
 	return ok, nil
 }
- 
+
 func (o *InMemObjectRepo) Get(_ context.Context, oid t.ObjectID) (m.Object, error) {
 	o.mu.RLock()
 	defer o.mu.RUnlock()
@@ -93,10 +93,10 @@ func (o *InMemObjectRepo) List(_ context.Context) []m.Object {
 }
 
 func (o *InMemObjectRepo) ExistsChunk(_ context.Context, slot t.ObjectSlot) (bool, error) {
-	
+
 	o.mu.RLock()
 	defer o.mu.RUnlock()
-	
+
 	obj, ok := o.objects[slot.ObjectID]
 	if !ok {
 		return false, m.ErrObjectNotFound
@@ -116,7 +116,7 @@ func (o *InMemObjectRepo) AddChunk(_ context.Context, slot t.ObjectSlot, cid t.C
 	if _, ok := obj.Chunks[slot.ChunkKey]; ok {
 		return m.ErrChunkKeyExists
 	}
-	obj.Chunks[slot.ChunkKey] = cid 
+	obj.Chunks[slot.ChunkKey] = cid
 	return nil
 }
 
@@ -141,7 +141,7 @@ func (o *InMemObjectRepo) DeleteChunk(_ context.Context, slot t.ObjectSlot) erro
 
 	object, ok := o.objects[slot.ObjectID]
 	if !ok {
-		return m.ErrObjectNotFound 
+		return m.ErrObjectNotFound
 	}
 	_, ok = object.Chunks[slot.ChunkKey]
 	if !ok {
@@ -160,9 +160,9 @@ func (o *InMemObjectRepo) Delete(_ context.Context, objectID t.ObjectID) error {
 	if !ok {
 		return nil
 	}
-	
+
 	if len(obj.Chunks) > 0 {
-		return m.ErrObjectNotEmpty 
+		return m.ErrObjectNotEmpty
 	}
 
 	delete(o.objects, objectID)

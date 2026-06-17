@@ -130,20 +130,20 @@ func (ci *ChunkInventory) ListStaged() []t.ChunkMeta {
 func (ci *ChunkInventory) Activate(chunkID t.ChunkID) (t.ChunkMeta, error) {
 	ci.mu.Lock()
 	defer ci.mu.Unlock()
-	
+
 	rec, ok := ci.catalog[chunkID]
 	if !ok {
 		return t.ChunkMeta{}, s.ErrChunkNotFound
 	}
 
 	rec.State = s.ChunkStateActive
-	return *rec.Meta.Clone(), nil 
+	return *rec.Meta.Clone(), nil
 }
 
 func (ci *ChunkInventory) Stage(chunkID t.ChunkID) (t.ChunkMeta, error) {
 	ci.mu.Lock()
 	defer ci.mu.Unlock()
-	
+
 	rec, ok := ci.catalog[chunkID]
 	if !ok {
 		return t.ChunkMeta{}, s.ErrChunkNotFound
@@ -153,7 +153,7 @@ func (ci *ChunkInventory) Stage(chunkID t.ChunkID) (t.ChunkMeta, error) {
 	return *rec.Meta.Clone(), nil
 }
 
-func (ci *ChunkInventory) GetState(chunkID t.ChunkID) (s.ChunkState, error)  {
+func (ci *ChunkInventory) GetState(chunkID t.ChunkID) (s.ChunkState, error) {
 	ci.mu.RLock()
 	defer ci.mu.RUnlock()
 
@@ -199,19 +199,19 @@ func (cs *ChunkInventory) BuildCatalog(
 }
 
 func (ci *ChunkInventory) ListRecords() []s.ChunkRecord {
-  	ci.mu.RLock()
-  	defer ci.mu.RUnlock()
+	ci.mu.RLock()
+	defer ci.mu.RUnlock()
 
-  	records := make([]s.ChunkRecord, 0, len(ci.catalog))
-  	for _, record := range ci.catalog {
-  		records = append(records, *record.Clone())
-  	}
-  	return records
+	records := make([]s.ChunkRecord, 0, len(ci.catalog))
+	for _, record := range ci.catalog {
+		records = append(records, *record.Clone())
+	}
+	return records
 }
 
 func (ci *ChunkInventory) ListIDs() []t.ChunkID {
-  	ci.mu.RLock()
-  	defer ci.mu.RUnlock()
+	ci.mu.RLock()
+	defer ci.mu.RUnlock()
 
 	return slices.Collect(maps.Keys(ci.catalog))
 }

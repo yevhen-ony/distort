@@ -7,7 +7,6 @@ type ChunkInventoryMetrics struct {
 	ChunksTotalBytes metrics.Gauge
 }
 
-
 func NewChunkInventoryMetrics(provider metrics.Provider) *ChunkInventoryMetrics {
 	chunksCount := provider.Gauge(metrics.GaugeOpts{
 		Name: "storage_catalog_chunks_count",

@@ -19,14 +19,14 @@ func TestReportService_RunReportIteration_RetriesPendingReports(tt *testing.T) {
 
 	f.config.EXPECT().QueueCapacity().Return(10)
 	f.config.EXPECT().ReportInterval().Return(time.Hour)
-	
+
 	report := t.NewReplicaDeleted("chunk-1").ToRecord()
 	reports := []t.StorageNodeReport{report}
 	result := t.ReportResult{Accepted: []t.ChunkID{"chunk-1"}}
 	sendErr := errors.New("send failed")
 
 	gomock.InOrder(
-		// first report iteration, use enqueued reports 
+		// first report iteration, use enqueued reports
 		f.identity.EXPECT().
 			GetID().
 			Return(t.NodeID("node-1"), nil),
@@ -34,7 +34,7 @@ func TestReportService_RunReportIteration_RetriesPendingReports(tt *testing.T) {
 			ReportChunks(ctx, t.NodeID("node-1"), reports).
 			Return(t.ReportResult{}, sendErr),
 
-		// second report iteration, use pending reports 
+		// second report iteration, use pending reports
 		f.identity.EXPECT().
 			GetID().
 			Return(t.NodeID("node-1"), nil),
@@ -53,7 +53,7 @@ func TestReportService_RunReportIteration_RetriesPendingReports(tt *testing.T) {
 
 	// do report
 	s.Report(ctx, report)
-	
+
 	// first operation, expect to fail -> see mock setup
 	s.RunReportIteration(ctx)
 	require.Equal(tt, reports, s.pending)
@@ -66,9 +66,9 @@ func TestReportService_RunReportIteration_RetriesPendingReports(tt *testing.T) {
 // fixture
 
 type reportFixture struct {
-	identity *MockIdentityProvider
+	identity  *MockIdentityProvider
 	transport *MockMasterTransport
-	config *MockReportConfig
+	config    *MockReportConfig
 	processor *MockReportProcessor
 }
 
@@ -76,18 +76,18 @@ func newReportFixutre(tt *testing.T) *reportFixture {
 	ctrl := gomock.NewController(tt)
 
 	return &reportFixture{
-		identity: NewMockIdentityProvider(ctrl),
+		identity:  NewMockIdentityProvider(ctrl),
 		transport: NewMockMasterTransport(ctrl),
-		config: NewMockReportConfig(ctrl),
+		config:    NewMockReportConfig(ctrl),
 		processor: NewMockReportProcessor(ctrl),
 	}
 }
 
 func (f *reportFixture) deps() ReportDeps {
-	return ReportDeps {
+	return ReportDeps{
 		Identity: f.identity,
-		MasterT: f.transport,
-		Config: f.config,
-		Metrics: NewReportMetrics(metrics.NopProvider{}),
+		MasterT:  f.transport,
+		Config:   f.config,
+		Metrics:  NewReportMetrics(metrics.NopProvider{}),
 	}
 }

@@ -110,7 +110,6 @@ func (mt *Master) ReportChunks(
 	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
 	defer cancel()
 
-
 	client, err := mt.client(ctx)
 	if err != nil {
 		return t.ReportResult{}, err

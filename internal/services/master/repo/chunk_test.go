@@ -21,15 +21,15 @@ func TestInMemChunkRepo_CreateGet(tt *testing.T) {
 	// create new chunk
 	err := repo.Create(ctx, chunkID, slot1)
 	require.NoError(tt, err, "new chunk")
-	
-	// try create with the same id 
+
+	// try create with the same id
 	err = repo.Create(ctx, chunkID, slot2)
 	require.ErrorIs(tt, err, m.ErrChunkExists, "duplicated")
 
 	// get chunk
 	chunk, err := repo.Get(ctx, chunkID)
 	require.NoError(tt, err, "accessable")
-	
+
 	require.Equal(tt, chunkID, chunk.Meta.ID)
 	require.Equal(tt, int64(0), chunk.Meta.Digest.Size)
 	require.Empty(tt, chunk.Meta.Digest.Checksum)
@@ -58,7 +58,7 @@ func TestInMemChunkRepo_SetDigest(tt *testing.T) {
 	err = repo.IncReplicaCount(ctx, chunkID)
 	require.NoError(tt, err)
 
-	// noop if digest correct 
+	// noop if digest correct
 	err = repo.SetDigest(ctx, chunkID, first)
 	require.NoError(tt, err)
 
@@ -113,7 +113,7 @@ func TestInMemChunkRepo_Delete(tt *testing.T) {
 	deleted, err := repo.Delete(ctx, chunkID)
 	require.Error(tt, err)
 	require.False(tt, deleted)
-	
+
 	// still accessable
 	got, err := repo.Get(ctx, chunkID)
 	require.NoError(tt, err)
@@ -121,9 +121,9 @@ func TestInMemChunkRepo_Delete(tt *testing.T) {
 
 	// dec replica count
 	err = repo.DecReplicaCount(ctx, chunkID)
-	require.NoError(tt, err) 
-	
-	// dec is applied 
+	require.NoError(tt, err)
+
+	// dec is applied
 	got, err = repo.Get(ctx, chunkID)
 	require.NoError(tt, err)
 	require.Zero(tt, got.ReplicaCount)
@@ -132,10 +132,9 @@ func TestInMemChunkRepo_Delete(tt *testing.T) {
 	deleted, err = repo.Delete(ctx, chunkID)
 	require.NoError(tt, err)
 	require.True(tt, deleted)
-	
+
 	// delete once again
 	deleted, err = repo.Delete(ctx, chunkID)
 	require.NoError(tt, err)
 	require.False(tt, deleted)
 }
-

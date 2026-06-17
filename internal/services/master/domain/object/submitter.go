@@ -10,12 +10,12 @@ type CommandSubmitter interface {
 }
 
 type LocalCommandSubmitter struct {
-	apply CommandApplier 
+	apply CommandApplier
 }
 
 func NewLocalCommandSubmitter(apply CommandApplier) (*LocalCommandSubmitter, error) {
 	if apply == nil {
-		return nil, errors.New("missing command applier") 
+		return nil, errors.New("missing command applier")
 	}
 
 	submit := &LocalCommandSubmitter{
@@ -27,4 +27,3 @@ func NewLocalCommandSubmitter(apply CommandApplier) (*LocalCommandSubmitter, err
 func (s *LocalCommandSubmitter) Submit(ctx context.Context, cmd ObjectCommand) error {
 	return s.apply.Apply(ctx, cmd)
 }
-

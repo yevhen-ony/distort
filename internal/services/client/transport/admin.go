@@ -1,4 +1,4 @@
-package transport 
+package transport
 
 import (
 	"context"
@@ -14,12 +14,12 @@ func (mt *MasterTransport) ListObjects(ctx context.Context) ([]t.ObjectInfo, err
 
 	ctx, cancel := context.WithTimeout(ctx, mt.config.RPCTimeout())
 	defer cancel()
-	
+
 	admin, err := mt.admin(ctx)
 	if err != nil {
 		return nil, err
 	}
-	
+
 	rsp, err := admin.ListObjects(ctx, &pb.ListObjectsRequest{})
 	if err != nil {
 		return nil, fmt.Errorf("rpc: %w", err)

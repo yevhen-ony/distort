@@ -1,13 +1,13 @@
 package api
 
 import (
-  	"context"
+	"context"
 
-  	"google.golang.org/grpc"
-  	"google.golang.org/grpc/codes"
-  	"google.golang.org/grpc/status"
+	"google.golang.org/grpc"
+	"google.golang.org/grpc/codes"
+	"google.golang.org/grpc/status"
 
-  	mpb "dos/gen/proto/master/v1"
+	mpb "dos/gen/proto/master/v1"
 )
 
 type ActiveGuard interface {
@@ -15,7 +15,7 @@ type ActiveGuard interface {
 }
 
 type MasterGuard struct {
-	masterState ActiveGuard 
+	masterState ActiveGuard
 }
 
 func NewMasterGuard(state ActiveGuard) *MasterGuard {
@@ -47,10 +47,10 @@ func (i *MasterGuard) AsOption() grpc.ServerOption {
 }
 
 func isUnguardedMethod(method string) bool {
-  	switch method {
-  	case mpb.MasterDiscoveryService_GetActiveMaster_FullMethodName:
-  		return true
-  	default:
-  		return false
-  	}
+	switch method {
+	case mpb.MasterDiscoveryService_GetActiveMaster_FullMethodName:
+		return true
+	default:
+		return false
+	}
 }

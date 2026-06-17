@@ -30,18 +30,17 @@ func run() error {
 	}
 
 	logger.Init(&cfg.Logger)
-	
+
 	app, err := NewApp(&cfg)
 	if err != nil {
 		return err
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
-    defer stop()
+	defer stop()
 
 	if err := app.Run(ctx); err != nil {
 		return fmt.Errorf("run app: %w", err)
 	}
 	return nil
 }
-

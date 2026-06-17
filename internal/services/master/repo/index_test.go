@@ -38,7 +38,7 @@ func TestInMemChunkNodeIndex_DetachChunk(tt *testing.T) {
 	// detaches chunk from first node only
 	detached := index.DetachChunk(ctx, "node-1", "chunk-1")
 	require.True(tt, detached)
-	
+
 	require.ElementsMatch(tt, []t.ChunkID{"chunk-2"}, index.GetNodeChunks(ctx, "node-1"))
 	require.ElementsMatch(tt, []t.NodeID{"node-2"}, index.GetChunkNodes(ctx, "chunk-1"))
 

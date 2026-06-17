@@ -50,7 +50,7 @@ func NewMasterRaftMode(config *Config) (*MasterRaftMode, error) {
 	}
 
 	mode.state, err = raftnode.NewRaftMasterStateService(raftnode.RaftMasterStateDeps{
-		Raft: mode.node.Raft,
+		Raft:     mode.node.Raft,
 		Resolver: mode.resolver,
 	})
 	if err != nil {

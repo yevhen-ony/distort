@@ -8,7 +8,7 @@ import (
 )
 
 type LocalMasterStateService struct {
-	resolver MasterSelfResolver 
+	resolver MasterSelfResolver
 }
 
 type MasterSelfResolver interface {
@@ -22,7 +22,7 @@ func NewLocalMasterStateService(resolver MasterSelfResolver) (*LocalMasterStateS
 
 	s := &LocalMasterStateService{
 		resolver: resolver,
-	}	
+	}
 	return s, nil
 }
 
@@ -35,13 +35,13 @@ func (s *LocalMasterStateService) IsActiveMaster() bool {
 }
 
 func (s *LocalMasterStateService) WatchState(
-  	ctx context.Context,
-  	onActive func(context.Context),
+	ctx context.Context,
+	onActive func(context.Context),
 ) {
-  	onActive(ctx)
-  	<-ctx.Done()
+	onActive(ctx)
+	<-ctx.Done()
 }
 
 func (s *LocalMasterStateService) TransferLeadership(_ context.Context) error {
- 	return errors.New("leadership transfer is not supported")
+	return errors.New("leadership transfer is not supported")
 }

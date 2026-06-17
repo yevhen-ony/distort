@@ -1,4 +1,4 @@
-package app 
+package app
 
 import (
 	"context"
@@ -18,12 +18,12 @@ func (app *App) Upload(ctx context.Context, objectID string, path string) error 
 
 	uploader, err := delivery.NewObjectDelivery(delivery.ObjectDeliveryDeps{
 		ObjectID: t.ObjectID(objectID),
-		MasterT: app.MasterT(),
-		ChunkT: app.ChunkT,
-		Config: app.Config,
+		MasterT:  app.MasterT(),
+		ChunkT:   app.ChunkT,
+		Config:   app.Config,
 	})
 	if err != nil {
-		return fmt.Errorf("uploader init: %w", err) 
+		return fmt.Errorf("uploader init: %w", err)
 	}
 
 	if app.onProgress != nil {

@@ -10,7 +10,7 @@ import (
 )
 
 type ObjectFSM struct {
-	codec object.CommandCodec
+	codec   object.CommandCodec
 	applier object.CommandApplier
 }
 
@@ -22,34 +22,34 @@ func NewObjectFSM(codec object.CommandCodec, applier object.CommandApplier) (*Ob
 		return nil, fmt.Errorf("missing command applier")
 	}
 	fsm := &ObjectFSM{
-		codec: codec,
+		codec:   codec,
 		applier: applier,
 	}
 	return fsm, nil
 }
 
 func (f *ObjectFSM) Apply(log *raft.Log) any {
-  	cmd, err := f.codec.Decode(log.Data)
-  	if err != nil {
-  		return err
-  	}
+	cmd, err := f.codec.Decode(log.Data)
+	if err != nil {
+		return err
+	}
 
-  	return f.applier.Apply(context.Background(), cmd)
+	return f.applier.Apply(context.Background(), cmd)
 }
 
 func (f *ObjectFSM) Snapshot() (raft.FSMSnapshot, error) {
-  	return &NopSnapshot{}, nil
+	return &NopSnapshot{}, nil
 }
 
 func (f *ObjectFSM) Restore(rc io.ReadCloser) error {
-  	defer rc.Close()
-  	return nil
+	defer rc.Close()
+	return nil
 }
 
 type NopSnapshot struct{}
 
 func (s *NopSnapshot) Persist(sink raft.SnapshotSink) error {
-  	return sink.Close()
+	return sink.Close()
 }
 
 func (s *NopSnapshot) Release() {}

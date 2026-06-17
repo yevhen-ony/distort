@@ -1,4 +1,4 @@
-package heartbeat 
+package heartbeat
 
 import (
 	"context"
@@ -148,7 +148,7 @@ func (s *HeartbeatService) Pause() bool {
 	}
 
 	s.paused = true
-	return true 
+	return true
 }
 
 func (s *HeartbeatService) Resume() bool {
@@ -161,7 +161,7 @@ func (s *HeartbeatService) Resume() bool {
 		s.paused = false
 		return true
 	}
-	return false	
+	return false
 }
 
 func (s *HeartbeatService) IsPaused() bool {

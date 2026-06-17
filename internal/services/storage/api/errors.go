@@ -1,4 +1,4 @@
-package api 
+package api
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
-	
+
 	s "dos/internal/services/storage"
 )
 
@@ -27,7 +27,7 @@ func ToStatus(err error) error {
 	case errors.Is(err, s.ErrInvalidDigest):
 		return status.Error(codes.InvalidArgument, err.Error())
 	case errors.Is(err, s.ErrChunkNotFound):
-		return status.Error(codes.NotFound,  err.Error())
+		return status.Error(codes.NotFound, err.Error())
 	case errors.Is(err, s.ErrChunkConflict):
 		return status.Error(codes.AlreadyExists, err.Error())
 	case errors.Is(err, s.ErrInvalidHeader):

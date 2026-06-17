@@ -15,15 +15,15 @@ func (app *App) Download(ctx context.Context, objectID string, destPath string) 
 	if err != nil {
 		return fmt.Errorf("create object assembler: %w", err)
 	}
-	
+
 	downloader, err := delivery.NewObjectDelivery(delivery.ObjectDeliveryDeps{
 		ObjectID: t.ObjectID(objectID),
-		MasterT: app.MasterT(),
-		ChunkT: app.ChunkT,
-		Config: app.Config,
+		MasterT:  app.MasterT(),
+		ChunkT:   app.ChunkT,
+		Config:   app.Config,
 	})
 	if err != nil {
-		return fmt.Errorf("uploader init: %w", err) 
+		return fmt.Errorf("uploader init: %w", err)
 	}
 
 	if app.onProgress != nil {

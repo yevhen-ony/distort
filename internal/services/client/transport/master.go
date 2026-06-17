@@ -24,7 +24,7 @@ type MasterTransportDeps struct {
 
 type MasterTransport struct {
 	mrouter *route.MasterRouter
-	config MasterTransportConfig 
+	config  MasterTransportConfig
 }
 
 func NewMasterTransport(deps MasterTransportDeps) (*MasterTransport, error) {
@@ -37,7 +37,7 @@ func NewMasterTransport(deps MasterTransportDeps) (*MasterTransport, error) {
 
 	mt := &MasterTransport{
 		mrouter: deps.Router,
-		config: deps.Config,
+		config:  deps.Config,
 	}
 	return mt, nil
 }
@@ -57,7 +57,6 @@ func (mt *MasterTransport) admin(ctx context.Context) (pb.AdminServiceClient, er
 	}
 	return pb.NewAdminServiceClient(conn), nil
 }
-
 
 func (mt *MasterTransport) CreateObject(ctx context.Context, oid t.ObjectID) error {
 
@@ -98,7 +97,7 @@ func (mt *MasterTransport) AllocateChunk(
 
 	client, err := mt.client(ctx)
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
 
 	rsp, err := client.AllocateChunk(ctx, req)
@@ -186,4 +185,3 @@ func (mt *MasterTransport) DescribeObject(
 	description := convert.ObjectDesc1FromPB(rsp.GetDescription())
 	return &description, nil
 }
-

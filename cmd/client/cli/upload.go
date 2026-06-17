@@ -15,10 +15,10 @@ import (
 
 func MakeUploadCmd(cfg *app.Config) *cobra.Command {
 	pushCmd := &cobra.Command{
-		Use:   "upload [path]",
+		Use:     "upload [path]",
 		Aliases: []string{"ul"},
-		Short: "upload file to the object storage",
-		Args:  cobra.ExactArgs(1),
+		Short:   "upload file to the object storage",
+		Args:    cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt)
@@ -47,11 +47,10 @@ func MakeUploadCmd(cfg *app.Config) *cobra.Command {
 			}
 			defer a.Close()
 
-
- 			if cfg.OutputFormat() == "text" {
+			if cfg.OutputFormat() == "text" {
 				cancel := a.Presenter.RunLoop(ctx)
 				defer cancel()
-  			}
+			}
 
 			a.App.SetOnProgress(func(p *progress.ObjectProgress) {
 				a.Presenter.Update(p)

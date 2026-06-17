@@ -168,8 +168,8 @@ func MakeCreateObjectCmd(cfg *app.Config) *cobra.Command {
 			res, err := a.App.CreateObject(ctx, objectID)
 			if err != nil {
 				a.Presenter.Update(render.NewErrorResult("create_object", err))
-				return err 
-				
+				return err
+
 			}
 			return a.Presenter.Update(res)
 		},

@@ -17,7 +17,7 @@ type CleanupConfig interface {
 }
 
 type CleanupDeps struct {
-	ObjectAuthority m.ObjectRW 
+	ObjectAuthority m.ObjectRW
 	ChunkRepository m.ChunkRepo
 	Config          CleanupConfig
 	Metrics         *CatalogMetrics
@@ -66,7 +66,7 @@ func (cs *CleanupService) ReconcileChunks(ctx context.Context) error {
 	for _, chunk := range cs.chunks.List(ctx) {
 		slot := chunk.Slot
 		chunkID, err := cs.objects.GetChunk(ctx, chunk.Slot)
-		if errors.Is(err, m.ErrObjectNotFound) || errors.Is(err, m.ErrChunkKeyNotFound) { 
+		if errors.Is(err, m.ErrObjectNotFound) || errors.Is(err, m.ErrChunkKeyNotFound) {
 			slog.ErrorContext(ctx, "missing slot",
 				"chunk_id", chunk.Meta.ID,
 				"object_id", slot.ObjectID,
@@ -94,7 +94,7 @@ func (cs *CleanupService) ReconcileChunks(ctx context.Context) error {
 	var reconcileErr error
 	for _, object := range cs.objects.List(ctx) {
 		for chunkKey, chunkID := range object.Chunks {
-			err := cs.chunks.Create(ctx, chunkID, t.ObjectSlot{ 
+			err := cs.chunks.Create(ctx, chunkID, t.ObjectSlot{
 				ChunkKey: chunkKey,
 				ObjectID: object.ID,
 			})
@@ -146,7 +146,7 @@ func (cs *CleanupService) DeleteUnwanted(ctx context.Context) []t.ObjectID {
 }
 
 func (cs *CleanupService) RunLoop(ctx context.Context) {
-	
+
 	_ = cs.ReconcileChunks(ctx)
 
 	go cs.looper.Run(ctx, func(ctx context.Context) {

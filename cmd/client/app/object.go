@@ -19,7 +19,7 @@ func (app *App) ListObjects(ctx context.Context) (*ListObjectsResult, error) {
 	}
 
 	res := &ListObjectsResult{
-		Objects: infos, 
+		Objects: infos,
 	}
 	return res, nil
 }
@@ -46,21 +46,17 @@ func (app *App) DescribeObject(ctx context.Context, objectID string) (*DescribeO
 		Description: desc,
 	}
 
-	return res, nil 
+	return res, nil
 }
 
-
 type CreateObjectResult struct {
-  	ObjectID t.ObjectID `json:"object_id"`
+	ObjectID t.ObjectID `json:"object_id"`
 }
 
 func (app *App) CreateObject(ctx context.Context, objectID string) (*CreateObjectResult, error) {
-  	if err := app.MasterT().CreateObject(ctx, t.ObjectID(objectID)); err != nil {
-  		return nil, fmt.Errorf("create object %s: %w", objectID, err)
-  	}
+	if err := app.MasterT().CreateObject(ctx, t.ObjectID(objectID)); err != nil {
+		return nil, fmt.Errorf("create object %s: %w", objectID, err)
+	}
 
-  	return &CreateObjectResult{ObjectID: t.ObjectID(objectID)}, nil
+	return &CreateObjectResult{ObjectID: t.ObjectID(objectID)}, nil
 }
-
-
-

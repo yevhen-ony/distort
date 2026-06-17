@@ -154,15 +154,15 @@ func (p *Presenter) resolve(state any) (FrameFn, error) {
 	case *app.CreateObjectResult:
 		frameFn := func() ([]byte, error) { return p.render.CreateObject(s) }
 		return frameFn, nil
-	
+
 	case *app.InspectNodeResult:
 		frameFn := func() ([]byte, error) { return p.render.InspectNode(s) }
 		return frameFn, nil
 
-  	case *app.TriggerReportResult:
+	case *app.TriggerReportResult:
 		frameFn := func() ([]byte, error) { return p.render.TriggerReport(s) }
 		return frameFn, nil
-	
+
 	case *app.HeartbeatControlResult:
 		frameFn := func() ([]byte, error) { return p.render.HeartbeatControl(s) }
 		return frameFn, nil

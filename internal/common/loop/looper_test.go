@@ -17,7 +17,7 @@ func TestLooper_SkipFirstWait(tt *testing.T) {
 		called <- struct{}{}
 		cancel()
 	})
-	
+
 	select {
 	case <-called:
 	case <-time.After(100 * time.Millisecond):
@@ -47,26 +47,26 @@ func TestLooper_Flush(tt *testing.T) {
 }
 
 func TestLooper_OnCancel(tt *testing.T) {
-  	ctx, cancel := context.WithCancel(context.Background())
-  	done := make(chan struct{})
-  	exec := make(chan struct{})
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	exec := make(chan struct{})
 
-  	looper := NewLooper(time.Hour)
+	looper := NewLooper(time.Hour)
 
-  	go func() {
-  		defer close(done)
-  		looper.Run(ctx, func(context.Context) {
-  			exec <- struct{}{}
-  		})
-  	}()
+	go func() {
+		defer close(done)
+		looper.Run(ctx, func(context.Context) {
+			exec <- struct{}{}
+		})
+	}()
 
-  	cancel()
+	cancel()
 
-  	select {
-  	case <-exec:
-  		tt.Fatal("fn should not run")
-  	case <-done:
-  	case <-time.After(100 * time.Millisecond):
-  		tt.Fatal("looper did not stop")
-  	}
+	select {
+	case <-exec:
+		tt.Fatal("fn should not run")
+	case <-done:
+	case <-time.After(100 * time.Millisecond):
+		tt.Fatal("looper did not stop")
+	}
 }

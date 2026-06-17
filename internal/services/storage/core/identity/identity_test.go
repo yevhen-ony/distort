@@ -93,10 +93,10 @@ func newIdentityFixture() *identityFixture {
 	}
 }
 
-func (f *identityFixture) deps() IdentityDeps{
+func (f *identityFixture) deps() IdentityDeps {
 	return IdentityDeps{
 		MasterT: f.transport,
-		Config: f.config,
+		Config:  f.config,
 	}
 }
 

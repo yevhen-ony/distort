@@ -208,48 +208,48 @@ func (r *TextRender) CreateObject(res *app.CreateObjectResult) ([]byte, error) {
 }
 
 func (r *TextRender) InspectNode(res *app.InspectNodeResult) ([]byte, error) {
-  	report := res.Report
-  	b := &bytes.Buffer{}
+	report := res.Report
+	b := &bytes.Buffer{}
 
-  	fmt.Fprintln(b, "INSPECT NODE:")
-  	fmt.Fprintf(b, "\t * addr      : %s\n", report.Addr)
-  	fmt.Fprintf(b, "\t * chunks    : %d\n", report.Stats.ChunkCount)
-  	fmt.Fprintf(b, "\t * used_bytes: %s\n", ToMBStr(report.Stats.UsedBytes))
-  	fmt.Fprintf(b, "\t * free_bytes: %s\n", ToMBStr(report.Stats.FreeBytes))
+	fmt.Fprintln(b, "INSPECT NODE:")
+	fmt.Fprintf(b, "\t * addr      : %s\n", report.Addr)
+	fmt.Fprintf(b, "\t * chunks    : %d\n", report.Stats.ChunkCount)
+	fmt.Fprintf(b, "\t * used_bytes: %s\n", ToMBStr(report.Stats.UsedBytes))
+	fmt.Fprintf(b, "\t * free_bytes: %s\n", ToMBStr(report.Stats.FreeBytes))
 	fmt.Fprintf(b, "\t * heartbeat : status = %s\n", res.Report.Heartbeat.Status)
 
-  	fmt.Fprintf(b, "%-18s %10s %-10s\n", "CHUNK_ID", "SIZE", "STATE")
-  	for _, chunk := range report.Chunks {
-  		fmt.Fprintf(b, "%-18s %10s %-10s\n",
-  			chunk.Meta.ID,
-  			ToMBStr(chunk.Meta.Digest.Size),
-  			chunk.State,
-  		)
-  	}
+	fmt.Fprintf(b, "%-18s %10s %-10s\n", "CHUNK_ID", "SIZE", "STATE")
+	for _, chunk := range report.Chunks {
+		fmt.Fprintf(b, "%-18s %10s %-10s\n",
+			chunk.Meta.ID,
+			ToMBStr(chunk.Meta.Digest.Size),
+			chunk.State,
+		)
+	}
 
-  	return b.Bytes(), nil
+	return b.Bytes(), nil
 }
 
 func (r *TextRender) TriggerReport(res *app.TriggerReportResult) ([]byte, error) {
-  	report := res.Report
-  	b := &bytes.Buffer{}
+	report := res.Report
+	b := &bytes.Buffer{}
 
-  	fmt.Fprintln(b, "TRIGGER REPORT:")
-  	if len(report.Scheduled) > 0 {
-  		fmt.Fprintf(b, "SCHEDULED %d:\n", len(report.Scheduled))
-  		for _, chunkID := range report.Scheduled {
-  			fmt.Fprintf(b, "%-18s\n", chunkID)
-  		}
-  	}
+	fmt.Fprintln(b, "TRIGGER REPORT:")
+	if len(report.Scheduled) > 0 {
+		fmt.Fprintf(b, "SCHEDULED %d:\n", len(report.Scheduled))
+		for _, chunkID := range report.Scheduled {
+			fmt.Fprintf(b, "%-18s\n", chunkID)
+		}
+	}
 
-  	if len(report.Failed) > 0 {
-  		fmt.Fprintf(b, "FAILED %d:\n", len(report.Failed))
-  		for _, chunkID := range report.Failed {
-  			fmt.Fprintf(b, "%-18s\n", chunkID)
-  		}
-  	}
+	if len(report.Failed) > 0 {
+		fmt.Fprintf(b, "FAILED %d:\n", len(report.Failed))
+		for _, chunkID := range report.Failed {
+			fmt.Fprintf(b, "%-18s\n", chunkID)
+		}
+	}
 
-  	return b.Bytes(), nil
+	return b.Bytes(), nil
 }
 
 func (r *TextRender) HeartbeatControl(res *app.HeartbeatControlResult) ([]byte, error) {
@@ -259,7 +259,7 @@ func (r *TextRender) HeartbeatControl(res *app.HeartbeatControlResult) ([]byte, 
 	fmt.Fprintln(b, "HEARTBEAT:")
 	fmt.Fprintf(b, "\t * addr  : %s\n", report.Addr)
 	fmt.Fprintf(b, "\t * status: %s\n", report.Heartbeat.Status)
-	
+
 	return b.Bytes(), nil
 }
 
@@ -290,8 +290,6 @@ func (r *TextRender) Progress(op *progress.ObjectProgress) ([]byte, error) {
 	}
 	return b.Bytes(), nil
 }
-
-
 
 func ToMBStr(bytes int64) string {
 	mb := float64(bytes) / float64(1024*1024)

@@ -13,7 +13,7 @@ type DiscoverMasterResult struct {
 func (app *App) DiscoverMaster(ctx context.Context) (*DiscoverMasterResult, error) {
 	ref, err := app.MasterT().DiscoverMaster(ctx)
 	if err != nil {
-		return nil, err 
+		return nil, err
 	}
 
 	res := &DiscoverMasterResult{
@@ -22,7 +22,6 @@ func (app *App) DiscoverMaster(ctx context.Context) (*DiscoverMasterResult, erro
 
 	return res, nil
 }
-
 
 func (app *App) TransferLeadership(ctx context.Context) error {
 	return app.MasterT().TransferLeadership(ctx)
@@ -41,13 +40,12 @@ func (app *App) Ping(ctx context.Context, addr string) (*PingResult, error) {
 	}
 
 	res := &PingResult{
-		Address: addr,
+		Address:   addr,
 		Component: health.Component,
-		Status: "not ready",
+		Status:    "not ready",
 	}
 	if health.Ready {
 		res.Status = "ready"
 	}
 	return res, nil
 }
-

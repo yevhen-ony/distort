@@ -56,9 +56,9 @@ func NewResourceViewSerivce(deps ResourceViewDeps) (*ResourceViewService, error)
 		return nil, errors.New("missing node placement")
 	}
 	rvs := &ResourceViewService{
-		objects: deps.ObjectReader,
-		chunks: deps.ChunkRepo,
-		nodes: deps.NodeRegistry,
+		objects:   deps.ObjectReader,
+		chunks:    deps.ChunkRepo,
+		nodes:     deps.NodeRegistry,
 		placement: deps.NodePlacement,
 	}
 	return rvs, nil

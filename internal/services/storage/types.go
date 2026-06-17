@@ -40,7 +40,7 @@ func NewChunkRecord(meta t.ChunkMeta) *ChunkRecord {
 
 func (r *ChunkRecord) Clone() *ChunkRecord {
 	return &ChunkRecord{
-		Meta: *r.Meta.Clone(),
+		Meta:  *r.Meta.Clone(),
 		State: r.State,
 	}
 }
@@ -49,12 +49,12 @@ type ChunkCatalog map[t.ChunkID]*ChunkRecord
 
 type TriggerReportResult struct {
 	Scheduled []t.ChunkID
-	Failed []t.ChunkID
+	Failed    []t.ChunkID
 }
 
 func NewTriggerReportResult() *TriggerReportResult {
 	return &TriggerReportResult{
 		Scheduled: []t.ChunkID{},
-		Failed: []t.ChunkID{},
+		Failed:    []t.ChunkID{},
 	}
 }
